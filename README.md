@@ -41,6 +41,42 @@ make
 
 The binary shall be build to `bin/pacman`.
 
+## Usage
+
+Following commandline arguments are supported
+- `-step` to disable automatic moving forward of puckman
+- `-show_fps` to periodically show the frames per seconds (fps) value on the console
+- `-no_vsync` to force off hardware enabled vsync, which in turn enables manual fps synchronization
+- `-fps <int>` to enforce a specific fps value, which will also set `-no_vsync` naturally
+- `-speed <int>` to set the 100% player speed in fields per seconds
+- `-wwidth <int> to set the initial window width
+- `-wheight <int> to set the initial window height
+- `-show_ghost_moves` to show the ghost moves's criteria like distance and collisions on the console
+- `-show_targets` to show the ghost's target position as a ray on the video screen
+- `-bugfix` to turn off the original puckman's behavior (bugs), see below.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
+bin/pacman [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-bugfix]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## Bugfix mode
+
+With the `-bugfix` mode enabled, see above,
+the original puckman behavior (bugs) are disabled.
+
+The list below shall be updated in case we further the implementation
+and kept in sync with `include/pacman/globals.hpp`.
+
+By default the original pacman behavior is being implemented:
+- weighted (round) tile position for collision tests
+- pinky's up-target not 4 ahead, but 4 ahead and 4 to the left
+- ...
+
+If false, a more accurate implementation, the pacman bugfix, is used:
+- pixel accurate tile position for collision tests
+- pinky's up-traget to be 4 ahead as intended
+- ...
+
 ## Changes
 
 **0.0.1**

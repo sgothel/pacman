@@ -61,6 +61,8 @@ extern pacman_ref pacman;
  * - pixel accurate tile position for collision tests
  * - pinky's up-traget to be 4 ahead as intended
  * - ...
+ *
+ * TODO: Keep in sync with README.md
  */
 extern bool use_original_pacman_behavior();
 

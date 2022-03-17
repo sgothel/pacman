@@ -172,6 +172,7 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 }
 
 static std::string get_usage(const std::string& exename) {
+    // TODO: Keep in sync with README.md
     return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-bugfix]";
 }
 
