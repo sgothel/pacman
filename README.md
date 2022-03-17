@@ -51,17 +51,17 @@ Following commandline arguments are supported
 - `-speed <int>` to set the 100% player speed in fields per seconds
 - `-wwidth <int> to set the initial window width
 - `-wheight <int> to set the initial window height
-- `-show_ghost_moves` to show the ghost moves's criteria like distance and collisions on the console
+- `-show_ghost_moves` to show the ghost's moves criteria like distance and collisions on the console
 - `-show_targets` to show the ghost's target position as a ray on the video screen
-- `-bugfix` to turn off the original puckman's behavior (bugs), see below.
+- `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
 bin/pacman [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-bugfix]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-## Bugfix mode
+## Bugfix Mode
 
-With the `-bugfix` mode enabled, see above,
+With the `-bugfix` mode enabled, see `Usage` above,
 the original puckman behavior (bugs) are disabled.
 
 The list below shall be updated in case we further the implementation
@@ -76,6 +76,13 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pixel accurate tile position for collision tests
 - pinky's up-traget to be 4 ahead as intended
 - ...
+
+## Media Data
+
+The pixel data in `media/playfield_pacman.png` and `media/tiles_all.png`
+are copied from [Arcade - Pac-Man - General Sprites.png](https://www.spriters-resource.com/arcade/pacman/sheet/52631/),
+which were submitted and created by `Superjustinbros`
+and assumed to be in the public domain.
 
 ## Changes
 

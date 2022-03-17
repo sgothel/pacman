@@ -6,3 +6,9 @@
 - line 5:  4x14x14: ghost_anim 4x inky
 - line 6:  4x14x14: ghost_anim 4x pinky
 - line 7:  4x14x14: ghost_anim 4x eyes
+
+The pixel data in `playfield_pacman.png` and `tiles_all.png`
+are copied from [Arcade - Pac-Man - General Sprites.png](https://www.spriters-resource.com/arcade/pacman/sheet/52631/),
+which were submitted and created by `Superjustinbros`
+and assumed to be in the public domain.
+
