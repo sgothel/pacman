@@ -6,7 +6,7 @@
 This project's canonical repositories is hosted on [Gothel Software](https://jausoft.com/cgit/cs_class/pacman.git/).
 
 ## Goals
-This project has been created to demonstrate a complex system written in modern C++
+This project likes to demonstrate a complex system written in modern C++
 for our computer science class.
 
 Besides management of animated sprite graphics, maze environment and tile positioning,
@@ -17,7 +17,7 @@ ghost algorithm, etc. - we have used Jamey Pittman's [The Pac-Man Dossier](https
 and [Understanding Pac-Man Ghost Behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
 for reference.
 
-The implementation is inspired and loosely follows [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s
+The implementation is inspired by [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s
 original game [Puckman](https://en.wikipedia.org/wiki/Pac-Man).
 
 ## Supported Platforms
