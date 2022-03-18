@@ -148,14 +148,14 @@ bool acoord_t::intersects_f(const box_t& other) const {
 }
 
 float acoord_t::distance(const float x, const float y) const {
-    const float x_d = std::abs(x - x_pos_f);
-    const float y_d = std::abs(y - y_pos_f);
+    const float x_d = x - x_pos_f;
+    const float y_d = y - y_pos_f;
     return std::sqrt(x_d * x_d + y_d * y_d);
 }
 
 float acoord_t::sq_distance(const float x, const float y) const {
-    const float x_d = std::abs(x - x_pos_f);
-    const float y_d = std::abs(y - y_pos_f);
+    const float x_d = x - x_pos_f;
+    const float y_d = y - y_pos_f;
     return x_d * x_d + y_d * y_d;
 }
 
