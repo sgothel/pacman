@@ -78,10 +78,10 @@ void audio_sample_t::play() {
     }
 }
 
-void audio_sample_t::play(int times) {
+void audio_sample_t::play(int loops) {
     if ( nullptr != chunk.get() ) {
         if( !singly || 0 > channel_playing || ( 0 <= channel_playing && 0 == Mix_Playing(channel_playing) ) ) {
-            channel_playing = Mix_PlayChannel(-1, chunk.get(), times - 1);
+            channel_playing = Mix_PlayChannel(-1, chunk.get(), loops - 1);
         }
     }
 }

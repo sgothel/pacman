@@ -34,7 +34,21 @@
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_timer.h>
 
+/**
+ * Open the audio system.
+ *
+ * @param mix_channels
+ * @param out_channel
+ * @param out_frequency
+ * @param out_sample_format
+ * @param out_chunksize
+ * @return
+ */
 bool audio_open(int mix_channels=16, int out_channel=2, int out_frequency=MIX_DEFAULT_FREQUENCY, Uint16 out_sample_format=AUDIO_S16SYS, int out_chunksize=1024);
+
+/**
+ * Close the audio system.
+ */
 void audio_close();
 
 class audio_sample_t {
@@ -62,8 +76,22 @@ class audio_sample_t {
         audio_sample_t(const std::string &fname, const int volume=MIX_MAX_VOLUME/2)
         : audio_sample_t(fname, true, volume) {}
 
+        /**
+         * Play this sample once
+         * @see set_single_play()
+         */
         void play();
-        void play(int times);
+
+        /**
+         * Play this sample
+         * @param loops pass 0 for infinity, otherwise the number of loops.
+         * @see set_single_play()
+         */
+        void play(int loops);
+
+        /**
+         * Stop playing this sample.
+         */
         void stop();
 
         /**
