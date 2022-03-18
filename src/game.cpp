@@ -21,6 +21,10 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#include <pacman/utils.hpp>
+#include <pacman/graphics.hpp>
+#include <pacman/audio.hpp>
+#include <pacman/maze.hpp>
 #include <pacman/game.hpp>
 #include <pacman/globals.hpp>
 
@@ -28,8 +32,6 @@
 
 #include <cstdio>
 #include <time.h>
-
-static constexpr const bool DEBUG_GFX_BOUNDS = false;
 
 //
 // globals across modules 'globals.hpp'
@@ -45,6 +47,8 @@ std::unique_ptr<maze_t> pacman_maze;
 std::shared_ptr<global_tex_t> global_tex;
 std::vector<ghost_ref> ghosts;
 pacman_ref pacman;
+
+std::vector<audio_sample_ref> audio_samples;
 
 static bool original_pacman_behavior = true;
 bool use_original_pacman_behavior() { return original_pacman_behavior; }
@@ -173,7 +177,64 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 
 static std::string get_usage(const std::string& exename) {
     // TODO: Keep in sync with README.md
-    return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-bugfix]";
+    return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-bugfix] [-audio]";
+}
+
+//
+// FIXME: Consider moving game state types and fields into its own class
+//
+enum class game_mode_t {
+    LEVEL_START,
+    GAME,
+    PAUSE
+};
+static std::string to_string(game_mode_t m) {
+    switch( m ) {
+        case game_mode_t::LEVEL_START:
+            return "level_start";
+        case game_mode_t::GAME:
+            return "game";
+        case game_mode_t::PAUSE:
+            return "pause";
+        default:
+            return "unknown";
+    }
+}
+enum class game_mode_duration_t : int {
+    LEVEL_START = 4000
+};
+static constexpr int number(const game_mode_duration_t item) noexcept {
+    return static_cast<int>(item);
+}
+static int game_mode_ms_left = -1;
+static game_mode_t game_mode = game_mode_t::PAUSE;
+static game_mode_t game_mode_last = game_mode_t::LEVEL_START;
+
+static void set_game_mode(const game_mode_t m) {
+    const game_mode_t old_mode = game_mode;
+    switch( m ) {
+        case game_mode_t::LEVEL_START:
+            game_mode = m;
+            if( audio_samples[ number( audio_clip_t::INTRO ) ]->is_valid() ) {
+                // use_audio == true
+                audio_samples[ number( audio_clip_t::INTRO ) ]->play();
+                game_mode_ms_left = number( game_mode_duration_t::LEVEL_START );
+            } else {
+                // use_audio == true, shorten startup time a little
+                game_mode_ms_left = 3000;
+            }
+            break;
+        case game_mode_t::GAME:
+            [[fallthrough]];
+        case game_mode_t::PAUSE:
+            [[fallthrough]];
+        default:
+            game_mode = m;
+            game_mode_ms_left = -1;
+            break;
+    }
+    game_mode_last = old_mode;
+    log_print("game set_mode: %s -> %s [%d ms]\n", to_string(old_mode).c_str(), to_string(game_mode).c_str(), game_mode_ms_left);
 }
 
 int main(int argc, char *argv[])
@@ -186,6 +247,7 @@ int main(int argc, char *argv[])
     int win_width = 640, win_height = 720;
     bool show_ghost_moves = false;
     bool show_targets = false;
+    bool use_audio = false;
     {
         for(int i=1; i<argc; ++i) {
             if( 0 == strcmp("-step", argv[i]) ) {
@@ -213,6 +275,8 @@ int main(int argc, char *argv[])
                 show_targets = true;
             } else if( 0 == strcmp("-bugfix", argv[i]) ) {
                 original_pacman_behavior = false;
+            } else if( 0 == strcmp("-audio", argv[i]) ) {
+                use_audio = true;
             }
         }
         log_print("%s\n", get_usage(argv[0]).c_str());
@@ -225,6 +289,7 @@ int main(int argc, char *argv[])
         log_print("- show_ghost_moves %d\n", show_ghost_moves);
         log_print("- show_targets %d\n", show_targets);
         log_print("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
+        log_print("- use_audio %d\n", use_audio);
     }
 
     pacman_maze = std::make_unique<maze_t>("media/playfield_pacman.txt");
@@ -248,15 +313,34 @@ int main(int argc, char *argv[])
     }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        log_print("error initializing SDL: %s\n", SDL_GetError());
+        log_print("SDL: Error initializing: %s\n", SDL_GetError());
     }
 
     if ( ( IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG ) != IMG_INIT_PNG ) {
-        log_print("error initializing SDL_image: %s\n", SDL_GetError());
+        log_print("SDL_image: Error initializing: %s\n", SDL_GetError());
     }
 
     if( 0 != TTF_Init() ) {
-        log_print("Font: Error initializing.\n");
+        log_print("SDL_TTF: Error initializing: %s\n", SDL_GetError());
+    }
+
+    if( use_audio ) {
+        use_audio = audio_open();
+    }
+    if( use_audio ) {
+        for(int i=0; i <= number( audio_clip_t::DEATH ); ++i) {
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/beginning.wav") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/chomp.wav") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/eatfruit.wav") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/eatghost.wav", false /* single_play */) );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/extrapac.wav") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/intermission.wav") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/death.wav") );
+        }
+    } else {
+        for(int i=0; i <= number( audio_clip_t::DEATH ); ++i) {
+            audio_samples.push_back( std::make_shared<audio_sample_t>() );
+        }
     }
 
     if( enable_vsync ) {
@@ -329,7 +413,7 @@ int main(int argc, char *argv[])
 
     bool close = false;
     bool set_dir = false;
-    bool pause = true;
+    bool level_start = true;
     direction_t dir = pacman->get_dir();
 
     const uint64_t fps_range_ms = 3000;
@@ -342,6 +426,8 @@ int main(int argc, char *argv[])
     uint64_t last_score = pacman->get_score();
     std::shared_ptr<text_texture_t> ttex_score = nullptr;
     std::shared_ptr<text_texture_t> ttex_score_title = nullptr;
+
+    set_game_mode(game_mode_t::PAUSE);
 
     while (!close) {
         SDL_Event event;
@@ -358,10 +444,14 @@ int main(int argc, char *argv[])
                 case SDL_WINDOWEVENT:
                     switch (event.window.event) {
                         case SDL_WINDOWEVENT_SHOWN:
-                            pause = false;
+                            if( level_start ) {
+                                set_game_mode(game_mode_t::LEVEL_START);
+                            } else {
+                                set_game_mode(game_mode_t::GAME);
+                            }
                             break;
                         case SDL_WINDOWEVENT_HIDDEN:
-                            pause = true;
+                            set_game_mode(game_mode_t::PAUSE);
                             break;
                         case SDL_WINDOWEVENT_RESIZED:
                             on_window_resized(rend, event.window.data1, event.window.data2);
@@ -383,7 +473,11 @@ int main(int argc, char *argv[])
                             close = true;
                             break;
                         case SDL_SCANCODE_P:
-                            pause = pause ? false : true;
+                            if( game_mode_t::PAUSE == game_mode ) {
+                                set_game_mode( game_mode_last );
+                            } else {
+                                set_game_mode( game_mode_t::PAUSE );
+                            }
                             break;
                         case SDL_SCANCODE_R:
                             pacman_maze->reset();
@@ -418,19 +512,43 @@ int main(int argc, char *argv[])
                     }
             }
         }
-        if( pause ) {
-            SDL_Delay( 1000 / 60 );
-            continue;
-        }
-        if( set_dir ) {
-            pacman->set_dir(dir);
-        }
-        global_tex->tick();
-        for(ghost_ref g : ghosts) {
-            g->tick();
-        }
-        pacman->tick();
 
+        bool game_active;
+
+        if( 0 < game_mode_ms_left ) {
+            game_mode_ms_left = std::max( 0, game_mode_ms_left - get_ms_per_frame() );
+        }
+
+        switch( game_mode ) {
+            case game_mode_t::LEVEL_START:
+                if( 0 == game_mode_ms_left ) {
+                    set_game_mode( game_mode_t::GAME );
+                    level_start = false;
+                    game_active = true;
+                } else {
+                    game_active = false;
+                }
+                break;
+            case game_mode_t::PAUSE:
+                game_active = false;
+                break;
+            case game_mode_t::GAME:
+                [[fallthrough]];
+            default:
+                game_active = true;
+                break;
+        }
+
+        if( game_active ) {
+            if( set_dir ) {
+                pacman->set_dir(dir);
+            }
+            global_tex->tick();
+            for(ghost_ref g : ghosts) {
+                g->tick();
+            }
+            pacman->tick();
+        }
         SDL_RenderClear(rend);
 
         pacman_maze_tex->draw(rend, 0, 0, false /* maze_offset */);
@@ -513,6 +631,10 @@ int main(int argc, char *argv[])
         }
     } // loop
 
+    if( use_audio ) {
+        audio_samples.clear();
+        audio_close();
+    }
     pacman->destroy();
     ghosts.clear();
     pacman_maze_tex->destroy();

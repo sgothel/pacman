@@ -29,6 +29,7 @@
 #include <vector>
 #include <string>
 #include <inttypes.h>
+#include <functional>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

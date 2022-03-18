@@ -21,6 +21,8 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#include <pacman/graphics.hpp>
+#include <pacman/audio.hpp>
 #include <pacman/game.hpp>
 #include <pacman/globals.hpp>
 
@@ -68,7 +70,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_, bool auto_mo
 : fields_per_sec( fields_per_sec_ ),
   auto_move(auto_move_),
   mode( mode_t::HOME ),
-  mode_ms_left ( number( mode_duration_t::HOMESTAY ) ),
+  mode_ms_left ( -1 ),
   lives( 3 ),
   dir_( direction_t::LEFT ),
   last_dir( dir_ ),
@@ -101,7 +103,7 @@ void pacman_t::set_mode(const mode_t m) {
     switch( m ) {
         case mode_t::HOME:
             mode = m;
-            mode_ms_left = number( mode_duration_t::HOMESTAY );
+            mode_ms_left = -1;
             pos = pacman_maze->get_pacman_start_pos();
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::HOME);
@@ -165,9 +167,7 @@ bool pacman_t::tick() {
     }
 
     if( mode_t::HOME == mode ) {
-        if( 0 == mode_ms_left ) {
-            set_mode( mode_t::NORMAL );
-        }
+        set_mode( mode_t::NORMAL );
     } else if( mode_t::DEAD == mode ) {
         if( 0 == mode_ms_left ) {
             set_mode( mode_t::HOME );
@@ -195,17 +195,31 @@ bool pacman_t::tick() {
                                         float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
                  (void)d;
                  if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
-                     score += ::number( tile_to_score(tile) );
-                     pacman_maze->set_tile(x, y, tile_t::EMPTY);
-                     if( tile_t::PELLET_POWER == tile ) {
-                         set_mode( mode_t::POWERED );
+                     if( !inbetween ) {
+                         score += ::number( tile_to_score(tile) );
+                         pacman_maze->set_tile(x_i, y_i, tile_t::EMPTY);
+                         if( tile_t::PELLET == tile ) {
+                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                         } else if( tile_t::PELLET_POWER == tile ) {
+                             set_mode( mode_t::POWERED );
+                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                         } else {
+                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+                         }
+                         if( 0 == pacman_maze->get_count( tile_t::PELLET ) && 0 == pacman_maze->get_count( tile_t::PELLET_POWER ) ) {
+                             pacman_maze->reset(); // FIXME: Actual end of level ...
+                         }
                      }
-                     if( 0 == pacman_maze->get_count( tile_t::PELLET ) && 0 == pacman_maze->get_count( tile_t::PELLET_POWER ) ) {
-                         pacman_maze->reset(); // FIXME: Actual end of level ...
+                     return false;
+                 } else if( tile_t::WALL == tile || tile_t::GATE == tile ) {
+                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+                     return true;
+                 } else {
+                     if( !inbetween ) {
+                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                      }
                      return false;
                  }
-                 return tile_t::WALL == tile || tile_t::GATE == tile;
              });
              if( collision_maze ) {
                  uint64_t t1 = getCurrentMilliseconds();
@@ -226,12 +240,14 @@ bool pacman_t::tick() {
                  } else if( ghost_t::mode_t::SCARED == g_mode ) {
                      score += ::number( score_t::GHOST_1 ); // FIXME
                      g->set_mode( ghost_t::mode_t::PHANTOM );
+                     audio_samples[ ::number( audio_clip_t::EAT_GHOST ) ]->play();
                  }
              }
          }
 
          if( collision_enemies ) {
              set_mode( mode_t::DEAD );
+             audio_samples[ ::number( audio_clip_t::DEATH ) ]->play();
          }
     }
 

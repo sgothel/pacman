@@ -8,7 +8,7 @@ LN	    := g++
 # DBGFLAGS := -ggdb3 -O0
 DBGFLAGS := -O3
 CPPFLAGS := -Wall -Iinclude ${DBGFLAGS} `sdl2-config --cflags`
-LNFLAGS := -Wall ${DBGFLAGS} -lm `sdl2-config --libs` -lSDL2_image -lSDL2_ttf
+LNFLAGS := -Wall ${DBGFLAGS} -lm `sdl2-config --libs` -lSDL2_image -lSDL2_ttf -lSDL2_mixer
 
 HEADERS := include/pacman/*
 
@@ -18,7 +18,7 @@ obj/%.o: src/%.cpp $(HEADERS) Makefile
 # default recipe
 all: obj bin bin/pacman
 
-bin/pacman: obj/maze.o obj/graphics.o obj/game.o obj/pacman.o obj/ghost.o obj/utils.o
+bin/pacman: obj/utils.o obj/graphics.o obj/audio.o obj/maze.o obj/pacman.o obj/ghost.o obj/game.o
 	$(LN) -o $@ $^ $(LNFLAGS)
 
 obj:

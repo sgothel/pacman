@@ -25,7 +25,6 @@
 #define PACMAN_GAME_HPP_
 
 #include <pacman/maze.hpp>
-#include <pacman/graphics.hpp>
 
 //
 // score_t
@@ -236,7 +235,6 @@ class pacman_t {
     private:
         /** mode durations in ms */
         enum class mode_duration_t : int {
-            HOMESTAY = 2000,
             INPOWER = ghost_t::number(ghost_t::mode_duration_t::SCARED),
             DEADANIM = 2000
         };

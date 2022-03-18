@@ -26,6 +26,7 @@
 
 #include <pacman/maze.hpp>
 #include <pacman/graphics.hpp>
+#include <pacman/audio.hpp>
 #include <pacman/game.hpp>
 
 #include <cmath>
@@ -50,6 +51,22 @@ extern std::vector<ghost_ref> ghosts;
 
 typedef std::shared_ptr<pacman_t> pacman_ref;
 extern pacman_ref pacman;
+
+enum class audio_clip_t : int {
+    INTRO = 0,
+    MUNCH = 1,
+    EAT_FRUIT = 2,
+    EAT_GHOST = 3,
+    EXTRA = 4,
+    INTERMISSION = 5,
+    DEATH = 6
+};
+constexpr int number(const audio_clip_t item) noexcept {
+    return static_cast<int>(item);
+}
+
+typedef std::shared_ptr<audio_sample_t> audio_sample_ref;
+extern std::vector<audio_sample_ref> audio_samples;
 
 /**
  * By default the original pacman behavior is being implemented:
