@@ -211,8 +211,8 @@ void acoord_t::incr_fwd(const maze_t& maze, const direction_t dir, const int til
 }
 
 bool acoord_t::is_inbetween(const float fields_per_frame, const float x, const float y) {
-    if( std::abs( std::round(x) - x ) < fields_per_frame/2.0 &&
-        std::abs( std::round(y) - y ) < fields_per_frame/2.0 ) {
+    if( std::abs( std::round(x) - x ) < fields_per_frame &&
+        std::abs( std::round(y) - y ) < fields_per_frame ) {
         // on tile center within step width
         return false;
     } else {
