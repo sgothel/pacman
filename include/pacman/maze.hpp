@@ -116,7 +116,7 @@ class maze_t; // fwd
 
 class acoord_t {
     public:
-        typedef std::function<bool(direction_t d, int x_pos, int y_pos, tile_t)> collisiontest_t;
+        typedef std::function<bool(direction_t d, float x_pos_f, float y_pos_f, bool inbetween, int x_pos, int y_pos, tile_t)> collisiontest_t;
 
     private:
         static constexpr const bool DEBUG_BOUNDS = false;
@@ -217,7 +217,10 @@ class acoord_t {
             return step_impl(maze, dir, true, 0.50, ct);
         }
 
-        bool is_transitioning(const float fields_per_sec, const int frames_per_sec);
+        static bool is_inbetween(const float fields_per_frame, const float x, const float y);
+        bool is_inbetween(const float fields_per_sec, const int frames_per_sec) const {
+            return is_inbetween(fields_per_sec / frames_per_sec, x_pos_f, y_pos_f);
+        }
 
         /**
          * Returns whether the last step has collided according to the given collistiontest_t or not.

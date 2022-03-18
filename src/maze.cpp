@@ -201,10 +201,9 @@ void acoord_t::incr_fwd(const maze_t& maze, const direction_t dir, const int til
     }
 }
 
-bool acoord_t::is_transitioning(const float fields_per_sec, const int frames_per_sec) {
-    const float fields_per_frame = fields_per_sec / frames_per_sec;
-    if( std::abs( std::round(x_pos_f) - x_pos_f ) < fields_per_frame/2.0 &&
-        std::abs( std::round(y_pos_f) - y_pos_f ) < fields_per_frame/2.0 ) {
+bool acoord_t::is_inbetween(const float fields_per_frame, const float x, const float y) {
+    if( std::abs( std::round(x) - x ) < fields_per_frame/2.0 &&
+        std::abs( std::round(y) - y ) < fields_per_frame/2.0 ) {
         // on tile center within step width
         return false;
     } else {
@@ -313,7 +312,8 @@ bool acoord_t::step_impl(const maze_t& maze, direction_t dir, const bool test_on
     }
     // Collision test with walls
     const tile_t tile = maze.get_tile(fwd_x_pos_i, fwd_y_pos_i);
-    bool collision = nullptr != ct ? ct(dir, fwd_x_pos_i, fwd_y_pos_i, tile) : false;
+    bool collision = nullptr != ct ? ct(dir, new_x_pos_f, new_y_pos_f, is_inbetween(fields_per_frame, new_x_pos_f, new_y_pos_f),
+                                             fwd_x_pos_i, fwd_y_pos_i, tile) : false;
     if( DEBUG_BOUNDS ) {
         log_print("%s: %s -> %s: %5.2f/%5.2f %2.2d/%2.2d -> %5.2f/%5.2f %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",

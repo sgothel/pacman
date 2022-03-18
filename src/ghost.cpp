@@ -21,6 +21,7 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#include <pacman/graphics.hpp>
 #include <pacman/game.hpp>
 #include <pacman/globals.hpp>
 
@@ -209,7 +210,7 @@ void ghost_t::set_mode(const mode_t m) {
 }
 
 void ghost_t::set_next_dir() {
-    if( pos.is_transitioning(fields_per_sec, get_frames_per_sec()) ) {
+    if( pos.is_inbetween(fields_per_sec, get_frames_per_sec()) ) {
         return; // NOP
     }
     constexpr const int U = 0;
@@ -229,8 +230,8 @@ void ghost_t::set_next_dir() {
     acoord_t left = pos;    // 1
     acoord_t down = pos;    // 2
     acoord_t right = pos;   // 3
-    acoord_t::collisiontest_t collisiontest = [&](direction_t d, int x, int y, tile_t tile) -> bool {
-        (void)d; (void)x; (void)y;
+    acoord_t::collisiontest_t collisiontest = [&](direction_t d, float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
+        (void)d; (void)x_f; (void)y_f; (void)inbetween; (void)x_i; (void)y_i;
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     };
@@ -325,8 +326,7 @@ bool ghost_t::tick() {
         mode_ms_left = std::max( 0, mode_ms_left - get_ms_per_frame() );
     }
 
-    const bool in_transition = pos.is_transitioning(fields_per_sec, get_frames_per_sec());
-    if( !in_transition ) {
+    if( !pos.is_inbetween(fields_per_sec, get_frames_per_sec()) ) {
         if( mode_t::AWAY == mode ) {
             return true; // NOP
         } else if( mode_t::HOME == mode ) {
@@ -362,8 +362,8 @@ bool ghost_t::tick() {
         }
     }
 
-    collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](direction_t d, int x, int y, tile_t tile) -> bool {
-        (void)d; (void)x; (void)y;
+    collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](direction_t d, float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
+        (void)d; (void)x_f; (void)y_f; (void)inbetween; (void)x_i; (void)y_i;
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });

@@ -137,8 +137,9 @@ void pacman_t::set_mode(const mode_t m) {
 }
 
 void pacman_t::set_dir(direction_t dir) {
-    const bool collision_maze = !pos.test(*pacman_maze, dir, [](direction_t d, int x, int y, tile_t tile) -> bool {
-        (void)d; (void)x; (void)y; return tile_t::WALL == tile || tile_t::GATE == tile;
+    const bool collision_maze = !pos.test(*pacman_maze, dir, [](direction_t d, float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
+        (void)d; (void)x_f; (void)y_f; (void)inbetween; (void)x_i; (void)y_i;
+        return tile_t::WALL == tile || tile_t::GATE == tile;
     });
     if( !collision_maze ) {
         if( !auto_move ) {
@@ -190,7 +191,8 @@ bool pacman_t::tick() {
              if( !auto_move ) {
                  --steps_left;
              }
-             collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](direction_t d, int x, int y, tile_t tile) -> bool {
+             collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](direction_t d,
+                                        float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
                  (void)d;
                  if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
                      score += ::number( tile_to_score(tile) );
