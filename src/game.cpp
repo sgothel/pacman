@@ -214,6 +214,8 @@ static void set_game_mode(const game_mode_t m) {
     const game_mode_t old_mode = game_mode;
     switch( m ) {
         case game_mode_t::LEVEL_START:
+            pacman->set_mode( pacman_t::mode_t::HOME );
+            pacman_maze->reset();
             game_mode = m;
             if( audio_samples[ number( audio_clip_t::INTRO ) ]->is_valid() ) {
                 // use_audio == true
@@ -533,7 +535,10 @@ int main(int argc, char *argv[])
                 game_active = false;
                 break;
             case game_mode_t::GAME:
-                [[fallthrough]];
+                if( 0 == pacman_maze->get_count( tile_t::PELLET ) && 0 == pacman_maze->get_count( tile_t::PELLET_POWER ) ) {
+                    set_game_mode(game_mode_t::LEVEL_START);
+                }
+            [[fallthrough]];
             default:
                 game_active = true;
                 break;
