@@ -41,16 +41,16 @@ texture_t::texture_t(SDL_Renderer* rend, const std::string& fname)
     SDL_Surface* surface = IMG_Load(fname.c_str());
     if( nullptr != surface ) {
         if( DEBUG_LOG ) {
-            log_print("texture_t::surface: fmt %u 0x%X, %d x %d pitch %d\n", surface->format->format, surface->format->format, surface->w, surface->h, surface->pitch);
+            log_printf("texture_t::surface: fmt %u 0x%X, %d x %d pitch %d\n", surface->format->format, surface->format->format, surface->w, surface->h, surface->pitch);
         }
         tex = SDL_CreateTextureFromSurface(rend, surface);
         SDL_FreeSurface(surface);
         if( nullptr == tex ) {
-            log_print("texture_t: Error loading %s: %s\n", fname.c_str(), SDL_GetError());
+            log_printf("texture_t: Error loading %s: %s\n", fname.c_str(), SDL_GetError());
         }
     } else {
         tex = nullptr;
-        log_print("texture_t::surface: Error loading %s: %s\n", fname.c_str(), SDL_GetError());
+        log_printf("texture_t::surface: Error loading %s: %s\n", fname.c_str(), SDL_GetError());
     }
     x = 0;
     y = 0;
@@ -60,7 +60,7 @@ texture_t::texture_t(SDL_Renderer* rend, const std::string& fname)
     if( nullptr != tex ) {
         SDL_QueryTexture(tex, &format, NULL, &width, &height);
         if( DEBUG_LOG ) {
-            log_print("texture_t: fmt %u 0x%X, %d x %d\n", format, format, width, height);
+            log_printf("texture_t: fmt %u 0x%X, %d x %d\n", format, format, width, height);
         }
     }
     owner = true;
@@ -137,7 +137,7 @@ int add_sub_textures(std::vector<std::shared_ptr<texture_t>>& storage, SDL_Rende
     std::unique_ptr<texture_t> all = std::make_unique<texture_t>(rend, filename);
     all->disown();
     if( DEBUG_LOG ) {
-        log_print("add_sub_textures: each ( %d + %d ) x %d, all: %s\n", w, x_off, h, all->toString().c_str());
+        log_printf("add_sub_textures: each ( %d + %d ) x %d, all: %s\n", w, x_off, h, all->toString().c_str());
     }
     const size_t size_start = storage.size();
 
@@ -148,7 +148,7 @@ int add_sub_textures(std::vector<std::shared_ptr<texture_t>>& storage, SDL_Rende
             }
             storage.push_back( std::make_shared<texture_t>(all->get_sdltex(), x, y, w, h, true /* owner*/) );
             if( DEBUG_LOG ) {
-                log_print("add_sub_textures: tex %zd [%d][%d]: %s\n", storage.size()-1, x, y, storage[ storage.size() - 1 ]->toString().c_str());
+                log_printf("add_sub_textures: tex %zd [%d][%d]: %s\n", storage.size()-1, x, y, storage[ storage.size() - 1 ]->toString().c_str());
             }
         }
     }
@@ -159,7 +159,7 @@ int add_sub_textures(std::vector<std::shared_ptr<texture_t>>& storage, SDL_Rende
                      int x_off, int y_off, int w, int h, const std::vector<tex_sub_coord_t>& tex_positions)
 {
     if( DEBUG_LOG ) {
-        log_print("add_sub_textures: each %d x %d, all: %s\n", w, h, global_texture->toString().c_str());
+        log_printf("add_sub_textures: each %d x %d, all: %s\n", w, h, global_texture->toString().c_str());
     }
     const size_t size_start = storage.size();
 
@@ -172,7 +172,7 @@ int add_sub_textures(std::vector<std::shared_ptr<texture_t>>& storage, SDL_Rende
             storage.push_back( std::make_shared<texture_t>() );
         }
         if( DEBUG_LOG ) {
-            log_print("add_sub_textures: tex %zd [%d][%d]: %s\n", storage.size()-1, x, y, storage[ storage.size() - 1 ]->toString().c_str());
+            log_printf("add_sub_textures: tex %zd [%d][%d]: %s\n", storage.size()-1, x, y, storage[ storage.size() - 1 ]->toString().c_str());
         }
     }
     return storage.size() - size_start;
@@ -279,7 +279,7 @@ std::shared_ptr<text_texture_t> draw_text(SDL_Renderer* rend, TTF_Font* font, co
         // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
         return ttex;
     } else {
-        log_print("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
+        log_printf("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
         return nullptr;
     }
 }
@@ -296,7 +296,7 @@ std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* f
         // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
         return ttex;
     } else {
-        log_print("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
+        log_printf("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
         return nullptr;
     }
 }

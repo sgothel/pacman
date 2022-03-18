@@ -221,7 +221,7 @@ void ghost_t::set_mode(const mode_t m) {
             break;
     }
     target = get_personal_target();
-    log_print("%s set_mode: %s -> %s [%d ms], pos %s -> %s\n", to_string(id).c_str(), to_string(old_mode).c_str(), to_string(mode).c_str(), mode_ms_left,
+    log_printf("%s set_mode: %s -> %s [%d ms], pos %s -> %s\n", to_string(id).c_str(), to_string(old_mode).c_str(), to_string(mode).c_str(), mode_ms_left,
             pos.toShortString().c_str(), target.toShortString().c_str());
 }
 
@@ -284,8 +284,8 @@ void ghost_t::set_next_dir() {
         dir_dist[ ::number(inv_dir) ] += 2*2;
 
         if( log_moves ) {
-            log_print(std::string("collisions r "+std::to_string(dir_coll[R])+", d "+std::to_string(dir_coll[D])+", l "+std::to_string(dir_coll[L])+", u "+std::to_string(dir_coll[U])+"\n").c_str());
-            log_print(std::string("distances r "+std::to_string(dir_dist[R])+", d "+std::to_string(dir_dist[D])+", l "+std::to_string(dir_dist[L])+", u "+std::to_string(dir_dist[U])+"\n").c_str());
+            log_printf(std::string(to_string(id)+": collisions r "+std::to_string(dir_coll[R])+", d "+std::to_string(dir_coll[D])+", l "+std::to_string(dir_coll[L])+", u "+std::to_string(dir_coll[U])+"\n").c_str());
+            log_printf(std::string(to_string(id)+": distances r "+std::to_string(dir_dist[R])+", d "+std::to_string(dir_dist[D])+", l "+std::to_string(dir_dist[L])+", u "+std::to_string(dir_dist[U])+"\n").c_str());
         }
         // Check for a clear short path, reversal has been punished
         if( !dir_coll[R] && dir_dist[R] < dir_dist[U] && dir_dist[R] < dir_dist[D] && dir_dist[R] < dir_dist[L] ) {
@@ -328,7 +328,7 @@ void ghost_t::set_next_dir() {
     }
     dir_ = new_dir;
     if( log_moves ) {
-        log_print("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s -> %s\n", to_string(id).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
+        log_printf("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s -> %s\n", to_string(id).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
                 choice, to_string(mode).c_str(), mode_ms_left, pos.toShortString().c_str(), target.toShortString().c_str());
     }
 }
@@ -389,7 +389,7 @@ bool ghost_t::tick() {
     set_next_dir();
 
     if( DEBUG_GFX_BOUNDS ) {
-        log_print("tick[%s]: frame %3.3d, %s, pos %s -> %s, crash[maze %d], textures %s\n",
+        log_printf("tick[%s]: frame %3.3d, %s, pos %s -> %s, crash[maze %d], textures %s\n",
                 to_string(id).c_str(), frame_count, to_string(dir_).c_str(), pos.toShortString().c_str(), target.toShortString().c_str(), collision_maze, atex->toString().c_str());
     }
     return true;

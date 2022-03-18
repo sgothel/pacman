@@ -135,7 +135,7 @@ void pacman_t::set_mode(const mode_t m) {
             mode_ms_left = -1;
             break;
     }
-    log_print("pacman set_mode: %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(mode).c_str(), mode_ms_left, pos.toShortString().c_str());
+    log_printf("pacman set_mode: %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(mode).c_str(), mode_ms_left, pos.toShortString().c_str());
 }
 
 void pacman_t::set_dir(direction_t dir) {
@@ -227,7 +227,7 @@ bool pacman_t::tick() {
                  uint64_t t1 = getCurrentMilliseconds();
                  if( pos.get_fields_walked_i() > 0 ) {
                      const float fps = get_fps(perf_fields_walked_t0, t1, pos.get_fields_walked_f());
-                     log_print("pacman: fields %.2f/s, td %" PRIu64 " ms, %s\n", fps, t1-perf_fields_walked_t0, pos.toString().c_str());
+                     log_printf("pacman: fields %.2f/s, td %" PRIu64 " ms, %s\n", fps, t1-perf_fields_walked_t0, pos.toString().c_str());
                  }
                  pos.reset_stats();
                  perf_fields_walked_t0 = getCurrentMilliseconds();
@@ -254,7 +254,7 @@ bool pacman_t::tick() {
     }
 
     if( DEBUG_GFX_BOUNDS ) {
-        log_print("tick: frame %3.3d, %s, %s, crash[maze %d, ghosts %d], textures %s\n",
+        log_printf("tick: frame %3.3d, %s, %s, crash[maze %d, ghosts %d], textures %s\n",
                 frame_count, to_string(dir_).c_str(), pos.toString().c_str(), collision_maze, collision_enemies, atex->toString().c_str());
     }
     return !collision_enemies;

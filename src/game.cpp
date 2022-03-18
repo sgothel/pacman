@@ -170,9 +170,9 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
         font_height = pacman_maze->get_ppt_y() * win_pixel_scale;
         font_ttf = TTF_OpenFont(fontfilename.c_str(), font_height);
     }
-    log_print("Window Resized: %d x %d pixel ( %d x %d logical ) @ %d hz\n",
+    log_printf("Window Resized: %d x %d pixel ( %d x %d logical ) @ %d hz\n",
             win_pixel_width, win_pixel_height, win_width_l, win_height_l, get_frames_per_sec());
-    log_print("Pixel scale: %f x %f -> %d, font[ok %d, height %d]\n", sx, sy, win_pixel_scale, nullptr!=font_ttf, font_height);
+    log_printf("Pixel scale: %f x %f -> %d, font[ok %d, height %d]\n", sx, sy, win_pixel_scale, nullptr!=font_ttf, font_height);
 }
 
 static std::string get_usage(const std::string& exename) {
@@ -234,7 +234,7 @@ static void set_game_mode(const game_mode_t m) {
             break;
     }
     game_mode_last = old_mode;
-    log_print("game set_mode: %s -> %s [%d ms]\n", to_string(old_mode).c_str(), to_string(game_mode).c_str(), game_mode_ms_left);
+    log_printf("game set_mode: %s -> %s [%d ms]\n", to_string(old_mode).c_str(), to_string(game_mode).c_str(), game_mode_ms_left);
 }
 
 int main(int argc, char *argv[])
@@ -279,27 +279,27 @@ int main(int argc, char *argv[])
                 use_audio = true;
             }
         }
-        log_print("%s\n", get_usage(argv[0]).c_str());
-        log_print("- auto_move %d\n", auto_move);
-        log_print("- show_fps %d\n", show_fps);
-        log_print("- enable_vsync %d\n", enable_vsync);
-        log_print("- forced_fps %d\n", forced_fps);
-        log_print("- fields_per_sec %5.2f\n", fields_per_sec);
-        log_print("- win size %d x %d\n", win_width, win_height);
-        log_print("- show_ghost_moves %d\n", show_ghost_moves);
-        log_print("- show_targets %d\n", show_targets);
-        log_print("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
-        log_print("- use_audio %d\n", use_audio);
+        log_printf("%s\n", get_usage(argv[0]).c_str());
+        log_printf("- auto_move %d\n", auto_move);
+        log_printf("- show_fps %d\n", show_fps);
+        log_printf("- enable_vsync %d\n", enable_vsync);
+        log_printf("- forced_fps %d\n", forced_fps);
+        log_printf("- fields_per_sec %5.2f\n", fields_per_sec);
+        log_printf("- win size %d x %d\n", win_width, win_height);
+        log_printf("- show_ghost_moves %d\n", show_ghost_moves);
+        log_printf("- show_targets %d\n", show_targets);
+        log_printf("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
+        log_printf("- use_audio %d\n", use_audio);
     }
 
     pacman_maze = std::make_unique<maze_t>("media/playfield_pacman.txt");
 
     if( !pacman_maze->is_ok() ) {
-        log_print("Maze: Error: %s\n", pacman_maze->toString().c_str());
+        log_printf("Maze: Error: %s\n", pacman_maze->toString().c_str());
         return -1;
     }
     {
-        log_print("--- 8< ---\n");
+        log_printf("--- 8< ---\n");
         const int maze_width = pacman_maze->get_width();
         pacman_maze->draw( [&maze_width](int x, int y, tile_t tile) {
             fprintf(stderr, "%s", to_string(tile).c_str());
@@ -308,20 +308,20 @@ int main(int argc, char *argv[])
             }
             (void)y;
         });
-        log_print("--- >8 ---\n");
-        log_print("Maze: %s\n", pacman_maze->toString().c_str());
+        log_printf("--- >8 ---\n");
+        log_printf("Maze: %s\n", pacman_maze->toString().c_str());
     }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        log_print("SDL: Error initializing: %s\n", SDL_GetError());
+        log_printf("SDL: Error initializing: %s\n", SDL_GetError());
     }
 
     if ( ( IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG ) != IMG_INIT_PNG ) {
-        log_print("SDL_image: Error initializing: %s\n", SDL_GetError());
+        log_printf("SDL_image: Error initializing: %s\n", SDL_GetError());
     }
 
     if( 0 != TTF_Init() ) {
-        log_print("SDL_TTF: Error initializing: %s\n", SDL_GetError());
+        log_printf("SDL_TTF: Error initializing: %s\n", SDL_GetError());
     }
 
     if( use_audio ) {
@@ -365,10 +365,10 @@ int main(int argc, char *argv[])
         SDL_GetRendererInfo(rend, &info);
         bool _uses_vsync = 0 != ( info.flags & SDL_RENDERER_PRESENTVSYNC );
         uses_vsync = _uses_vsync | enable_vsync; // FIXME: Assume yes if enforced with enable_vsync, since info.flags is not reliable
-        log_print("renderer: name: %s\n", info.name);
-        log_print("renderer: accel %d\n", 0 != ( info.flags & SDL_RENDERER_ACCELERATED ));
-        log_print("renderer: soft %d\n", 0 != ( info.flags & SDL_RENDERER_SOFTWARE ));
-        log_print("renderer: vsync %d -> %d\n", _uses_vsync, uses_vsync);
+        log_printf("renderer: name: %s\n", info.name);
+        log_printf("renderer: accel %d\n", 0 != ( info.flags & SDL_RENDERER_ACCELERATED ));
+        log_printf("renderer: soft %d\n", 0 != ( info.flags & SDL_RENDERER_SOFTWARE ));
+        log_printf("renderer: vsync %d -> %d\n", _uses_vsync, uses_vsync);
     }
  
     std::unique_ptr<texture_t> pacman_maze_tex = std::make_unique<texture_t>(rend, "media/"+pacman_maze->get_texture_file());
@@ -383,13 +383,13 @@ int main(int argc, char *argv[])
                 for(int i=0; i<num_displays; ++i) {
                     bzero(&mode, sizeof(mode));
                     SDL_GetCurrentDisplayMode(i, &mode);
-                    log_print("Display %d: %d x %d @ %d Hz\n", i, mode.w, mode.h, mode.refresh_rate);
+                    log_printf("Display %d: %d x %d @ %d Hz\n", i, mode.w, mode.h, mode.refresh_rate);
                 }
             }
             const int win_display_idx = SDL_GetWindowDisplayIndex(win);
             bzero(&mode, sizeof(mode));
             SDL_GetCurrentDisplayMode(win_display_idx, &mode); // SDL_GetWindowDisplayMode(..) fails on some systems (wrong refresh_rate and logical size
-            log_print("WindowDisplayMode: %d x %d @ %d Hz @ display %d\n", mode.w, mode.h, mode.refresh_rate, win_display_idx);
+            log_printf("WindowDisplayMode: %d x %d @ %d Hz @ display %d\n", mode.w, mode.h, mode.refresh_rate, win_display_idx);
             if( 0 < forced_fps ) {
                 frames_per_sec = forced_fps;
             } else {
@@ -622,7 +622,7 @@ int main(int argc, char *argv[])
             const int written = std::snprintf(&fps_str[0], fps_str.size(), "fps %6.2f", fps);
             fps_str.resize(written);
             // log_print("%s, td %" PRIu64 "ms, frames %" PRIu64 "\n", fps_str.c_str(), t1-t0, frame_count);
-            log_print("%s\n", fps_str.c_str());
+            log_printf("%s\n", fps_str.c_str());
             td_print_fps = t1;
         }
         if( 0 == --reset_fps_frame ) {

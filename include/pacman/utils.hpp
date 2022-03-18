@@ -41,6 +41,6 @@ uint64_t getElapsedMillisecond() noexcept;
 
 float get_fps(const uint64_t t0, const uint64_t t1, const float event_count);
 
-void log_print(const char * format, ...) noexcept;
+void log_printf(const char * format, ...) noexcept;
 
 #endif /* PACMAN_UTILS_HPP_ */

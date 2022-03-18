@@ -324,7 +324,7 @@ bool acoord_t::step_impl(const maze_t& maze, direction_t dir, const bool test_on
     bool collision = nullptr != ct ? ct(dir, new_x_pos_f, new_y_pos_f, is_inbetween(fields_per_frame, new_x_pos_f, new_y_pos_f),
                                              fwd_x_pos_i, fwd_y_pos_i, tile) : false;
     if( DEBUG_BOUNDS ) {
-        log_print("%s: %s -> %s: %5.2f/%5.2f %2.2d/%2.2d -> %5.2f/%5.2f %2.2d/%2.2d, tile '%s', collision %d\n",
+        log_printf("%s: %s -> %s: %5.2f/%5.2f %2.2d/%2.2d -> %5.2f/%5.2f %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",
                 to_string(last_dir).c_str(), to_string(dir).c_str(),
                 x_pos_f, y_pos_f, x_pos_i, y_pos_i,
@@ -431,7 +431,7 @@ bool maze_t::digest_position_line(const std::string& name, acoord_t& dest, const
         sscanf(line.c_str(), "%d %d", &x_pos, &y_pos);
         dest.set_pos(x_pos, y_pos);
         if( DEBUG ) {
-            log_print("maze: read %s position: %s\n", name.c_str(), dest.toString().c_str());
+            log_printf("maze: read %s position: %s\n", name.c_str(), dest.toString().c_str());
         }
         return true;
     } else {
@@ -445,7 +445,7 @@ bool maze_t::digest_box_line(const std::string& name, box_t& dest, const std::st
         sscanf(line.c_str(), "%d %d %d %d", &x_pos, &y_pos, &w, &h);
         dest.set_dim(x_pos, y_pos, w, h);
         if( DEBUG ) {
-            log_print("maze: read %s box: %s\n", name.c_str(), dest.toString().c_str());
+            log_printf("maze: read %s box: %s\n", name.c_str(), dest.toString().c_str());
         }
         return true;
     } else {
@@ -480,7 +480,7 @@ maze_t::maze_t(const std::string& fname)
                 ppt_x = visual_width / original.get_width();
                 ppt_y = visual_height / original.get_height();
                 if( DEBUG ) {
-                    log_print("maze: read dimension: %s\n", toString().c_str());
+                    log_printf("maze: read dimension: %s\n", toString().c_str());
                 }
             } else if( digest_position_line("top_left_pos", top_left_pos, line) ) {
             } else if( digest_position_line("bottom_left_pos", bottom_left_pos, line) ) {
@@ -494,7 +494,7 @@ maze_t::maze_t(const std::string& fname)
                 texture_file = line;
             } else if( field_line_iter < original.get_height() ) {
                 if( DEBUG ) {
-                    log_print("maze: read line y = %d, len = %zd: %s\n", field_line_iter, line.length(), line.c_str());
+                    log_printf("maze: read line y = %d, len = %zd: %s\n", field_line_iter, line.length(), line.c_str());
                 }
                 if( line.length() == (size_t)original.get_width() ) {
                     for(int x=0; x<original.get_width(); ++x) {
@@ -516,7 +516,7 @@ maze_t::maze_t(const std::string& fname)
                                 original.add_tile(tile_t::PELLET_POWER);
                                 break;
                             default:
-                                log_print("maze error: unknown tile @ %d / %d: '%c'\n", x, field_line_iter, c);
+                                log_printf("maze error: unknown tile @ %d / %d: '%c'\n", x, field_line_iter, c);
                                 break;
                         }
                     }
@@ -530,7 +530,7 @@ maze_t::maze_t(const std::string& fname)
             return; // OK
         }
     } else {
-        log_print("Could not open maze file: %s\n", filename.c_str());
+        log_printf("Could not open maze file: %s\n", filename.c_str());
     }
     original.clear();
     pacman_start_pos.set_pos(0, 0);

@@ -31,25 +31,25 @@
 
 bool audio_open(int mix_channels, int out_channel, int out_frequency, Uint16 out_sample_format, int out_chunksize) {
     if( 0 != Mix_OpenAudio(out_frequency, AUDIO_S16SYS, out_channel, out_chunksize) ) {
-        log_print("SDL_mixer: Error Mix_OpenAudio: %s\n", SDL_GetError());
+        log_printf("SDL_mixer: Error Mix_OpenAudio: %s\n", SDL_GetError());
         return false;
     }
 
     if ( ( Mix_Init(MIX_INIT_MP3) & MIX_INIT_MP3 ) != MIX_INIT_MP3 ) {
-        log_print("SDL_mixer: Error initializing: %s\n", SDL_GetError());
+        log_printf("SDL_mixer: Error initializing: %s\n", SDL_GetError());
         return false;
     }
 
     {
         const int max=Mix_GetNumChunkDecoders();
         for(int i=0; i<max; ++i) {
-            log_print("SDL_mixer: ChunkDecoder[%d]: %s\n", i, Mix_GetChunkDecoder(i));
+            log_printf("SDL_mixer: ChunkDecoder[%d]: %s\n", i, Mix_GetChunkDecoder(i));
         }
     }
     {
         const int max=Mix_GetNumMusicDecoders();
         for(int i=0; i<max; ++i) {
-            log_print("SDL_mixer: MusicDecoder[%d]: %s\n", i, Mix_GetMusicDecoder(i));
+            log_printf("SDL_mixer: MusicDecoder[%d]: %s\n", i, Mix_GetMusicDecoder(i));
         }
     }
     Mix_AllocateChannels(mix_channels);
@@ -64,7 +64,7 @@ audio_sample_t::audio_sample_t(const std::string &fname, const bool single_play,
 : chunk(Mix_LoadWAV(fname.c_str()), Mix_FreeChunk), channel_playing(-1), singly(single_play)
 {
     if ( nullptr == chunk.get() ) {
-        log_print("Mix_LoadWAV: Load '%s' Error: %s\n", fname.c_str(), SDL_GetError());
+        log_printf("Mix_LoadWAV: Load '%s' Error: %s\n", fname.c_str(), SDL_GetError());
     } else {
         Mix_VolumeChunk(chunk.get(), volume);
     }

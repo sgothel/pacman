@@ -130,7 +130,7 @@ float get_fps(const uint64_t t0, const uint64_t t1, const float event_count) {
     return fps;
 }
 
-void log_print(const char * format, ...) noexcept {
+void log_printf(const char * format, ...) noexcept {
     fprintf(stderr, "[%s] ", to_decstring(getElapsedMillisecond(), ',', 9).c_str());
     va_list args;
     va_start (args, format);
