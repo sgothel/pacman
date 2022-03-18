@@ -563,13 +563,14 @@ int main(int argc, char *argv[])
                 uint8_t r, g, b, a;
                 SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
                 SDL_SetRenderDrawColor(rend, 150, 150, 150, 255);
+                const int win_pixel_offset = ( win_pixel_width - pacman_maze->get_pixel_width()*win_pixel_scale ) / 2;
                 const acoord_t& p1 = ghost->get_pos();
                 const acoord_t& p2 = ghost->get_target();
                 SDL_RenderDrawLine(rend,
-                        pacman_maze->x_to_pixel( p1.get_x_i(), win_pixel_scale, false ),
-                        pacman_maze->y_to_pixel( p1.get_y_i(), win_pixel_scale, false ),
-                        pacman_maze->x_to_pixel( p2.get_x_i(), win_pixel_scale, false ),
-                        pacman_maze->y_to_pixel( p2.get_y_i(), win_pixel_scale, false ) );
+                        win_pixel_offset + pacman_maze->x_to_pixel( p1.get_x_i(), win_pixel_scale, false ),
+                                           pacman_maze->y_to_pixel( p1.get_y_i(), win_pixel_scale, false ),
+                        win_pixel_offset + pacman_maze->x_to_pixel( p2.get_x_i(), win_pixel_scale, false ),
+                                           pacman_maze->y_to_pixel( p2.get_y_i(), win_pixel_scale, false ) );
                 SDL_SetRenderDrawColor(rend, r, g, b, a);
             }
         }
