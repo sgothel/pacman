@@ -213,10 +213,13 @@ void ghost_t::set_next_dir() {
     if( pos.is_inbetween(fields_per_sec, get_frames_per_sec()) ) {
         return; // NOP
     }
-    constexpr const int U = 0;
-    constexpr const int L = 1;
-    constexpr const int D = 2;
-    constexpr const int R = 3;
+    /**
+     * Original Puckman direction encoding, see http://donhodges.com/pacman_pinky_explanation.htm
+     */
+    constexpr const int R = 0;
+    constexpr const int D = 1;
+    constexpr const int L = 2;
+    constexpr const int U = 3;
 
     const direction_t cur_dir = dir_;
     const direction_t inv_dir = inverse(cur_dir);
@@ -226,10 +229,10 @@ void ghost_t::set_next_dir() {
     int choice = 0;
     const float d_inf = pacman_maze->get_width() * pacman_maze->get_height() * 10; // std::numeric_limits<float>::max();
 
-    acoord_t up = pos;      // 0
-    acoord_t left = pos;    // 1
-    acoord_t down = pos;    // 2
-    acoord_t right = pos;   // 3
+    acoord_t right = pos;   // 0
+    acoord_t down = pos;    // 1
+    acoord_t left = pos;    // 2
+    acoord_t up = pos;      // 3
     acoord_t::collisiontest_t collisiontest = [&](direction_t d, float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
         (void)d; (void)x_f; (void)y_f; (void)inbetween; (void)x_i; (void)y_i;
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
@@ -237,10 +240,10 @@ void ghost_t::set_next_dir() {
     };
 
     const bool dir_coll[4] = {
-            !up.step(*pacman_maze, direction_t::UP, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !left.step(*pacman_maze, direction_t::LEFT, fields_per_sec, get_frames_per_sec(), collisiontest),
+            !right.step(*pacman_maze, direction_t::RIGHT, fields_per_sec, get_frames_per_sec(), collisiontest),
             !down.step(*pacman_maze, direction_t::DOWN, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !right.step(*pacman_maze, direction_t::RIGHT, fields_per_sec, get_frames_per_sec(), collisiontest) };
+            !left.step(*pacman_maze, direction_t::LEFT, fields_per_sec, get_frames_per_sec(), collisiontest),
+            !up.step(*pacman_maze, direction_t::UP, fields_per_sec, get_frames_per_sec(), collisiontest) };
 
     if( dir_coll[ ::number(left_dir) ] && dir_coll[ ::number(right_dir) ] ) {
         // walls left and right
@@ -256,47 +259,47 @@ void ghost_t::set_next_dir() {
     } else {
         // find shortest path
         float dir_dist[4] = {
-                dir_coll[U] ? d_inf : up.sq_distance(target),
-                dir_coll[L] ? d_inf : left.sq_distance(target),
+                dir_coll[R] ? d_inf : right.sq_distance(target),
                 dir_coll[D] ? d_inf : down.sq_distance(target),
-                dir_coll[R] ? d_inf : right.sq_distance(target) };
+                dir_coll[L] ? d_inf : left.sq_distance(target),
+                dir_coll[U] ? d_inf : up.sq_distance(target) };
 
         // penalty for reversal
         dir_dist[ ::number(inv_dir) ] += 2*2;
 
         if( log_moves ) {
-            log_print(std::string("collisions u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
-            log_print(std::string("distances u "+std::to_string(dir_dist[U])+", l "+std::to_string(dir_dist[L])+", d "+std::to_string(dir_dist[D])+", r "+std::to_string(dir_dist[R])+"\n").c_str());
+            log_print(std::string("collisions r "+std::to_string(dir_coll[R])+", d "+std::to_string(dir_coll[D])+", l "+std::to_string(dir_coll[L])+", u "+std::to_string(dir_coll[U])+"\n").c_str());
+            log_print(std::string("distances r "+std::to_string(dir_dist[R])+", d "+std::to_string(dir_dist[D])+", l "+std::to_string(dir_dist[L])+", u "+std::to_string(dir_dist[U])+"\n").c_str());
         }
         // Check for a clear short path, reversal has been punished
-        if( !dir_coll[U] && dir_dist[U] < dir_dist[D] && dir_dist[U] < dir_dist[L] && dir_dist[U] < dir_dist[R] ) {
-            new_dir = direction_t::UP;
+        if( !dir_coll[R] && dir_dist[R] < dir_dist[U] && dir_dist[R] < dir_dist[D] && dir_dist[R] < dir_dist[L] ) {
+            new_dir = direction_t::RIGHT;
             choice = 30;
-        } else if( !dir_coll[L] && dir_dist[L] < dir_dist[U] && dir_dist[L] < dir_dist[D] && dir_dist[L] < dir_dist[R] ) {
-            new_dir = direction_t::LEFT;
-            choice = 31;
         } else if( !dir_coll[D] && dir_dist[D] < dir_dist[U] && dir_dist[D] < dir_dist[L] && dir_dist[D] < dir_dist[R] ) {
             new_dir = direction_t::DOWN;
+            choice = 31;
+        } else if( !dir_coll[L] && dir_dist[L] < dir_dist[U] && dir_dist[L] < dir_dist[D] && dir_dist[L] < dir_dist[R] ) {
+            new_dir = direction_t::LEFT;
             choice = 32;
-        } else if( !dir_coll[R] && dir_dist[R] < dir_dist[U] && dir_dist[R] < dir_dist[D] && dir_dist[R] < dir_dist[L] ) {
-            new_dir = direction_t::RIGHT;
+        } else if( !dir_coll[U] && dir_dist[U] < dir_dist[D] && dir_dist[U] < dir_dist[L] && dir_dist[U] < dir_dist[R] ) {
+            new_dir = direction_t::UP;
             choice = 33;
         } else {
             if( !dir_coll[ ::number(cur_dir) ] ) {
                 // straight ahead .. no better choice
                 new_dir = cur_dir;
                 choice = 40;
-            } else if( !dir_coll[U] && dir_dist[U] <= dir_dist[D] && dir_dist[U] <= dir_dist[L] && dir_dist[U] <= dir_dist[R] ) {
-                new_dir = direction_t::UP;
+            } else if( !dir_coll[R] && dir_dist[R] <= dir_dist[U] && dir_dist[R] <= dir_dist[D] && dir_dist[R] <= dir_dist[L] ) {
+                new_dir = direction_t::RIGHT;
                 choice = 50;
-            } else if( !dir_coll[L] && dir_dist[L] <= dir_dist[U] && dir_dist[L] <= dir_dist[D] && dir_dist[L] <= dir_dist[R] ) {
-                new_dir = direction_t::LEFT;
-                choice = 51;
             } else if( !dir_coll[D] && dir_dist[D] <= dir_dist[U] && dir_dist[D] <= dir_dist[L] && dir_dist[D] <= dir_dist[R] ) {
                 new_dir = direction_t::DOWN;
+                choice = 51;
+            } else if( !dir_coll[L] && dir_dist[L] <= dir_dist[U] && dir_dist[L] <= dir_dist[D] && dir_dist[L] <= dir_dist[R] ) {
+                new_dir = direction_t::LEFT;
                 choice = 52;
-            } else if( !dir_coll[R] /* && dir_dist[R] <= dir_dist[U] && dir_dist[R] <= dir_dist[D] && dir_dist[R] <= dir_dist[L] */ ) {
-                new_dir = direction_t::RIGHT;
+            } else if( !dir_coll[U] /* && dir_dist[U] <= dir_dist[D] && dir_dist[U] <= dir_dist[L] && dir_dist[U] <= dir_dist[R] */ ) {
+                new_dir = direction_t::UP;
                 choice = 53;
             } else {
                 new_dir = direction_t::LEFT;

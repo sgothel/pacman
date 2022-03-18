@@ -34,41 +34,41 @@
 //
 std::string to_string(direction_t dir) {
     switch(dir) {
-        case direction_t::UP: return "U";
-        case direction_t::LEFT: return "L";
-        case direction_t::DOWN: return "D";
         case direction_t::RIGHT: return "R";
+        case direction_t::DOWN: return "D";
+        case direction_t::LEFT: return "L";
+        case direction_t::UP: return "U";
         default: return "?";
     }
 }
 
 direction_t inverse(direction_t dir) {
     switch(dir) {
-        case direction_t::UP: return direction_t::DOWN;
-        case direction_t::LEFT: return direction_t::RIGHT;
-        case direction_t::DOWN: return direction_t::UP;
         case direction_t::RIGHT: return direction_t::LEFT;
-        default: return direction_t::LEFT;
+        case direction_t::DOWN: return direction_t::UP;
+        case direction_t::LEFT: return direction_t::RIGHT;
+        case direction_t::UP: return direction_t::DOWN;
+        default: return direction_t::DOWN;
     }
 }
 
 direction_t rot_left(direction_t dir) {
     switch(dir) {
-        case direction_t::UP: return direction_t::LEFT;
-        case direction_t::LEFT: return direction_t::DOWN;
-        case direction_t::DOWN: return direction_t::RIGHT;
         case direction_t::RIGHT: return direction_t::UP;
-        default: return direction_t::UP;
+        case direction_t::DOWN: return direction_t::RIGHT;
+        case direction_t::LEFT: return direction_t::DOWN;
+        case direction_t::UP: return direction_t::LEFT;
+        default: return direction_t::LEFT;
     }
 }
 
 direction_t rot_right(direction_t dir) {
     switch(dir) {
-        case direction_t::UP: return direction_t::RIGHT;
-        case direction_t::LEFT: return direction_t::UP;
-        case direction_t::DOWN: return direction_t::LEFT;
         case direction_t::RIGHT: return direction_t::DOWN;
-        default: return direction_t::UP;
+        case direction_t::DOWN: return direction_t::LEFT;
+        case direction_t::LEFT: return direction_t::UP;
+        case direction_t::UP: return direction_t::RIGHT;
+        default: return direction_t::RIGHT;
     }
 }
 

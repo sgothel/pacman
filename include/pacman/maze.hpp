@@ -47,11 +47,17 @@ inline constexpr int ceil_to_int(const float f) {
 //
 // direction_t
 //
+
+/**
+ * Direction of the players.
+ *
+ * Original Puckman direction encoding, see http://donhodges.com/pacman_pinky_explanation.htm
+ */
 enum class direction_t : int {
-    UP = 0,
-    LEFT = 1,
-    DOWN = 2,
-    RIGHT = 3
+    RIGHT = 0,
+    DOWN = 1,
+    LEFT = 2,
+    UP = 3
 };
 constexpr int number(const direction_t d) noexcept {
     return static_cast<int>(d);
