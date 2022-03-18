@@ -257,6 +257,7 @@ class pacman_t {
         int frame_count;
         int steps_left;
         uint64_t score;
+        int audio_nopellet_cntr = 0;
 
         animtex_t atex_left;
         animtex_t atex_right;

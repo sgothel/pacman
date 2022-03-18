@@ -102,6 +102,7 @@ void pacman_t::set_mode(const mode_t m) {
     const mode_t old_mode = mode;
     switch( m ) {
         case mode_t::HOME:
+            audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
             mode = m;
             mode_ms_left = -1;
             pos = pacman_maze->get_pacman_start_pos();
@@ -123,12 +124,14 @@ void pacman_t::set_mode(const mode_t m) {
             }
             break;
         case mode_t::DEAD:
+            audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
             mode = m;
             mode_ms_left = number( mode_duration_t::DEADANIM );
             atex_dead.reset();
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::AWAY);
             }
+            audio_samples[ ::number( audio_clip_t::DEATH ) ]->play();
             break;
         default:
             mode = m;
@@ -139,8 +142,7 @@ void pacman_t::set_mode(const mode_t m) {
 }
 
 void pacman_t::set_dir(direction_t dir) {
-    const bool collision_maze = !pos.test(*pacman_maze, dir, [](direction_t d, float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
-        (void)d; (void)x_f; (void)y_f; (void)inbetween; (void)x_i; (void)y_i;
+    const bool collision_maze = !pos.test(*pacman_maze, dir, [](tile_t tile) -> bool {
         return tile_t::WALL == tile || tile_t::GATE == tile;
     });
     if( !collision_maze ) {
@@ -191,39 +193,11 @@ bool pacman_t::tick() {
              if( !auto_move ) {
                  --steps_left;
              }
-             collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](direction_t d,
-                                        float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
-                 (void)d;
-                 if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
-                     if( !inbetween ) {
-                         score += ::number( tile_to_score(tile) );
-                         pacman_maze->set_tile(x_i, y_i, tile_t::EMPTY);
-                         if( tile_t::PELLET == tile ) {
-                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                         } else if( tile_t::PELLET_POWER == tile ) {
-                             set_mode( mode_t::POWERED );
-                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                         } else {
-                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                         }
-                         if( 0 == pacman_maze->get_count( tile_t::PELLET ) && 0 == pacman_maze->get_count( tile_t::PELLET_POWER ) ) {
-                             pacman_maze->reset(); // FIXME: Actual end of level ...
-                         }
-                     }
-                     return false;
-                 } else if( tile_t::WALL == tile || tile_t::GATE == tile ) {
-                     // actual collision
-                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                     return true;
-                 } else {
-                     // empty
-                     if( !inbetween ) {
-                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                     }
-                     return false;
-                 }
+             collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [](tile_t tile) -> bool {
+                 return tile_t::WALL == tile || tile_t::GATE == tile ;
              });
              if( collision_maze ) {
+                 audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                  uint64_t t1 = getCurrentMilliseconds();
                  if( pos.get_fields_walked_i() > 0 ) {
                      const float fps = get_fps(perf_fields_walked_t0, t1, pos.get_fields_walked_f());
@@ -231,6 +205,31 @@ bool pacman_t::tick() {
                  }
                  pos.reset_stats();
                  perf_fields_walked_t0 = getCurrentMilliseconds();
+             } else {
+                 const bool inbetween = pos.is_inbetween(fields_per_sec, get_frames_per_sec());
+                 const int x_i = pos.get_x_i();
+                 const int y_i = pos.get_y_i();
+                 const tile_t tile = pacman_maze->get_tile(x_i, y_i);
+                 // log_print("tick: %s, %s, inbetween %d, tile %s\n", to_string(dir_).c_str(), pos.toString().c_str(), inbetween, to_string(tile).c_str());
+                 if( !inbetween ) {
+                     if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
+                         score += ::number( tile_to_score(tile) );
+                         pacman_maze->set_tile(x_i, y_i, tile_t::EMPTY);
+                         if( tile_t::PELLET == tile ) {
+                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                             audio_nopellet_cntr = 2;
+                         } else if( tile_t::PELLET_POWER == tile ) {
+                             set_mode( mode_t::POWERED );
+                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                             audio_nopellet_cntr = 2;
+                         }
+                     } else if( tile_t::EMPTY == tile ) {
+                         audio_nopellet_cntr = std::max(0, audio_nopellet_cntr - 1);
+                         if( 0 == audio_nopellet_cntr ) {
+                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+                         }
+                     }
+                 }
              }
          }
          // Collision test with ghosts
@@ -249,7 +248,6 @@ bool pacman_t::tick() {
 
          if( collision_enemies ) {
              set_mode( mode_t::DEAD );
-             audio_samples[ ::number( audio_clip_t::DEATH ) ]->play();
          }
     }
 

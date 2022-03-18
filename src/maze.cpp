@@ -220,7 +220,7 @@ bool acoord_t::is_inbetween(const float fields_per_frame, const float x, const f
     }
 }
 
-bool acoord_t::step_impl(const maze_t& maze, direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_t ct) {
+bool acoord_t::step_impl(const maze_t& maze, direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_simple_t ct0, collisiontest_t ct1) {
     /**
      * The new float position, pixel accurate.
      */
@@ -321,8 +321,15 @@ bool acoord_t::step_impl(const maze_t& maze, direction_t dir, const bool test_on
     }
     // Collision test with walls
     const tile_t tile = maze.get_tile(fwd_x_pos_i, fwd_y_pos_i);
-    bool collision = nullptr != ct ? ct(dir, new_x_pos_f, new_y_pos_f, is_inbetween(fields_per_frame, new_x_pos_f, new_y_pos_f),
-                                             fwd_x_pos_i, fwd_y_pos_i, tile) : false;
+    bool collision;
+    if( nullptr != ct0 ) {
+        collision = ct0(tile);
+    } else if( nullptr != ct1 ) {
+        collision = ct1(dir, new_x_pos_f, new_y_pos_f, is_inbetween(fields_per_frame, new_x_pos_f, new_y_pos_f),
+                             fwd_x_pos_i, fwd_y_pos_i, tile);
+    } else {
+        collision = false;
+    }
     if( DEBUG_BOUNDS ) {
         log_printf("%s: %s -> %s: %5.2f/%5.2f %2.2d/%2.2d -> %5.2f/%5.2f %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",

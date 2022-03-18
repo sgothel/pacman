@@ -122,6 +122,7 @@ class maze_t; // fwd
 
 class acoord_t {
     public:
+        typedef std::function<bool(tile_t)> collisiontest_simple_t;
         typedef std::function<bool(direction_t d, float x_pos_f, float y_pos_f, bool inbetween, int x_pos, int y_pos, tile_t)> collisiontest_t;
 
     private:
@@ -134,7 +135,7 @@ class acoord_t {
         int fields_walked_i;
         float fields_walked_f;
 
-        bool step_impl(const maze_t& maze, direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_t ct);
+        bool step_impl(const maze_t& maze, direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_simple_t ct0, collisiontest_t ct1);
 
     public:
         acoord_t(const int x, const int y);
@@ -204,7 +205,7 @@ class acoord_t {
         }
 
         void step(const maze_t& maze, direction_t dir, const float fields_per_sec, const int frames_per_sec) {
-            step_impl(maze, dir, false, fields_per_sec / frames_per_sec, nullptr);
+            step_impl(maze, dir, false, fields_per_sec / frames_per_sec, nullptr, nullptr);
         }
 
         /**
@@ -216,17 +217,28 @@ class acoord_t {
          * @param ct
          * @return true if successful, otherwise false for collision
          */
+        bool step(const maze_t& maze, direction_t dir, const float fields_per_sec, const int frames_per_sec, collisiontest_simple_t ct) {
+            return step_impl(maze, dir, false, fields_per_sec / frames_per_sec, ct, nullptr);
+        }
+
         bool step(const maze_t& maze, direction_t dir, const float fields_per_sec, const int frames_per_sec, collisiontest_t ct) {
-            return step_impl(maze, dir, false, fields_per_sec / frames_per_sec, ct);
+            return step_impl(maze, dir, false, fields_per_sec / frames_per_sec, nullptr, ct);
+        }
+
+        bool test(const maze_t& maze, direction_t dir, collisiontest_simple_t ct) {
+            return step_impl(maze, dir, true, 0.50, ct, nullptr);
         }
 
         bool test(const maze_t& maze, direction_t dir, collisiontest_t ct) {
-            return step_impl(maze, dir, true, 0.50, ct);
+            return step_impl(maze, dir, true, 0.50, nullptr, ct);
         }
 
         static bool is_inbetween(const float fields_per_frame, const float x, const float y);
         bool is_inbetween(const float fields_per_sec, const int frames_per_sec) const {
             return is_inbetween(fields_per_sec / frames_per_sec, x_pos_f, y_pos_f);
+        }
+        bool is_inbetween(const float fields_per_frame) const {
+            return is_inbetween(fields_per_frame, x_pos_f, y_pos_f);
         }
 
         /**

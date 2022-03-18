@@ -249,8 +249,7 @@ void ghost_t::set_next_dir() {
     acoord_t down = pos;    // 1
     acoord_t left = pos;    // 2
     acoord_t up = pos;      // 3
-    acoord_t::collisiontest_t collisiontest = [&](direction_t d, float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
-        (void)d; (void)x_f; (void)y_f; (void)inbetween; (void)x_i; (void)y_i;
+    acoord_t::collisiontest_simple_t collisiontest = [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     };
@@ -381,8 +380,7 @@ bool ghost_t::tick() {
         }
     }
 
-    collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](direction_t d, float x_f, float y_f, bool inbetween, int x_i, int y_i, tile_t tile) -> bool {
-        (void)d; (void)x_f; (void)y_f; (void)inbetween; (void)x_i; (void)y_i;
+    collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
