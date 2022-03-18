@@ -86,7 +86,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_, bool auto_mo
           { 6*14, 0 }, { 7*14, 0 }, { 8*14, 0 }, { 9*14, 0 }, { 10*14, 0 }, { 11*14, 0 } }),
   atex_home( "H", ms_per_tex, { atex_dead.get_tex(0) }),
   atex( &get_tex() ),
-  pos( pacman_maze->get_pacman_start_pos() )
+  pos( global_maze->get_pacman_start_pos() )
 { }
 
 void pacman_t::destroy() {
@@ -105,7 +105,7 @@ void pacman_t::set_mode(const mode_t m) {
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
             mode = m;
             mode_ms_left = -1;
-            pos = pacman_maze->get_pacman_start_pos();
+            pos = global_maze->get_pacman_start_pos();
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::HOME);
             }
@@ -142,7 +142,7 @@ void pacman_t::set_mode(const mode_t m) {
 }
 
 void pacman_t::set_dir(direction_t dir) {
-    const bool collision_maze = !pos.test(*pacman_maze, dir, [](tile_t tile) -> bool {
+    const bool collision_maze = !pos.test(dir, [](tile_t tile) -> bool {
         return tile_t::WALL == tile || tile_t::GATE == tile;
     });
     if( !collision_maze ) {
@@ -193,7 +193,7 @@ bool pacman_t::tick() {
              if( !auto_move ) {
                  --steps_left;
              }
-             collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [](tile_t tile) -> bool {
+             collision_maze = !pos.step(dir_, fields_per_sec, get_frames_per_sec(), [](tile_t tile) -> bool {
                  return tile_t::WALL == tile || tile_t::GATE == tile ;
              });
              if( collision_maze ) {
@@ -209,12 +209,12 @@ bool pacman_t::tick() {
                  const bool inbetween = pos.is_inbetween(fields_per_sec, get_frames_per_sec());
                  const int x_i = pos.get_x_i();
                  const int y_i = pos.get_y_i();
-                 const tile_t tile = pacman_maze->get_tile(x_i, y_i);
+                 const tile_t tile = global_maze->get_tile(x_i, y_i);
                  // log_print("tick: %s, %s, inbetween %d, tile %s\n", to_string(dir_).c_str(), pos.toString().c_str(), inbetween, to_string(tile).c_str());
                  if( !inbetween ) {
                      if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
                          score += ::number( tile_to_score(tile) );
-                         pacman_maze->set_tile(x_i, y_i, tile_t::EMPTY);
+                         global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                          if( tile_t::PELLET == tile ) {
                              audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                              audio_nopellet_cntr = 2;
@@ -265,7 +265,7 @@ void pacman_t::draw(SDL_Renderer* rend) {
         uint8_t r, g, b, a;
         SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
         SDL_SetRenderDrawColor(rend, 0, 255, 0, 255);
-        SDL_Rect bounds = { .x=pacman_maze->x_to_pixel(pos.get_x_f(), win_pixel_scale, true), .y=pacman_maze->y_to_pixel(pos.get_y_f(), win_pixel_scale, true),
+        SDL_Rect bounds = { .x=global_maze->x_to_pixel(pos.get_x_f(), win_pixel_scale, true), .y=global_maze->y_to_pixel(pos.get_y_f(), win_pixel_scale, true),
                 .w=atex->get_width()*win_pixel_scale, .h=atex->get_height()*win_pixel_scale};
         SDL_RenderDrawRect(rend, &bounds);
         SDL_SetRenderDrawColor(rend, r, g, b, a);

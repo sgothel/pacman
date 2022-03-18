@@ -86,7 +86,7 @@ void texture_t::destroy() {
 void texture_t::draw_scaled_dimpos(SDL_Renderer* rend, const int x_pos, const int y_pos) {
     if( nullptr != tex ) {
         SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
-        const int win_pixel_offset = ( win_pixel_width - pacman_maze->get_pixel_width()*win_pixel_scale ) / 2;
+        const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
         SDL_Rect dest = { .x=win_pixel_offset + x_pos,
                           .y=y_pos,
                           .w=width, .h=height };
@@ -96,9 +96,9 @@ void texture_t::draw_scaled_dimpos(SDL_Renderer* rend, const int x_pos, const in
 void texture_t::draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y_pos) {
     if( nullptr != tex ) {
         SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
-        const int win_pixel_offset = ( win_pixel_width - pacman_maze->get_pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + ( pacman_maze->x_to_pixel(x_pos, win_pixel_scale, false) ),
-                          .y=pacman_maze->y_to_pixel(y_pos, win_pixel_scale, false),
+        const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale, false) ),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale, false),
                           .w=width, .h=height };
         SDL_RenderCopy(rend, tex, &src, &dest);
     }
@@ -106,9 +106,9 @@ void texture_t::draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y
 void texture_t::draw(SDL_Renderer* rend, const int x_pos, const int y_pos, const bool maze_offset) {
     if( nullptr != tex ) {
         SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
-        const int win_pixel_offset = ( win_pixel_width - pacman_maze->get_pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + ( pacman_maze->x_to_pixel(x_pos, win_pixel_scale, maze_offset) ),
-                          .y=pacman_maze->y_to_pixel(y_pos, win_pixel_scale, maze_offset),
+        const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale, maze_offset) ),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale, maze_offset),
                           .w=width*win_pixel_scale, .h=height*win_pixel_scale };
         SDL_RenderCopy(rend, tex, &src, &dest);
     }
@@ -116,9 +116,9 @@ void texture_t::draw(SDL_Renderer* rend, const int x_pos, const int y_pos, const
 void texture_t::draw(SDL_Renderer* rend, const float x_pos, const float y_pos, const bool maze_offset) {
     if( nullptr != tex ) {
         SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
-        const int win_pixel_offset = ( win_pixel_width - pacman_maze->get_pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + pacman_maze->x_to_pixel(x_pos, win_pixel_scale, maze_offset),
-                          .y=pacman_maze->y_to_pixel(y_pos, win_pixel_scale, maze_offset),
+        const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+        SDL_Rect dest = { .x=win_pixel_offset + global_maze->x_to_pixel(x_pos, win_pixel_scale, maze_offset),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale, maze_offset),
                           .w=width*win_pixel_scale, .h=height*win_pixel_scale };
         SDL_RenderCopy(rend, tex, &src, &dest);
     }

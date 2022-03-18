@@ -43,7 +43,7 @@ int win_pixel_scale = 1;
 static int frames_per_sec=0;
 int get_frames_per_sec() { return frames_per_sec; }
 
-std::unique_ptr<maze_t> pacman_maze;
+std::unique_ptr<maze_t> global_maze;
 std::shared_ptr<global_tex_t> global_tex;
 std::vector<ghost_ref> ghosts;
 pacman_ref pacman;
@@ -156,8 +156,8 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
     int win_pixel_height=0;
     SDL_GetRendererOutputSize(rend, &win_pixel_width, &win_pixel_height);
 
-    float sx = win_pixel_width / pacman_maze->get_pixel_width();
-    float sy = win_pixel_height / pacman_maze->get_pixel_height();
+    float sx = win_pixel_width / global_maze->get_pixel_width();
+    float sy = win_pixel_height / global_maze->get_pixel_height();
     win_pixel_scale = static_cast<int>( std::round( std::fmin<float>(sx, sy) ) );
 
     if( nullptr != font_ttf ) {
@@ -167,7 +167,7 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
     int font_height;
     {
         const std::string fontfilename = "fonts/freefont/FreeSansBold.ttf";
-        font_height = pacman_maze->get_ppt_y() * win_pixel_scale;
+        font_height = global_maze->get_ppt_y() * win_pixel_scale;
         font_ttf = TTF_OpenFont(fontfilename.c_str(), font_height);
     }
     log_printf("Window Resized: %d x %d pixel ( %d x %d logical ) @ %d hz\n",
@@ -215,7 +215,7 @@ static void set_game_mode(const game_mode_t m) {
     switch( m ) {
         case game_mode_t::LEVEL_START:
             pacman->set_mode( pacman_t::mode_t::HOME );
-            pacman_maze->reset();
+            global_maze->reset();
             game_mode = m;
             if( audio_samples[ number( audio_clip_t::INTRO ) ]->is_valid() ) {
                 // use_audio == true
@@ -294,16 +294,16 @@ int main(int argc, char *argv[])
         log_printf("- use_audio %d\n", use_audio);
     }
 
-    pacman_maze = std::make_unique<maze_t>("media/playfield_pacman.txt");
+    global_maze = std::make_unique<maze_t>("media/playfield_pacman.txt");
 
-    if( !pacman_maze->is_ok() ) {
-        log_printf("Maze: Error: %s\n", pacman_maze->toString().c_str());
+    if( !global_maze->is_ok() ) {
+        log_printf("Maze: Error: %s\n", global_maze->toString().c_str());
         return -1;
     }
     {
         log_printf("--- 8< ---\n");
-        const int maze_width = pacman_maze->get_width();
-        pacman_maze->draw( [&maze_width](int x, int y, tile_t tile) {
+        const int maze_width = global_maze->get_width();
+        global_maze->draw( [&maze_width](int x, int y, tile_t tile) {
             fprintf(stderr, "%s", to_string(tile).c_str());
             if( x == maze_width-1 ) {
                 fprintf(stderr, "\n");
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
             (void)y;
         });
         log_printf("--- >8 ---\n");
-        log_printf("Maze: %s\n", pacman_maze->toString().c_str());
+        log_printf("Maze: %s\n", global_maze->toString().c_str());
     }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
         log_printf("renderer: vsync %d -> %d\n", _uses_vsync, uses_vsync);
     }
  
-    std::unique_ptr<texture_t> pacman_maze_tex = std::make_unique<texture_t>(rend, "media/"+pacman_maze->get_texture_file());
+    std::unique_ptr<texture_t> pacman_maze_tex = std::make_unique<texture_t>(rend, "media/"+global_maze->get_texture_file());
     {
         int win_pixel_width_=0;
         int win_pixel_height_=0;
@@ -400,8 +400,8 @@ int main(int argc, char *argv[])
         }
         on_window_resized(rend, win_pixel_width_, win_pixel_height_);
     }
-    SDL_SetWindowSize(win, pacman_maze->get_pixel_width()*win_pixel_scale,
-                           pacman_maze->get_pixel_height()*win_pixel_scale);
+    SDL_SetWindowSize(win, global_maze->get_pixel_width()*win_pixel_scale,
+                           global_maze->get_pixel_height()*win_pixel_scale);
 
     global_tex = std::make_shared<global_tex_t>(rend);
     pacman = std::make_shared<pacman_t>(rend, fields_per_sec, auto_move);
@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
                             }
                             break;
                         case SDL_SCANCODE_R:
-                            pacman_maze->reset();
+                            global_maze->reset();
                             break;
                         case SDL_SCANCODE_W:
                         case SDL_SCANCODE_UP:
@@ -535,7 +535,7 @@ int main(int argc, char *argv[])
                 game_active = false;
                 break;
             case game_mode_t::GAME:
-                if( 0 == pacman_maze->get_count( tile_t::PELLET ) && 0 == pacman_maze->get_count( tile_t::PELLET_POWER ) ) {
+                if( 0 == global_maze->get_count( tile_t::PELLET ) && 0 == global_maze->get_count( tile_t::PELLET_POWER ) ) {
                     set_game_mode(game_mode_t::LEVEL_START);
                 }
             [[fallthrough]];
@@ -557,7 +557,7 @@ int main(int argc, char *argv[])
         SDL_RenderClear(rend);
 
         pacman_maze_tex->draw(rend, 0, 0, false /* maze_offset */);
-        pacman_maze->draw( [&rend](int x, int y, tile_t tile) {
+        global_maze->draw( [&rend](int x, int y, tile_t tile) {
             global_tex->draw_tile(tile, rend, x, y);
         });
         pacman->draw(rend);
@@ -568,14 +568,14 @@ int main(int argc, char *argv[])
                 uint8_t r, g, b, a;
                 SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
                 SDL_SetRenderDrawColor(rend, 150, 150, 150, 255);
-                const int win_pixel_offset = ( win_pixel_width - pacman_maze->get_pixel_width()*win_pixel_scale ) / 2;
+                const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
                 const acoord_t& p1 = ghost->get_pos();
                 const acoord_t& p2 = ghost->get_target();
                 SDL_RenderDrawLine(rend,
-                        win_pixel_offset + pacman_maze->x_to_pixel( p1.get_x_i(), win_pixel_scale, false ),
-                                           pacman_maze->y_to_pixel( p1.get_y_i(), win_pixel_scale, false ),
-                        win_pixel_offset + pacman_maze->x_to_pixel( p2.get_x_i(), win_pixel_scale, false ),
-                                           pacman_maze->y_to_pixel( p2.get_y_i(), win_pixel_scale, false ) );
+                        win_pixel_offset + global_maze->x_to_pixel( p1.get_x_i(), win_pixel_scale, false ),
+                                           global_maze->y_to_pixel( p1.get_y_i(), win_pixel_scale, false ),
+                        win_pixel_offset + global_maze->x_to_pixel( p2.get_x_i(), win_pixel_scale, false ),
+                                           global_maze->y_to_pixel( p2.get_y_i(), win_pixel_scale, false ) );
                 SDL_SetRenderDrawColor(rend, r, g, b, a);
             }
         }
@@ -584,8 +584,8 @@ int main(int argc, char *argv[])
             if( nullptr == ttex_score_title ) {
                 const std::string highscore_s("HIGH SCORE");
                 ttex_score_title = draw_text_scaled(rend, font_ttf, highscore_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
-                    x = ( pacman_maze->get_pixel_width()*win_pixel_scale - tex.get_width() ) / 2;
-                    y = pacman_maze->x_to_pixel(0, win_pixel_scale, false);
+                    x = ( global_maze->get_pixel_width()*win_pixel_scale - tex.get_width() ) / 2;
+                    y = global_maze->x_to_pixel(0, win_pixel_scale, false);
                 });
             } else {
                 ttex_score_title->redraw(rend);
@@ -595,8 +595,8 @@ int main(int argc, char *argv[])
             } else {
                 std::string score_s = std::to_string( pacman->get_score() );
                 ttex_score = draw_text_scaled(rend, font_ttf, score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
-                    x = ( pacman_maze->get_pixel_width()*win_pixel_scale - tex.get_width() ) / 2;
-                    y = pacman_maze->x_to_pixel(1, win_pixel_scale, false);
+                    x = ( global_maze->get_pixel_width()*win_pixel_scale - tex.get_width() ) / 2;
+                    y = global_maze->x_to_pixel(1, win_pixel_scale, false);
                 });
                 last_score = pacman->get_score();
             }

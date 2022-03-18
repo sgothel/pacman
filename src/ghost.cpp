@@ -76,8 +76,8 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   atex_scared( "S", rend, ms_per_atex, global_tex->get_all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->get_all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex( &get_tex() ),
-  pos( pacman_maze->get_ghost_home_pos() ),
-  target( pacman_maze->get_ghost_home_pos() )
+  pos( global_maze->get_ghost_home_pos() ),
+  target( global_maze->get_ghost_home_pos() )
 {
     set_mode( mode_t::HOME );
 }
@@ -96,12 +96,12 @@ void ghost_t::set_next_target() {
                 target = pacman->get_pos();
                 break;
             } else {
-                target = pacman_maze->get_ghost_home_pos();
+                target = global_maze->get_ghost_home_pos();
                 break;
             }
 
         case mode_t::LEAVE_HOME:
-            target = pacman_maze->get_ghost_start_pos();
+            target = global_maze->get_ghost_start_pos();
             break;
 
         case mode_t::CHASE:
@@ -110,7 +110,7 @@ void ghost_t::set_next_target() {
                     target = pacman->get_pos();
                     break;
                 case ghost_t::personality_t::CLYDE:
-                    target = pacman_maze->get_top_left_corner();
+                    target = global_maze->get_top_left_corner();
                     break;
                 case ghost_t::personality_t::INKY: {
                     /**
@@ -121,11 +121,11 @@ void ghost_t::set_next_target() {
                      */
                     acoord_t p = pacman->get_pos();
                     acoord_t b = ghosts[ number( ghost_t::personality_t::BLINKY ) ]->get_pos();
-                    p.incr_fwd(*pacman_maze, 2);
+                    p.incr_fwd(2);
                     float p_[] = { p.get_x_f(), p.get_y_f() };
                     float b_[] = { b.get_x_f(), b.get_y_f() };
                     float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
-                    p.set_pos_clipped(*pacman_maze, bp_[0]+b_[0], bp_[1]+b_[1]); // add back to blinky
+                    p.set_pos_clipped(bp_[0]+b_[0], bp_[1]+b_[1]); // add back to blinky
                     target =  p;
                     break;
                 }
@@ -134,10 +134,10 @@ void ghost_t::set_next_target() {
                     if( use_original_pacman_behavior() && direction_t::UP == pacman->get_dir() ) {
                         // See http://donhodges.com/pacman_pinky_explanation.htm
                         // See https://gameinternals.com/understanding-pac-man-ghost-behavior
-                        p.incr_fwd(*pacman_maze, 4);
-                        p.incr_left(*pacman_maze, 4);
+                        p.incr_fwd(4);
+                        p.incr_left(4);
                     } else {
-                        p.incr_fwd(*pacman_maze, 4);
+                        p.incr_fwd(4);
                     }
                     target =  p;
                     break;
@@ -152,31 +152,31 @@ void ghost_t::set_next_target() {
             // FIXME ???
             switch( id ) {
                 case ghost_t::personality_t::BLINKY:
-                    target = pacman_maze->get_top_right_corner();
+                    target = global_maze->get_top_right_corner();
                     break;
                 case ghost_t::personality_t::CLYDE:
-                    target = pacman_maze->get_top_left_corner();
+                    target = global_maze->get_top_left_corner();
                     break;
                 case ghost_t::personality_t::INKY:
-                    target = pacman_maze->get_bottom_left_corner();
+                    target = global_maze->get_bottom_left_corner();
                     break;
                 case ghost_t::personality_t::PINKY:
                     [[fallthrough]];
                 default:
-                    target = pacman_maze->get_bottom_right_corner();
+                    target = global_maze->get_bottom_right_corner();
                     break;
             }
             break;
 
         case mode_t::PHANTOM:
-            target = pacman_maze->get_ghost_home_pos();
+            target = global_maze->get_ghost_home_pos();
             break;
 
         case mode_t::SCARED:
             [[fallthrough]];
             // dummy, since an RNG is being used
         default:
-            target = pacman_maze->get_ghost_start_pos();
+            target = global_maze->get_ghost_start_pos();
             break;
     }
 }
@@ -190,11 +190,11 @@ void ghost_t::set_mode(const mode_t m) {
                 mode = mode_t::CHASE;
                 mode_ms_left = number( mode_duration_t::CHASING );
                 dir_ = direction_t::LEFT;
-                pos = pacman_maze->get_ghost_start_pos();
+                pos = global_maze->get_ghost_start_pos();
             } else {
                 mode = m;
                 mode_ms_left = number( mode_duration_t::HOMESTAY );
-                pos = pacman_maze->get_ghost_home_pos();
+                pos = global_maze->get_ghost_home_pos();
             }
             break;
         case mode_t::LEAVE_HOME:
@@ -260,7 +260,7 @@ void ghost_t::set_next_dir() {
     const direction_t right_dir = rot_right(cur_dir);
     direction_t new_dir;
     int choice = 0;
-    const float d_inf = pacman_maze->get_width() * pacman_maze->get_height() * 10; // std::numeric_limits<float>::max();
+    const float d_inf = global_maze->get_width() * global_maze->get_height() * 10; // std::numeric_limits<float>::max();
 
     acoord_t right = pos;   // 0
     acoord_t down = pos;    // 1
@@ -272,10 +272,10 @@ void ghost_t::set_next_dir() {
     };
 
     const bool dir_coll[4] = {
-            !right.step(*pacman_maze, direction_t::RIGHT, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !down.step(*pacman_maze, direction_t::DOWN, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !left.step(*pacman_maze, direction_t::LEFT, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !up.step(*pacman_maze, direction_t::UP, fields_per_sec, get_frames_per_sec(), collisiontest) };
+            !right.step(direction_t::RIGHT, fields_per_sec, get_frames_per_sec(), collisiontest),
+            !down.step(direction_t::DOWN, fields_per_sec, get_frames_per_sec(), collisiontest),
+            !left.step(direction_t::LEFT, fields_per_sec, get_frames_per_sec(), collisiontest),
+            !up.step(direction_t::UP, fields_per_sec, get_frames_per_sec(), collisiontest) };
 
     if( dir_coll[ ::number(left_dir) ] && dir_coll[ ::number(right_dir) ] ) {
         // walls left and right
@@ -372,11 +372,11 @@ bool ghost_t::tick() {
             if( pos.intersects(target) ) {
                 set_mode( mode_t::CHASE );
             } else if( 0 == mode_ms_left ) { // ooops
-                pos = pacman_maze->get_ghost_start_pos();
+                pos = global_maze->get_ghost_start_pos();
                 set_mode( mode_t::CHASE );
             }
         } else if( mode_t::CHASE == mode ) {
-            if( !pos.intersects_f( pacman_maze->get_ghost_home_box() ) ) {
+            if( !pos.intersects_f( global_maze->get_ghost_home_box() ) ) {
                 set_next_target(); // update ...
             }
             if( 0 == mode_ms_left ) {
@@ -397,7 +397,7 @@ bool ghost_t::tick() {
         }
     }
 
-    collision_maze = !pos.step(*pacman_maze, dir_, fields_per_sec, get_frames_per_sec(), [&](tile_t tile) -> bool {
+    collision_maze = !pos.step(dir_, fields_per_sec, get_frames_per_sec(), [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });

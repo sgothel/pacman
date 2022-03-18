@@ -42,7 +42,7 @@ extern int win_pixel_scale;
 extern int get_frames_per_sec();
 inline int get_ms_per_frame() { return (int)std::round(1000.0 / (float)get_frames_per_sec()); }
 
-extern std::unique_ptr<maze_t> pacman_maze;
+extern std::unique_ptr<maze_t> global_maze;
 
 extern std::shared_ptr<global_tex_t> global_tex;
 

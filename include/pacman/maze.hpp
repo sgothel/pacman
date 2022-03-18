@@ -135,7 +135,7 @@ class acoord_t {
         int fields_walked_i;
         float fields_walked_f;
 
-        bool step_impl(const maze_t& maze, direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_simple_t ct0, collisiontest_t ct1);
+        bool step_impl(direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_simple_t ct0, collisiontest_t ct1);
 
     public:
         acoord_t(const int x, const int y);
@@ -143,7 +143,7 @@ class acoord_t {
         void reset_stats();
 
         void set_pos(const int x, const int y);
-        void set_pos_clipped(const maze_t& maze, const float x, const float y);
+        void set_pos_clipped(const float x, const float y);
 
         int get_x_i() const { return x_pos_i; }
         int get_y_i() const { return y_pos_i; }
@@ -193,19 +193,19 @@ class acoord_t {
             return sq_distance(other.x_pos_f, other.y_pos_f);
         }
 
-        void incr_fwd(const maze_t& maze, const direction_t dir, const int tile_count);
-        void incr_fwd(const maze_t& maze, const int tile_count) {
-            incr_fwd(maze, last_dir, tile_count);
+        void incr_fwd(const direction_t dir, const int tile_count);
+        void incr_fwd(const int tile_count) {
+            incr_fwd(last_dir, tile_count);
         }
-        void incr_left(const maze_t& maze, const int tile_count) {
-            incr_fwd(maze, rot_left(last_dir), tile_count);
+        void incr_left(const int tile_count) {
+            incr_fwd(rot_left(last_dir), tile_count);
         }
-        void incr_right(const maze_t& maze, const int tile_count) {
-            incr_fwd(maze, rot_right(last_dir), tile_count);
+        void incr_right(const int tile_count) {
+            incr_fwd(rot_right(last_dir), tile_count);
         }
 
-        void step(const maze_t& maze, direction_t dir, const float fields_per_sec, const int frames_per_sec) {
-            step_impl(maze, dir, false, fields_per_sec / frames_per_sec, nullptr, nullptr);
+        void step(direction_t dir, const float fields_per_sec, const int frames_per_sec) {
+            step_impl(dir, false, fields_per_sec / frames_per_sec, nullptr, nullptr);
         }
 
         /**
@@ -217,20 +217,20 @@ class acoord_t {
          * @param ct
          * @return true if successful, otherwise false for collision
          */
-        bool step(const maze_t& maze, direction_t dir, const float fields_per_sec, const int frames_per_sec, collisiontest_simple_t ct) {
-            return step_impl(maze, dir, false, fields_per_sec / frames_per_sec, ct, nullptr);
+        bool step(direction_t dir, const float fields_per_sec, const int frames_per_sec, collisiontest_simple_t ct) {
+            return step_impl(dir, false, fields_per_sec / frames_per_sec, ct, nullptr);
         }
 
-        bool step(const maze_t& maze, direction_t dir, const float fields_per_sec, const int frames_per_sec, collisiontest_t ct) {
-            return step_impl(maze, dir, false, fields_per_sec / frames_per_sec, nullptr, ct);
+        bool step(direction_t dir, const float fields_per_sec, const int frames_per_sec, collisiontest_t ct) {
+            return step_impl(dir, false, fields_per_sec / frames_per_sec, nullptr, ct);
         }
 
-        bool test(const maze_t& maze, direction_t dir, collisiontest_simple_t ct) {
-            return step_impl(maze, dir, true, 0.50, ct, nullptr);
+        bool test(direction_t dir, collisiontest_simple_t ct) {
+            return step_impl(dir, true, 0.50, ct, nullptr);
         }
 
-        bool test(const maze_t& maze, direction_t dir, collisiontest_t ct) {
-            return step_impl(maze, dir, true, 0.50, nullptr, ct);
+        bool test(direction_t dir, collisiontest_t ct) {
+            return step_impl(dir, true, 0.50, nullptr, ct);
         }
 
         static bool is_inbetween(const float fields_per_frame, const float x, const float y);

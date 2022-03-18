@@ -120,7 +120,8 @@ void acoord_t::set_pos(const int x, const int y) {
     last_collided = false;
 }
 
-void acoord_t::set_pos_clipped(const maze_t& maze, const float x, const float y) {
+void acoord_t::set_pos_clipped(const float x, const float y) {
+    maze_t& maze = *global_maze;
     x_pos_f = maze.clip_pos_x( x );
     y_pos_f = maze.clip_pos_y( y );
     x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
@@ -159,8 +160,10 @@ float acoord_t::sq_distance(const float x, const float y) const {
     return x_d * x_d + y_d * y_d;
 }
 
-void acoord_t::incr_fwd(const maze_t& maze, const direction_t dir, const int tile_count) {
+void acoord_t::incr_fwd(const direction_t dir, const int tile_count) {
     const float fields_per_frame = tile_count;
+    maze_t& maze = *global_maze;
+
     switch( dir ) {
         case direction_t::DOWN:
             if( round_to_int(y_pos_f + fields_per_frame) < maze.get_height() ) {
@@ -220,7 +223,9 @@ bool acoord_t::is_inbetween(const float fields_per_frame, const float x, const f
     }
 }
 
-bool acoord_t::step_impl(const maze_t& maze, direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_simple_t ct0, collisiontest_t ct1) {
+bool acoord_t::step_impl(direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_simple_t ct0, collisiontest_t ct1) {
+    maze_t& maze = *global_maze;
+
     /**
      * The new float position, pixel accurate.
      */
