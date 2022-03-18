@@ -47,6 +47,9 @@ extern std::unique_ptr<maze_t> pacman_maze;
 extern std::shared_ptr<global_tex_t> global_tex;
 
 typedef std::shared_ptr<ghost_t> ghost_ref;
+/**
+ * ghosts are in proper ghost_t enum order for array access.
+ */
 extern std::vector<ghost_ref> ghosts;
 
 typedef std::shared_ptr<pacman_t> pacman_ref;

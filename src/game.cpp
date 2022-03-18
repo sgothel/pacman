@@ -405,8 +405,8 @@ int main(int argc, char *argv[])
     pacman = std::make_shared<pacman_t>(rend, fields_per_sec, auto_move);
     ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec) );
     ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec) );
+    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec) );
     // ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec) );
-    // ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec) );
     for(ghost_ref g : ghosts) {
         g->set_log_moves(show_ghost_moves);
     }

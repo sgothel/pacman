@@ -118,16 +118,19 @@ class global_tex_t {
  */
 class ghost_t {
     public:
-        enum class personality_t {
+        enum class personality_t : int {
             /** Red */
-            BLINKY,
+            BLINKY = 0,
             /** Orange */
-            CLYDE,
+            CLYDE = 1,
             /** Cyan or blue */
-            INKY,
+            INKY = 2,
             /** Pink or mangenta */
-            PINKY
+            PINKY = 3
         };
+        static constexpr int number(const personality_t item) noexcept {
+            return static_cast<int>(item);
+        }
 
         enum class mode_t {
             AWAY,

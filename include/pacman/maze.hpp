@@ -142,6 +142,7 @@ class acoord_t {
         void reset_stats();
 
         void set_pos(const int x, const int y);
+        void set_pos_clipped(const maze_t& maze, const float x, const float y);
 
         int get_x_i() const { return x_pos_i; }
         int get_y_i() const { return y_pos_i; }
@@ -329,6 +330,12 @@ class maze_t {
         }
         int clip_pos_y(const int y) const {
             return std::max(0, std::min(get_height()-1, y));
+        }
+        float clip_pos_x(const float x) const {
+            return std::max<float>(0.0, std::min<float>(get_width()-1.0, x));
+        }
+        float clip_pos_y(const float y) const {
+            return std::max<float>(0.0, std::min<float>(get_height()-1.0, y));
         }
 
         int get_count(const tile_t tile) const { return active.get_count(tile); }

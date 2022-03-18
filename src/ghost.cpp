@@ -107,25 +107,33 @@ acoord_t ghost_t::get_personal_target() const {
                     return pacman->get_pos();
                 case ghost_t::personality_t::CLYDE:
                     return pacman_maze->get_top_left_corner();
-                case ghost_t::personality_t::INKY:
+                case ghost_t::personality_t::INKY: {
                     /**
                      * Selecting the position two tiles in front of Pac-Man in his current direction of travel.
                      * From there, imagine drawing a vector from Blinky's position to this tile,
                      * and then doubling the length of the vector.
                      * The tile that this new, extended vector ends on will be Inky's actual target.
                      */
-                    return pacman_maze->get_bottom_left_corner();
+                    acoord_t p = pacman->get_pos();
+                    acoord_t b = ghosts[ number( ghost_t::personality_t::BLINKY ) ]->get_pos();
+                    p.incr_fwd(*pacman_maze, 2);
+                    float p_[] = { p.get_x_f(), p.get_y_f() };
+                    float b_[] = { b.get_x_f(), b.get_y_f() };
+                    float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
+                    p.set_pos_clipped(*pacman_maze, bp_[0]+b_[0], bp_[1]+b_[1]); // add back to blinky
+                    return p;
+                }
                 case ghost_t::personality_t::PINKY: {
-                    acoord_t r = pacman->get_pos();
+                    acoord_t p = pacman->get_pos();
                     if( use_original_pacman_behavior() && direction_t::UP == pacman->get_dir() ) {
                         // See http://donhodges.com/pacman_pinky_explanation.htm
                         // See https://gameinternals.com/understanding-pac-man-ghost-behavior
-                        r.incr_fwd(*pacman_maze, 4);
-                        r.incr_left(*pacman_maze, 4);
+                        p.incr_fwd(*pacman_maze, 4);
+                        p.incr_left(*pacman_maze, 4);
                     } else {
-                        r.incr_fwd(*pacman_maze, 4);
+                        p.incr_fwd(*pacman_maze, 4);
                     }
-                    return r;
+                    return p;
                 }
                 default:
                     return pacman->get_pos();

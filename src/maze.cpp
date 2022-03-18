@@ -120,6 +120,15 @@ void acoord_t::set_pos(const int x, const int y) {
     last_collided = false;
 }
 
+void acoord_t::set_pos_clipped(const maze_t& maze, const float x, const float y) {
+    x_pos_f = maze.clip_pos_x( x );
+    y_pos_f = maze.clip_pos_y( y );
+    x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
+    y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
+    last_dir = direction_t::LEFT;
+    last_collided = false;
+}
+
 bool acoord_t::intersects_f(const acoord_t& other) const {
     return !( x_pos_f + 0.999 < other.x_pos_f || other.x_pos_f + 0.999 < x_pos_f ||
               y_pos_f + 0.999 < other.y_pos_f || other.y_pos_f + 0.999 < y_pos_f );
