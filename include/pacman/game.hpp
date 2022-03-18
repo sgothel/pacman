@@ -182,7 +182,8 @@ class ghost_t {
             return atex_phantom;
         }
 
-        acoord_t get_personal_target() const;
+        void set_next_target();
+        void set_next_dir();
 
     public:
         ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_=8);
@@ -197,8 +198,6 @@ class ghost_t {
 
         mode_t get_mode() const { return mode; }
         void set_mode(const mode_t m);
-
-        void set_next_dir();
 
         direction_t get_dir() const { return dir_; }
 

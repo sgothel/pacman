@@ -89,24 +89,29 @@ void ghost_t::destroy() {
     atex_phantom.destroy();
 }
 
-acoord_t ghost_t::get_personal_target() const {
+void ghost_t::set_next_target() {
     switch( mode ) {
         case mode_t::HOME:
             if( ghost_t::personality_t::BLINKY == id ) {
-                return pacman->get_pos();
+                target = pacman->get_pos();
+                break;
             } else {
-                return pacman_maze->get_ghost_home_pos();
+                target = pacman_maze->get_ghost_home_pos();
+                break;
             }
 
         case mode_t::LEAVE_HOME:
-            return pacman_maze->get_ghost_start_pos();
+            target = pacman_maze->get_ghost_start_pos();
+            break;
 
         case mode_t::CHASE:
             switch( id ) {
                 case ghost_t::personality_t::BLINKY:
-                    return pacman->get_pos();
+                    target = pacman->get_pos();
+                    break;
                 case ghost_t::personality_t::CLYDE:
-                    return pacman_maze->get_top_left_corner();
+                    target = pacman_maze->get_top_left_corner();
+                    break;
                 case ghost_t::personality_t::INKY: {
                     /**
                      * Selecting the position two tiles in front of Pac-Man in his current direction of travel.
@@ -121,7 +126,8 @@ acoord_t ghost_t::get_personal_target() const {
                     float b_[] = { b.get_x_f(), b.get_y_f() };
                     float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
                     p.set_pos_clipped(*pacman_maze, bp_[0]+b_[0], bp_[1]+b_[1]); // add back to blinky
-                    return p;
+                    target =  p;
+                    break;
                 }
                 case ghost_t::personality_t::PINKY: {
                     acoord_t p = pacman->get_pos();
@@ -133,34 +139,45 @@ acoord_t ghost_t::get_personal_target() const {
                     } else {
                         p.incr_fwd(*pacman_maze, 4);
                     }
-                    return p;
+                    target =  p;
+                    break;
                 }
                 default:
-                    return pacman->get_pos();
+                    target = pacman->get_pos();
+                    break;
             }
+            break;
 
         case mode_t::SCATTER:
             // FIXME ???
             switch( id ) {
                 case ghost_t::personality_t::BLINKY:
-                    return pacman_maze->get_top_right_corner();
+                    target = pacman_maze->get_top_right_corner();
+                    break;
                 case ghost_t::personality_t::CLYDE:
-                    return pacman_maze->get_top_left_corner();
+                    target = pacman_maze->get_top_left_corner();
+                    break;
                 case ghost_t::personality_t::INKY:
-                    return pacman_maze->get_bottom_left_corner();
+                    target = pacman_maze->get_bottom_left_corner();
+                    break;
                 case ghost_t::personality_t::PINKY:
                     [[fallthrough]];
                 default:
-                    return pacman_maze->get_bottom_right_corner();
+                    target = pacman_maze->get_bottom_right_corner();
+                    break;
             }
+            break;
+
         case mode_t::PHANTOM:
-            return pacman_maze->get_ghost_home_pos();
+            target = pacman_maze->get_ghost_home_pos();
+            break;
 
         case mode_t::SCARED:
             [[fallthrough]];
             // dummy, since an RNG is being used
         default:
-            return pacman_maze->get_ghost_start_pos();
+            target = pacman_maze->get_ghost_start_pos();
+            break;
     }
 }
 
@@ -220,7 +237,7 @@ void ghost_t::set_mode(const mode_t m) {
             mode_ms_left = -1;
             break;
     }
-    target = get_personal_target();
+    set_next_target();
     log_printf("%s set_mode: %s -> %s [%d ms], pos %s -> %s\n", to_string(id).c_str(), to_string(old_mode).c_str(), to_string(mode).c_str(), mode_ms_left,
             pos.toShortString().c_str(), target.toShortString().c_str());
 }
@@ -360,7 +377,7 @@ bool ghost_t::tick() {
             }
         } else if( mode_t::CHASE == mode ) {
             if( !pos.intersects_f( pacman_maze->get_ghost_home_box() ) ) {
-                target = get_personal_target(); // update ...
+                set_next_target(); // update ...
             }
             if( 0 == mode_ms_left ) {
                 set_mode( mode_t::SCATTER );
