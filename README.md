@@ -13,9 +13,10 @@ Besides management of animated sprite graphics, maze environment and tile positi
 the interesting part might be the ghost's state machine and their movements.
 
 To implement the original pacman game behavior like weighted tile collision,
-ghost algorithm, etc. - we have used Jamey Pittman's [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier)
-and [Understanding Pac-Man Ghost Behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
-for reference.
+ghost algorithm, etc. - we have used the following documents for reference
+- Jamey Pittman's [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier)
+- [Understanding Pac-Man Ghost Behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
+- [Why do Pinky and Inky have different behaviors when Pac-Man is facing up?](http://donhodges.com/pacman_pinky_explanation.htm)
 
 The implementation is inspired by [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s
 original game [Puckman](https://en.wikipedia.org/wiki/Pac-Man).

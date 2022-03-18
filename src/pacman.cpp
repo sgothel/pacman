@@ -212,9 +212,11 @@ bool pacman_t::tick() {
                      }
                      return false;
                  } else if( tile_t::WALL == tile || tile_t::GATE == tile ) {
+                     // actual collision
                      audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                      return true;
                  } else {
+                     // empty
                      if( !inbetween ) {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                      }
