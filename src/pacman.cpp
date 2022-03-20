@@ -228,6 +228,15 @@ bool pacman_t::tick() {
              collision_maze = !pos.step(dir_, keyframei, [](tile_t tile) -> bool {
                  return tile_t::WALL == tile || tile_t::GATE == tile ;
              });
+             const int x_i = pos.get_x_i();
+             const int y_i = pos.get_y_i();
+             const tile_t tile = global_maze->get_tile(x_i, y_i);
+             if( log_moves || DEBUG_GFX_BOUNDS ) {
+                 log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
+                         to_string(dir_).c_str(), pos.toString().c_str(), pos.is_center_dir(keyframei), pos.entered_tile(keyframei),
+                         to_string(tile).c_str(),
+                         collision_maze, collision_enemies, atex->toString().c_str());
+             }
              if( collision_maze ) {
                  audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                  uint64_t t1 = getCurrentMilliseconds();
@@ -238,10 +247,6 @@ bool pacman_t::tick() {
                  pos.reset_stats();
                  perf_fields_walked_t0 = getCurrentMilliseconds();
              } else {
-                 const int x_i = pos.get_x_i();
-                 const int y_i = pos.get_y_i();
-                 const tile_t tile = global_maze->get_tile(x_i, y_i);
-                 // log_printf("tick: %s, %s c%d e%d, tile %s\n", to_string(dir_).c_str(), pos.toString().c_str(), pos.is_center_dir(keyframei), pos.entered_tile(keyframei), to_string(tile).c_str());
                  if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
                      score += ::number( tile_to_score(tile) );
                      global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
@@ -257,7 +262,7 @@ bool pacman_t::tick() {
                      }
                  } else if( tile_t::EMPTY == tile ) {
                      if( 0 < next_field_frame_cntr ) {
-                         // log_printf("next_field_frame_cntr: %d\n", next_field_frame_cntr);
+                         // log_printf("pacman next_field_frame_cntr: %d\n", next_field_frame_cntr);
                          if( 0 == --next_field_frame_cntr ) {
                              set_speed(0.80f);
                              audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
@@ -283,11 +288,6 @@ bool pacman_t::tick() {
          if( collision_enemies ) {
              set_mode( mode_t::DEAD );
          }
-    }
-
-    if( DEBUG_GFX_BOUNDS ) {
-        log_printf("tick: %s, %s, crash[maze %d, ghosts %d], textures %s\n",
-                to_string(dir_).c_str(), pos.toString().c_str(), collision_maze, collision_enemies, atex->toString().c_str());
     }
     return !collision_enemies;
 }

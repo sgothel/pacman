@@ -411,13 +411,13 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 new_y_pos_f = keyframei.get_aligned( y_pos_f + fields_per_frame );
                 fields_stepped_f = fields_per_frame;
 
-                if( new_y_pos_f - std::trunc(new_y_pos_f) >= center - fields_per_frame/2 ) {
+                if( new_y_pos_f - std::trunc(new_y_pos_f) >= center - fields_per_frame/2.0f ) {
                     new_y_pos_i = trunc_to_int(new_y_pos_f);
                 } else {
                     new_y_pos_i = std::min(maze.get_height()-1, trunc_to_int(new_y_pos_f) - 1);
                 }
                 // forward
-                if( new_y_pos_f - std::trunc(new_y_pos_f) > center + fields_per_frame/2 ) {
+                if( new_y_pos_f - std::trunc(new_y_pos_f) > center + fields_per_frame/2.0f ) {
                     fwd_y_pos_i = std::min(maze.get_height()-1, trunc_to_int(new_y_pos_f) + 1);
                 } else {
                     fwd_y_pos_i = trunc_to_int(new_y_pos_f);
@@ -437,13 +437,13 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 // next
                 new_x_pos_f = keyframei.get_aligned( x_pos_f + fields_per_frame );
                 fields_stepped_f = fields_per_frame;
-                if( new_x_pos_f - std::trunc(new_x_pos_f) >= center - fields_per_frame/2 ) {
+                if( new_x_pos_f - std::trunc(new_x_pos_f) >= center - fields_per_frame/2.0f ) {
                     new_x_pos_i = trunc_to_int(new_x_pos_f);
                 } else {
                     new_x_pos_i = std::min(maze.get_width()-1, trunc_to_int(new_x_pos_f) - 1);
                 }
                 // forward
-                if( new_x_pos_f - std::trunc(new_x_pos_f) > center + fields_per_frame/2 ) {
+                if( new_x_pos_f - std::trunc(new_x_pos_f) > center + fields_per_frame/2.0f ) {
                     fwd_x_pos_i = std::min(maze.get_width()-1, trunc_to_int(new_x_pos_f) + 1);
                 } else {
                     fwd_x_pos_i = trunc_to_int(new_x_pos_f);
@@ -463,7 +463,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 // next
                 new_y_pos_f = keyframei.get_aligned( y_pos_f - fields_per_frame );
                 fields_stepped_f = fields_per_frame;
-                if( new_y_pos_f - std::trunc(new_y_pos_f) < center - fields_per_frame/2 ) {
+                if( new_y_pos_f - std::trunc(new_y_pos_f) < center - fields_per_frame/2.0f ) {
                     new_y_pos_i = std::max(0, trunc_to_int(new_y_pos_f) - 1);
                 } else {
                     new_y_pos_i = trunc_to_int(new_y_pos_f);
@@ -487,7 +487,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 // next
                 new_x_pos_f = keyframei.get_aligned( x_pos_f - fields_per_frame );
                 fields_stepped_f = fields_per_frame;
-                if( new_x_pos_f - std::trunc(new_x_pos_f) < center - fields_per_frame/2 ) {
+                if( new_x_pos_f - std::trunc(new_x_pos_f) < center - fields_per_frame/2.0f ) {
                     new_x_pos_i = std::max(0, trunc_to_int(new_x_pos_f) - 1);
                 } else {
                     new_x_pos_i = trunc_to_int(new_x_pos_f);
@@ -517,7 +517,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
     } else {
         collision = false;
     }
-    if( !test_only && DEBUG_BOUNDS ) {
+    if( !test_only && false ) {
         log_printf("%s: %s -> %s: %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> new %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> fwd %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",
                 to_string(last_dir).c_str(), to_string(dir).c_str(),

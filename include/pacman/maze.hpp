@@ -271,8 +271,6 @@ class acoord_t {
         typedef std::function<bool(direction_t d, float x_pos_f, float y_pos_f, bool center, int x_pos, int y_pos, tile_t)> collisiontest_t;
 
     private:
-        static constexpr const bool DEBUG_BOUNDS = false;
-
         int x_pos_i, y_pos_i;
         float x_pos_f, y_pos_f;
         direction_t last_dir;

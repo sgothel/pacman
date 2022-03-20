@@ -187,7 +187,7 @@ class ghost_t {
         }
 
         void set_next_target();
-        void set_next_dir();
+        void set_next_dir(const bool collision, const bool is_center);
 
     public:
         ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_=10);
