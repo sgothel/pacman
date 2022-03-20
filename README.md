@@ -54,11 +54,12 @@ Following commandline arguments are supported
 - `-wheight <int> to set the initial window height
 - `-show_ghost_moves` to show the ghost's moves criteria like distance and collisions on the console
 - `-show_targets` to show the ghost's target position as a ray on the video screen
+- `-show_debug_gfx` to show all debug gfx, including `-show_debug_gfx`
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
 - `-use_audio` to turn on audio effects, i.e. playing the audio samples.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-bugfix] [-use_audio]
+bin/pacman [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-show_debug_gfx] [-bugfix] [-use_audio]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Bugfix Mode

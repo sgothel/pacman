@@ -64,8 +64,10 @@ animtex_t& ghost_t::get_tex() {
     }
 }
 
-ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_)
-: fields_per_sec( fields_per_sec_ ),
+ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_)
+: fields_per_sec_total(fields_per_sec_total_),
+  current_speed_pct(0.75f),
+  keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
   id( id_ ),
   mode( mode_t::HOME ),
   mode_ms_left ( number( mode_duration_t::HOMESTAY ) ),
@@ -121,11 +123,12 @@ void ghost_t::set_next_target() {
                      */
                     acoord_t p = pacman->get_pos();
                     acoord_t b = ghosts[ number( ghost_t::personality_t::BLINKY ) ]->get_pos();
-                    p.incr_fwd(2);
+                    p.incr_fwd(keyframei, 2);
                     float p_[] = { p.get_x_f(), p.get_y_f() };
                     float b_[] = { b.get_x_f(), b.get_y_f() };
                     float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
-                    p.set_pos_clipped(bp_[0]+b_[0], bp_[1]+b_[1]); // add back to blinky
+                    p.set_pos_clipped( keyframei.get_centered( bp_[0] + b_[0] ),
+                                       keyframei.get_centered( bp_[1] + b_[1] ) ); // add back to blinky
                     target =  p;
                     break;
                 }
@@ -134,10 +137,10 @@ void ghost_t::set_next_target() {
                     if( use_original_pacman_behavior() && direction_t::UP == pacman->get_dir() ) {
                         // See http://donhodges.com/pacman_pinky_explanation.htm
                         // See https://gameinternals.com/understanding-pac-man-ghost-behavior
-                        p.incr_fwd(4);
-                        p.incr_left(4);
+                        p.incr_fwd(keyframei, 4);
+                        p.incr_left(keyframei, 4);
                     } else {
-                        p.incr_fwd(4);
+                        p.incr_fwd(keyframei, 4);
                     }
                     target =  p;
                     break;
@@ -196,6 +199,7 @@ void ghost_t::set_mode(const mode_t m) {
                 mode_ms_left = number( mode_duration_t::HOMESTAY );
                 pos = global_maze->get_ghost_home_pos();
             }
+            set_speed(0.75f);
             break;
         case mode_t::LEAVE_HOME:
             mode = m;
@@ -209,6 +213,7 @@ void ghost_t::set_mode(const mode_t m) {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
+            set_speed(0.75f);
             break;
         case mode_t::SCATTER:
             mode = m;
@@ -218,6 +223,7 @@ void ghost_t::set_mode(const mode_t m) {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
+            set_speed(0.75f);
             break;
         case mode_t::SCARED:
             if( mode_t::HOME == old_mode || mode_t::LEAVE_HOME == old_mode ) {
@@ -227,10 +233,12 @@ void ghost_t::set_mode(const mode_t m) {
                 mode_ms_left = number( mode_duration_t::SCARED );
                 dir_ = inverse(dir_);
             }
+            set_speed(0.50f);
             break;
         case mode_t::PHANTOM:
             mode = m;
             mode_ms_left = number( mode_duration_t::PHANTOM );
+            set_speed(0.75f);
             break;
         default:
             mode = m;
@@ -242,8 +250,15 @@ void ghost_t::set_mode(const mode_t m) {
             pos.toShortString().c_str(), target.toShortString().c_str());
 }
 
+void ghost_t::set_speed(const float pct) {
+    const float old = current_speed_pct;
+    current_speed_pct = pct;
+    keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
+    // log_printf("%s set_speed: %5.2f -> %5.2f: %s\n", to_string(id).c_str(), old, current_speed_pct, keyframei.toString().c_str());
+}
+
 void ghost_t::set_next_dir() {
-    if( pos.is_inbetween(fields_per_sec, get_frames_per_sec()) ) {
+    if( !pos.is_center_dir(keyframei) ) {
         return; // NOP
     }
     /**
@@ -272,10 +287,10 @@ void ghost_t::set_next_dir() {
     };
 
     const bool dir_coll[4] = {
-            !right.step(direction_t::RIGHT, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !down.step(direction_t::DOWN, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !left.step(direction_t::LEFT, fields_per_sec, get_frames_per_sec(), collisiontest),
-            !up.step(direction_t::UP, fields_per_sec, get_frames_per_sec(), collisiontest) };
+            !right.step(direction_t::RIGHT, keyframei, collisiontest),
+            !down.step(direction_t::DOWN, keyframei, collisiontest),
+            !left.step(direction_t::LEFT, keyframei, collisiontest),
+            !up.step(direction_t::UP, keyframei, collisiontest) };
 
     if( dir_coll[ ::number(left_dir) ] && dir_coll[ ::number(right_dir) ] ) {
         // walls left and right
@@ -361,43 +376,41 @@ bool ghost_t::tick() {
         mode_ms_left = std::max( 0, mode_ms_left - get_ms_per_frame() );
     }
 
-    if( !pos.is_inbetween(fields_per_sec, get_frames_per_sec()) ) {
-        if( mode_t::AWAY == mode ) {
-            return true; // NOP
-        } else if( mode_t::HOME == mode ) {
-            if( 0 == mode_ms_left ) {
-                set_mode( mode_t::LEAVE_HOME );
-            }
-        } else if( mode_t::LEAVE_HOME == mode ) {
-            if( pos.intersects(target) ) {
-                set_mode( mode_t::CHASE );
-            } else if( 0 == mode_ms_left ) { // ooops
-                pos = global_maze->get_ghost_start_pos();
-                set_mode( mode_t::CHASE );
-            }
-        } else if( mode_t::CHASE == mode ) {
-            if( !pos.intersects_f( global_maze->get_ghost_home_box() ) ) {
-                set_next_target(); // update ...
-            }
-            if( 0 == mode_ms_left ) {
-                set_mode( mode_t::SCATTER );
-            }
-        } else if( mode_t::SCATTER == mode ) {
-            if( 0 == mode_ms_left ) {
-                set_mode( mode_t::CHASE );
-            }
-        } else if( mode_t::SCARED == mode ) {
-            if( 0 == mode_ms_left ) {
-                set_mode( mode_t::SCATTER );
-            }
-        } else if( mode_t::PHANTOM == mode ) {
-            if( pos.intersects(target) || 0 == mode_ms_left ) {
-                set_mode( mode_t::HOME );
-            }
+    if( mode_t::AWAY == mode ) {
+        return true; // NOP
+    } else if( mode_t::HOME == mode ) {
+        if( 0 == mode_ms_left ) {
+            set_mode( mode_t::LEAVE_HOME );
+        }
+    } else if( mode_t::LEAVE_HOME == mode ) {
+        if( pos.intersects(target) ) {
+            set_mode( mode_t::CHASE );
+        } else if( 0 == mode_ms_left ) { // ooops
+            pos = global_maze->get_ghost_start_pos();
+            set_mode( mode_t::CHASE );
+        }
+    } else if( mode_t::CHASE == mode ) {
+        if( !pos.intersects_f( global_maze->get_ghost_home_box() ) ) {
+            set_next_target(); // update ...
+        }
+        if( 0 == mode_ms_left ) {
+            set_mode( mode_t::SCATTER );
+        }
+    } else if( mode_t::SCATTER == mode ) {
+        if( 0 == mode_ms_left ) {
+            set_mode( mode_t::CHASE );
+        }
+    } else if( mode_t::SCARED == mode ) {
+        if( 0 == mode_ms_left ) {
+            set_mode( mode_t::SCATTER );
+        }
+    } else if( mode_t::PHANTOM == mode ) {
+        if( pos.intersects(target) || 0 == mode_ms_left ) {
+            set_mode( mode_t::HOME );
         }
     }
 
-    collision_maze = !pos.step(dir_, fields_per_sec, get_frames_per_sec(), [&](tile_t tile) -> bool {
+    collision_maze = !pos.step(dir_, keyframei, [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
@@ -412,12 +425,26 @@ bool ghost_t::tick() {
 
 void ghost_t::draw(SDL_Renderer* rend) {
     if( mode_t::AWAY != mode ) {
-        atex->draw(rend, pos.get_x_f(), pos.get_y_f(), ghost_t::mode_t::HOME != mode /* maze_offset */);
+        atex->draw(rend, pos.get_x_f()-keyframei.get_center(), pos.get_y_f()-keyframei.get_center());
+    }
+    if( show_all_debug_gfx() ) {
+        if( show_all_debug_gfx() || DEBUG_GFX_BOUNDS ) {
+            uint8_t r, g, b, a;
+            SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
+            SDL_SetRenderDrawColor(rend, 255, 0, 0, 255);
+            const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+            // pos is on player center position
+            SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos.get_x_f() * global_maze->get_ppt_y() * win_pixel_scale ) - ( atex->get_width()  * win_pixel_scale ) / 2,
+                                .y=                   round_to_int( pos.get_y_f() * global_maze->get_ppt_y() * win_pixel_scale ) - ( atex->get_height() * win_pixel_scale ) / 2,
+                                .w=atex->get_width()*win_pixel_scale, .h=atex->get_height()*win_pixel_scale };
+            SDL_RenderDrawRect(rend, &bounds);
+            SDL_SetRenderDrawColor(rend, r, g, b, a);
+        }
     }
 }
 
 std::string ghost_t::toString() const {
-    return to_string(id)+"["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos.toString()+" -> "+target.toShortString()+", "+atex->toString()+"]";
+    return to_string(id)+"["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos.toString()+" -> "+target.toShortString()+", "+atex->toString()+", "+keyframei.toString()+"]";
 }
 
 std::string to_string(ghost_t::personality_t id) {

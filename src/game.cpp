@@ -53,6 +53,9 @@ std::vector<audio_sample_ref> audio_samples;
 static bool original_pacman_behavior = true;
 bool use_original_pacman_behavior() { return original_pacman_behavior; }
 
+static bool enable_all_debug_gfx = false;
+bool show_all_debug_gfx() { return enable_all_debug_gfx; }
+
 //
 // score_t
 //
@@ -133,11 +136,11 @@ std::shared_ptr<const texture_t> global_tex_t::get_tex(const tile_t tile) const 
 
 void global_tex_t::draw_tile(const tile_t tile, SDL_Renderer* rend, const int x, const int y) {
     if( tile_t::PELLET_POWER == tile ) {
-        atex_pellet_power.draw(rend, x, y, true /* maze_offset */);
+        atex_pellet_power.draw(rend, x, y);
     } else {
         std::shared_ptr<texture_t> tex = get_tex(tile);
         if( nullptr != tex ) {
-            tex->draw(rend, x, y, true /* maze_offset */);
+            tex->draw2_i(rend, x, y);
         }
     }
 }
@@ -177,7 +180,7 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 
 static std::string get_usage(const std::string& exename) {
     // TODO: Keep in sync with README.md
-    return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-bugfix] [-audio]";
+    return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-show_debug_gfx] [-bugfix] [-audio]";
 }
 
 //
@@ -245,7 +248,7 @@ int main(int argc, char *argv[])
     bool show_fps = false;
     bool enable_vsync = true;
     int forced_fps = -1;
-    float fields_per_sec=8;
+    float fields_per_sec_total=10;
     int win_width = 640, win_height = 720;
     bool show_ghost_moves = false;
     bool show_targets = false;
@@ -263,7 +266,7 @@ int main(int argc, char *argv[])
                 enable_vsync = false;
                 ++i;
             } else if( 0 == strcmp("-speed", argv[i]) && i+1<argc) {
-                fields_per_sec = atof(argv[i+1]);
+                fields_per_sec_total = atof(argv[i+1]);
                 ++i;
             } else if( 0 == strcmp("-wwidth", argv[i]) && i+1<argc) {
                 win_width = atoi(argv[i+1]);
@@ -275,6 +278,9 @@ int main(int argc, char *argv[])
                 show_ghost_moves = true;
             } else if( 0 == strcmp("-show_targets", argv[i]) ) {
                 show_targets = true;
+            } else if( 0 == strcmp("-show_debug_gfx", argv[i]) ) {
+                show_targets = true;
+                enable_all_debug_gfx = true;
             } else if( 0 == strcmp("-bugfix", argv[i]) ) {
                 original_pacman_behavior = false;
             } else if( 0 == strcmp("-audio", argv[i]) ) {
@@ -286,7 +292,7 @@ int main(int argc, char *argv[])
         log_printf("- show_fps %d\n", show_fps);
         log_printf("- enable_vsync %d\n", enable_vsync);
         log_printf("- forced_fps %d\n", forced_fps);
-        log_printf("- fields_per_sec %5.2f\n", fields_per_sec);
+        log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
         log_printf("- win size %d x %d\n", win_width, win_height);
         log_printf("- show_ghost_moves %d\n", show_ghost_moves);
         log_printf("- show_targets %d\n", show_targets);
@@ -404,12 +410,14 @@ int main(int argc, char *argv[])
                            global_maze->get_pixel_height()*win_pixel_scale);
 
     global_tex = std::make_shared<global_tex_t>(rend);
-    pacman = std::make_shared<pacman_t>(rend, fields_per_sec, auto_move);
-    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec) );
-    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec) );
-    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec) );
-    // ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec) );
+    pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total, auto_move);
+    log_printf("%s\n", pacman->toString().c_str());
+    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
+    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec_total) );
+    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec_total) );
+    // ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec_total) );
     for(ghost_ref g : ghosts) {
+        log_printf("%s\n", g->toString().c_str());
         g->set_log_moves(show_ghost_moves);
     }
 
@@ -556,26 +564,64 @@ int main(int argc, char *argv[])
         }
         SDL_RenderClear(rend);
 
-        pacman_maze_tex->draw(rend, 0, 0, false /* maze_offset */);
+        pacman_maze_tex->draw(rend, 0, 0);
         global_maze->draw( [&rend](int x, int y, tile_t tile) {
             global_tex->draw_tile(tile, rend, x, y);
         });
+        if( show_all_debug_gfx() ) {
+            uint8_t r, g, b, a;
+            SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
+            const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+            {
+                SDL_SetRenderDrawColor(rend, 150, 150, 150, 255);
+                for(int y = global_maze->get_height(); y>=0; --y) {
+                    SDL_RenderDrawLine(rend,
+                            win_pixel_offset + global_maze->x_to_pixel( 0, win_pixel_scale),
+                                               global_maze->y_to_pixel( y, win_pixel_scale),
+                            win_pixel_offset + global_maze->x_to_pixel( global_maze->get_width(), win_pixel_scale),
+                                               global_maze->y_to_pixel( y, win_pixel_scale) );
+                }
+                for(int x = global_maze->get_width(); x>=0; --x) {
+                    SDL_RenderDrawLine(rend,
+                            win_pixel_offset + global_maze->x_to_pixel( x, win_pixel_scale),
+                                               global_maze->y_to_pixel( 0, win_pixel_scale),
+                            win_pixel_offset + global_maze->x_to_pixel( x, win_pixel_scale),
+                                               global_maze->y_to_pixel( global_maze->get_height(), win_pixel_scale) );
+                }
+            }
+            {
+                SDL_SetRenderDrawColor(rend, 0, 0, 255, 255);
+                SDL_Rect bounds = {
+                        .x=win_pixel_offset + global_maze->x_to_pixel(0, win_pixel_scale),
+                        .y=global_maze->y_to_pixel(0, win_pixel_scale),
+                        .w=global_maze->x_to_pixel(1, win_pixel_scale),
+                        .h=global_maze->y_to_pixel(1, win_pixel_scale)};
+                SDL_RenderDrawRect(rend, &bounds);
+                SDL_Rect bounds2 = {
+                        .x=win_pixel_offset + global_maze->x_to_pixel(1, win_pixel_scale),
+                        .y=global_maze->y_to_pixel(4, win_pixel_scale),
+                        .w=global_maze->x_to_pixel(1, win_pixel_scale),
+                        .h=global_maze->y_to_pixel(1, win_pixel_scale)};
+                SDL_RenderDrawRect(rend, &bounds2);
+            }
+            SDL_SetRenderDrawColor(rend, r, g, b, a);
+        }
         pacman->draw(rend);
         for(ghost_ref ghost : ghosts) {
             ghost->draw(rend);
 
-            if( show_targets ) {
+            if( show_all_debug_gfx() || show_targets ) {
                 uint8_t r, g, b, a;
                 SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
-                SDL_SetRenderDrawColor(rend, 150, 150, 150, 255);
+                SDL_SetRenderDrawColor(rend, 255, 255, 255, 255);
                 const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
                 const acoord_t& p1 = ghost->get_pos();
                 const acoord_t& p2 = ghost->get_target();
                 SDL_RenderDrawLine(rend,
-                        win_pixel_offset + global_maze->x_to_pixel( p1.get_x_i(), win_pixel_scale, false ),
-                                           global_maze->y_to_pixel( p1.get_y_i(), win_pixel_scale, false ),
-                        win_pixel_offset + global_maze->x_to_pixel( p2.get_x_i(), win_pixel_scale, false ),
-                                           global_maze->y_to_pixel( p2.get_y_i(), win_pixel_scale, false ) );
+                        win_pixel_offset + global_maze->x_to_pixel( p1.get_x_f(), win_pixel_scale),
+                                           global_maze->y_to_pixel( p1.get_y_f(), win_pixel_scale),
+                        win_pixel_offset + global_maze->x_to_pixel( p2.get_x_f(), win_pixel_scale),
+                                           global_maze->y_to_pixel( p2.get_y_f(), win_pixel_scale) );
                 SDL_SetRenderDrawColor(rend, r, g, b, a);
             }
         }
@@ -585,7 +631,7 @@ int main(int argc, char *argv[])
                 const std::string highscore_s("HIGH SCORE");
                 ttex_score_title = draw_text_scaled(rend, font_ttf, highscore_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
                     x = ( global_maze->get_pixel_width()*win_pixel_scale - tex.get_width() ) / 2;
-                    y = global_maze->x_to_pixel(0, win_pixel_scale, false);
+                    y = global_maze->x_to_pixel(0, win_pixel_scale);
                 });
             } else {
                 ttex_score_title->redraw(rend);
@@ -596,7 +642,7 @@ int main(int argc, char *argv[])
                 std::string score_s = std::to_string( pacman->get_score() );
                 ttex_score = draw_text_scaled(rend, font_ttf, score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
                     x = ( global_maze->get_pixel_width()*win_pixel_scale - tex.get_width() ) / 2;
-                    y = global_maze->x_to_pixel(1, win_pixel_scale, false);
+                    y = global_maze->x_to_pixel(1, win_pixel_scale);
                 });
                 last_score = pacman->get_score();
             }

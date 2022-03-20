@@ -97,28 +97,50 @@ void texture_t::draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y
     if( nullptr != tex ) {
         SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
         const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale, false) ),
-                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale, false),
+        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale) ),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale),
                           .w=width, .h=height };
         SDL_RenderCopy(rend, tex, &src, &dest);
     }
 }
-void texture_t::draw(SDL_Renderer* rend, const int x_pos, const int y_pos, const bool maze_offset) {
+void texture_t::draw(SDL_Renderer* rend, const int x_pos, const int y_pos) {
     if( nullptr != tex ) {
         SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
         const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale, maze_offset) ),
-                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale, maze_offset),
+        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale) ),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale),
                           .w=width*win_pixel_scale, .h=height*win_pixel_scale };
         SDL_RenderCopy(rend, tex, &src, &dest);
     }
 }
-void texture_t::draw(SDL_Renderer* rend, const float x_pos, const float y_pos, const bool maze_offset) {
+void texture_t::draw2_i(SDL_Renderer* rend, const int x_pos, const int y_pos) {
     if( nullptr != tex ) {
         SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
         const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + global_maze->x_to_pixel(x_pos, win_pixel_scale, maze_offset),
-                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale, maze_offset),
+        const int dxy = ( ( global_maze->get_ppt_y() * win_pixel_scale ) / 3 );
+        SDL_Rect dest = { .x=win_pixel_offset + ( ( x_pos * global_maze->get_ppt_y() * win_pixel_scale ) - dxy ),
+                          .y= ( ( y_pos * global_maze->get_ppt_y() * win_pixel_scale ) - dxy ),
+                          .w=width*win_pixel_scale, .h=height*win_pixel_scale };
+        SDL_RenderCopy(rend, tex, &src, &dest);
+    }
+}
+void texture_t::draw(SDL_Renderer* rend, const float x_pos, const float y_pos) {
+    if( nullptr != tex ) {
+        SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
+        const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+        SDL_Rect dest = { .x=win_pixel_offset + global_maze->x_to_pixel(x_pos, win_pixel_scale),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale),
+                          .w=width*win_pixel_scale, .h=height*win_pixel_scale };
+        SDL_RenderCopy(rend, tex, &src, &dest);
+    }
+}
+void texture_t::draw2_f(SDL_Renderer* rend, const float x_pos, const float y_pos) {
+    if( nullptr != tex ) {
+        SDL_Rect src = { .x=x, .y=y, .w=width, .h=height};
+        const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+        const int dxy = ( ( global_maze->get_ppt_y() * win_pixel_scale ) / 3 );
+        SDL_Rect dest = { .x=win_pixel_offset + ( round_to_int( x_pos * global_maze->get_ppt_y() * win_pixel_scale ) - dxy ),
+                          .y= ( round_to_int( y_pos * global_maze->get_ppt_y() * win_pixel_scale ) - dxy ),
                           .w=width*win_pixel_scale, .h=height*win_pixel_scale };
         SDL_RenderCopy(rend, tex, &src, &dest);
     }
@@ -257,6 +279,13 @@ void animtex_t::tick() {
                 animation_index = 0;
             }
         }
+    }
+}
+
+void animtex_t::draw(SDL_Renderer* rend, const float x, const float y) {
+    std::shared_ptr<texture_t> tex = get_tex();
+    if( nullptr != tex ) {
+        tex->draw2_f(rend, x, y);
     }
 }
 

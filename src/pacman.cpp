@@ -66,8 +66,10 @@ animtex_t& pacman_t::get_tex() {
     }
 }
 
-pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_, bool auto_move_)
-: fields_per_sec( fields_per_sec_ ),
+pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_, bool auto_move_)
+: fields_per_sec_total(fields_per_sec_total_),
+  current_speed_pct(0.80f),
+  keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
   auto_move(auto_move_),
   mode( mode_t::HOME ),
   mode_ms_left ( -1 ),
@@ -115,6 +117,7 @@ void pacman_t::set_mode(const mode_t m) {
             mode_ms_left = -1;
             perf_fields_walked_t0 = getCurrentMilliseconds();
             pos.reset_stats();
+            set_speed(0.80f);
             break;
         case mode_t::POWERED:
             mode = m;
@@ -122,6 +125,7 @@ void pacman_t::set_mode(const mode_t m) {
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::SCARED);
             }
+            set_speed(0.90f);
             break;
         case mode_t::DEAD:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
@@ -141,8 +145,15 @@ void pacman_t::set_mode(const mode_t m) {
     log_printf("pacman set_mode: %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(mode).c_str(), mode_ms_left, pos.toShortString().c_str());
 }
 
+void pacman_t::set_speed(const float pct) {
+    const float old = current_speed_pct;
+    current_speed_pct = pct;
+    keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
+    // log_printf("pacman set_speed: %5.2f -> %5.2f: %s\n", old, current_speed_pct, keyframei.toString().c_str());
+}
+
 void pacman_t::set_dir(direction_t dir) {
-    const bool collision_maze = !pos.test(dir, [](tile_t tile) -> bool {
+    const bool collision_maze = !pos.test(dir, keyframei, [](tile_t tile) -> bool {
         return tile_t::WALL == tile || tile_t::GATE == tile;
     });
     if( !collision_maze ) {
@@ -193,7 +204,7 @@ bool pacman_t::tick() {
              if( !auto_move ) {
                  --steps_left;
              }
-             collision_maze = !pos.step(dir_, fields_per_sec, get_frames_per_sec(), [](tile_t tile) -> bool {
+             collision_maze = !pos.step(dir_, keyframei, [](tile_t tile) -> bool {
                  return tile_t::WALL == tile || tile_t::GATE == tile ;
              });
              if( collision_maze ) {
@@ -206,26 +217,28 @@ bool pacman_t::tick() {
                  pos.reset_stats();
                  perf_fields_walked_t0 = getCurrentMilliseconds();
              } else {
-                 const bool inbetween = pos.is_inbetween(fields_per_sec, get_frames_per_sec());
                  const int x_i = pos.get_x_i();
                  const int y_i = pos.get_y_i();
                  const tile_t tile = global_maze->get_tile(x_i, y_i);
-                 // log_print("tick: %s, %s, inbetween %d, tile %s\n", to_string(dir_).c_str(), pos.toString().c_str(), inbetween, to_string(tile).c_str());
-                 if( !inbetween ) {
-                     if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
-                         score += ::number( tile_to_score(tile) );
-                         global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
-                         if( tile_t::PELLET == tile ) {
-                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                             audio_nopellet_cntr = 2;
-                         } else if( tile_t::PELLET_POWER == tile ) {
-                             set_mode( mode_t::POWERED );
-                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                             audio_nopellet_cntr = 2;
-                         }
-                     } else if( tile_t::EMPTY == tile ) {
-                         audio_nopellet_cntr = std::max(0, audio_nopellet_cntr - 1);
-                         if( 0 == audio_nopellet_cntr ) {
+                 // log_printf("tick: %s, %s c%d e%d, tile %s\n", to_string(dir_).c_str(), pos.toString().c_str(), pos.is_center_dir(keyframei), pos.entered_tile(keyframei), to_string(tile).c_str());
+                 if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
+                     score += ::number( tile_to_score(tile) );
+                     global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
+                     if( tile_t::PELLET == tile ) {
+                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                         set_speed(0.71f);
+                         no_pellet_cntr = keyframei.get_frames_per_field();
+                     } else if( tile_t::PELLET_POWER == tile ) {
+                         set_mode( mode_t::POWERED );
+                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                         set_speed(0.90f);
+                         no_pellet_cntr = keyframei.get_frames_per_field();
+                     }
+                 } else if( tile_t::EMPTY == tile ) {
+                     if( 0 < no_pellet_cntr ) {
+                         // log_printf("no_pellet_cntr: %d\n", audio_nopellet_cntr);
+                         if( 0 == --no_pellet_cntr ) {
+                             set_speed(0.80f);
                              audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                          }
                      }
@@ -259,21 +272,24 @@ bool pacman_t::tick() {
 }
 
 void pacman_t::draw(SDL_Renderer* rend) {
-    atex->draw(rend, pos.get_x_f(), pos.get_y_f(), true /* maze_offset */);
+    atex->draw(rend, pos.get_x_f()-keyframei.get_center(), pos.get_y_f()-keyframei.get_center());
 
-    if( DEBUG_GFX_BOUNDS ) {
+    if( show_all_debug_gfx() || DEBUG_GFX_BOUNDS ) {
         uint8_t r, g, b, a;
         SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
-        SDL_SetRenderDrawColor(rend, 0, 255, 0, 255);
-        SDL_Rect bounds = { .x=global_maze->x_to_pixel(pos.get_x_f(), win_pixel_scale, true), .y=global_maze->y_to_pixel(pos.get_y_f(), win_pixel_scale, true),
-                .w=atex->get_width()*win_pixel_scale, .h=atex->get_height()*win_pixel_scale};
+        SDL_SetRenderDrawColor(rend, 255, 255, 0, 255);
+        const int win_pixel_offset = ( win_pixel_width - global_maze->get_pixel_width()*win_pixel_scale ) / 2;
+        // pos is on player center position
+        SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos.get_x_f() * global_maze->get_ppt_y() * win_pixel_scale ) - ( atex->get_width()  * win_pixel_scale ) / 2,
+                            .y=                   round_to_int( pos.get_y_f() * global_maze->get_ppt_y() * win_pixel_scale ) - ( atex->get_height() * win_pixel_scale ) / 2,
+                            .w=atex->get_width()*win_pixel_scale, .h=atex->get_height()*win_pixel_scale };
         SDL_RenderDrawRect(rend, &bounds);
         SDL_SetRenderDrawColor(rend, r, g, b, a);
     }
 }
 
 std::string pacman_t::toString() const {
-    return "pacman["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos.toString()+", "+atex->toString()+"]";
+    return "pacman["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos.toString()+", "+atex->toString()+", "+keyframei.toString()+"]";
 }
 
 

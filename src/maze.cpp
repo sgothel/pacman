@@ -87,6 +87,147 @@ std::string to_string(tile_t tile) {
 }
 
 //
+// keyframei_t
+//
+int keyframei_t::calc_odd_frames_per_field(const float frames_per_second, const float fields_per_second, const bool hint_slower) {
+    const float v0 = frames_per_second / fields_per_second;
+    const int v0_floor = floor_to_int( v0 );
+    const int v0_ceil = ceil_to_int( v0 );
+    if( 0 != v0_floor % 2 ) {
+        // Use faster floor, i.e. resulting in higher fields per second.
+        // Difference is 'only' < 1
+        return v0_floor;
+    } else if( 0 != v0_ceil % 2 ) {
+        // Use slower ceil, i.e. resulting in lower fields per second.
+        // Difference is 'only' < 1
+        return v0_ceil;
+    } else {
+        // v0's mantissa == 0, difference of one full frame.
+        if( hint_slower ) {
+            return v0_floor + 1;
+        } else {
+            return v0_ceil - 1;
+        }
+    }
+}
+
+int keyframei_t::calc_nearest_frames_per_field(const float frames_per_second, const float fields_per_second) {
+    const float v0 = frames_per_second / fields_per_second;
+    const int v0_floor = floor_to_int( v0 );
+    const int v0_ceil = ceil_to_int( v0 );
+    if( v0 - v0_floor <= v0_ceil - v0 ) {
+        return v0_floor;
+    } else {
+        return v0_ceil;
+    }
+}
+
+float keyframei_t::get_sync_delay() const {
+    const float frame_per_seconds_diff = 1.0f / get_fields_per_second_diff() * get_frames_per_field();
+    return ( 1000.0f / ( frames_per_second_const - frame_per_seconds_diff ) ) - ( 1000.0f / frames_per_second_const ) ;
+}
+
+bool keyframei_t::intersects_center(const float x, const float y) const {
+    // use epsilon delta to avoid matching direct neighbors
+    const float fields_per_frame = get_fields_per_frame();
+    const float cx = std::trunc(x) + center;
+    const float cy = std::trunc(y) + center;
+#if 1
+    // uniform dimension
+    return std::abs( cx - x ) < fields_per_frame - std::numeric_limits<float>::epsilon() &&
+           std::abs( cy - y ) < fields_per_frame - std::numeric_limits<float>::epsilon();
+#else
+    return !( cx + fields_per_frame - std::numeric_limits<float>::epsilon() < x || x + fields_per_frame - std::numeric_limits<float>::epsilon() < cx ||
+              cy + fields_per_frame - std::numeric_limits<float>::epsilon() < y || y + fields_per_frame - std::numeric_limits<float>::epsilon() < cy );
+#endif
+}
+
+bool keyframei_t::is_center(const float x, const float y) const {
+    // use epsilon delta to have tolerance
+    const float cx = std::trunc(x) + center;
+    const float cy = std::trunc(y) + center;
+
+    return std::abs( cx - x ) <= std::numeric_limits<float>::epsilon() &&
+           std::abs( cy - y ) <= std::numeric_limits<float>::epsilon();
+}
+
+bool keyframei_t::is_center_xy(const float xy) const {
+    const float cx = std::trunc(xy) + center;
+    return std::abs( cx - xy ) <= std::numeric_limits<float>::epsilon();
+}
+
+bool keyframei_t::is_center_dir(const direction_t dir, const float x, const float y) const {
+    // use epsilon delta to have tolerance
+    switch( dir ) {
+        case direction_t::RIGHT:
+            [[fallthrough]];
+        case direction_t::LEFT: {
+            const float cx = std::trunc(x) + center;
+            return std::abs( cx - x ) <= std::numeric_limits<float>::epsilon();
+        }
+        case direction_t::DOWN:
+            [[fallthrough]];
+        case direction_t::UP:
+            [[fallthrough]];
+        default: {
+            const float cy = std::trunc(y) + center;
+            return std::abs( cy - y ) <= std::numeric_limits<float>::epsilon();
+        }
+    }
+}
+
+bool keyframei_t::entered_tile(const direction_t dir, const float x, const float y) const {
+    // FIXME: Wrong code, need to act solely on center tile
+    // use epsilon delta to have tolerance
+    const float fields_per_frame = get_fields_per_frame();
+    switch( dir ) {
+        case direction_t::RIGHT: {
+            const float v0_trunc = std::trunc(x);
+            const float v0_m = x - v0_trunc;
+            return v0_m <= std::numeric_limits<float>::epsilon();
+        }
+        case direction_t::LEFT: {
+            const float v0_trunc = std::trunc(x);
+            const float v0_m = x - v0_trunc;
+            // at the tile edge
+            return 1.0f - v0_m <= fields_per_frame + std::numeric_limits<float>::epsilon();
+            // return v0_m <= std::numeric_limits<float>::epsilon();
+        }
+        case direction_t::DOWN: {
+            const float v0_trunc = std::trunc(y);
+            const float v0_m = y - v0_trunc;
+            return v0_m <= std::numeric_limits<float>::epsilon();
+        }
+        case direction_t::UP:
+            [[fallthrough]];
+        default: {
+            const float v0_trunc = std::trunc(y);
+            const float v0_m = y - v0_trunc;
+            return 1.0f - v0_m <= fields_per_frame + std::numeric_limits<float>::epsilon();
+            // return v0_m <= std::numeric_limits<float>::epsilon();
+        }
+    }
+}
+
+float keyframei_t::get_aligned(const float v) const {
+    const float fields_per_frame = get_fields_per_frame();
+    const float v0_trunc = std::trunc(v);
+    const float v0_m = v - v0_trunc;
+    const int n = round_to_int(v0_m / fields_per_frame);
+    return v0_trunc + n*fields_per_frame;
+}
+
+float keyframei_t::get_centered(const float v) const {
+    return std::trunc(v) + center;
+}
+
+std::string keyframei_t::toString() const {
+    return "[fps "+std::to_string(frames_per_second_const)+", frames_per_field "+std::to_string(frames_per_field)+
+            ", fields_per_frame "+std::to_string(get_fields_per_frame())+", fields_per_second "+std::to_string(get_fields_per_second())+
+            " (diff "+std::to_string(fields_per_second_diff)+", delay "+std::to_string(get_sync_delay())+"ms), center "+std::to_string(center)+"]";
+}
+
+//
 // box_t
 //
 std::string box_t::toString() const {
@@ -131,8 +272,17 @@ void acoord_t::set_pos_clipped(const float x, const float y) {
 }
 
 bool acoord_t::intersects_f(const acoord_t& other) const {
-    return !( x_pos_f + 0.999 < other.x_pos_f || other.x_pos_f + 0.999 < x_pos_f ||
-              y_pos_f + 0.999 < other.y_pos_f || other.y_pos_f + 0.999 < y_pos_f );
+    // use machine epsilon delta to avoid matching direct neighbors
+#if 1
+    // uniform dimension
+    return std::abs( x_pos_f - other.get_x_f() ) < 1.0f - std::numeric_limits<float>::epsilon() &&
+           std::abs( y_pos_f - other.get_y_f() ) < 1.0f - std::numeric_limits<float>::epsilon();
+#else
+    return !(       x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.x_pos_f ||
+              other.x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() <       x_pos_f ||
+                    y_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.y_pos_f ||
+              other.y_pos_f + 1.0f - std::numeric_limits<float>::epsilon() <       y_pos_f );
+#endif
 }
 
 bool acoord_t::intersects_i(const acoord_t& other) const {
@@ -144,8 +294,8 @@ bool acoord_t::intersects(const acoord_t& other) const {
 }
 
 bool acoord_t::intersects_f(const box_t& other) const {
-    return !( x_pos_f + 0.999 < other.get_x() || other.get_x() + other.get_width() < x_pos_f ||
-              y_pos_f + 0.999 < other.get_y() || other.get_y() + other.get_height() < y_pos_f );
+    return !( x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.get_x() || other.get_x() + other.get_width() < x_pos_f ||
+              y_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.get_y() || other.get_y() + other.get_height() < y_pos_f );
 }
 
 float acoord_t::distance(const float x, const float y) const {
@@ -160,70 +310,59 @@ float acoord_t::sq_distance(const float x, const float y) const {
     return x_d * x_d + y_d * y_d;
 }
 
-void acoord_t::incr_fwd(const direction_t dir, const int tile_count) {
+void acoord_t::incr_fwd(const direction_t dir, const keyframei_t& keyframei, const int tile_count) {
     const float fields_per_frame = tile_count;
     maze_t& maze = *global_maze;
 
     switch( dir ) {
         case direction_t::DOWN:
             if( round_to_int(y_pos_f + fields_per_frame) < maze.get_height() ) {
-                y_pos_f = y_pos_f + fields_per_frame;
+                y_pos_f = keyframei.get_aligned( y_pos_f + fields_per_frame );
             } else {
-                y_pos_f = maze.get_height(); // clip only, no overflow to other side
+                y_pos_f = maze.get_height() - 1; // clip only, no overflow to other side
             }
-            y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
-            x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
-            x_pos_f = x_pos_i;
+            y_pos_i = trunc_to_int(y_pos_f);
+            x_pos_f = keyframei.get_centered(x_pos_i);
             break;
 
         case direction_t::RIGHT:
             if( round_to_int(x_pos_f + fields_per_frame) < maze.get_width() ) {
-                x_pos_f = x_pos_f + fields_per_frame;
+                x_pos_f = keyframei.get_aligned( x_pos_f + fields_per_frame );
             } else {
-                x_pos_f = maze.get_width(); // clip only, no overflow to other side
+                x_pos_f = maze.get_width() - 1; // clip only, no overflow to other side
             }
-            x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
-            y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
-            y_pos_f = y_pos_i;
+            x_pos_i = trunc_to_int(x_pos_f);
+            y_pos_f = keyframei.get_centered(y_pos_i);
             break;
 
         case direction_t::UP:
             if( round_to_int(y_pos_f - fields_per_frame) >= 0 ) {
-                y_pos_f = y_pos_f - fields_per_frame;
+                y_pos_f = keyframei.get_aligned( y_pos_f - fields_per_frame );
             } else {
                 y_pos_f = 0; // clip only, no overflow to other side
             }
-            y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
-            x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
-            x_pos_f = x_pos_i;
+            y_pos_i = trunc_to_int(y_pos_f);
+            x_pos_f = keyframei.get_centered(x_pos_i);
             break;
 
         case direction_t::LEFT:
             [[fallthrough]];
         default:
             if( round_to_int(x_pos_f - fields_per_frame) >= 0 ) {
-                x_pos_f = x_pos_f - fields_per_frame;
+                x_pos_f = keyframei.get_aligned( x_pos_f - fields_per_frame );
             } else {
                 x_pos_f = 0; // clip only, no overflow to other side
             }
-            x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
-            y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
-            y_pos_f = y_pos_i;
+            x_pos_i = trunc_to_int(x_pos_f);
+            y_pos_f = keyframei.get_centered(y_pos_i);
             break;
     }
 }
 
-bool acoord_t::is_inbetween(const float fields_per_frame, const float x, const float y) {
-    if( std::abs( std::round(x) - x ) < fields_per_frame &&
-        std::abs( std::round(y) - y ) < fields_per_frame ) {
-        // on tile center within step width
-        return false;
-    } else {
-        return true;
-    }
-}
+bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_t& keyframei, collisiontest_simple_t ct0, collisiontest_t ct1) {
+    const float fields_per_frame = keyframei.get_fields_per_frame();
+    const float center = keyframei.get_center();
 
-bool acoord_t::step_impl(direction_t dir, const bool test_only, const float fields_per_frame, collisiontest_simple_t ct0, collisiontest_t ct1) {
     maze_t& maze = *global_maze;
 
     /**
@@ -233,7 +372,14 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const float fiel
     float new_y_pos_f;
 
     /**
-     * The forward look-ahead int position for wall collision tests.
+     * The new int position.
+     */
+    int new_x_pos_i;
+    int new_y_pos_i;
+
+    /**
+     * The forward look-ahead int position for wall collision tests,
+     * also avoid overstepping center position if wall is following.
      *
      * Depending on the direction, it adds a whole tile position
      * to the pixel accurate position only to test for wall collisions.
@@ -249,98 +395,132 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const float fiel
     float fields_stepped_f = 0;
 
     /**
-     * The resulting int position will be weighted (rounded)
+     * Resulting int position is be weighted
      * as the original pacman game.
+     *
+     * Note: This also allows 'cutting the corner' for pacman to speed up.
      */
     switch( dir ) {
         case direction_t::DOWN:
             if( round_to_int(y_pos_f + fields_per_frame) < maze.get_height() ) {
-                new_y_pos_f = y_pos_f + fields_per_frame;
+                // next
+                new_y_pos_f = keyframei.get_aligned( y_pos_f + fields_per_frame );
                 fields_stepped_f = fields_per_frame;
-                if( new_y_pos_f > std::floor(new_y_pos_f) ) {
-                    fwd_y_pos_i = std::min(maze.get_height()-1, floor_to_int(y_pos_f) + 1);
+
+                if( new_y_pos_f - std::trunc(new_y_pos_f) >= center - fields_per_frame/2 ) {
+                    new_y_pos_i = trunc_to_int(new_y_pos_f);
                 } else {
-                    fwd_y_pos_i = std::min(maze.get_height()-1, floor_to_int(new_y_pos_f));
+                    new_y_pos_i = std::min(maze.get_height()-1, trunc_to_int(new_y_pos_f) - 1);
+                }
+                // forward
+                if( new_y_pos_f - std::trunc(new_y_pos_f) > center + fields_per_frame/2 ) {
+                    fwd_y_pos_i = std::min(maze.get_height()-1, trunc_to_int(new_y_pos_f) + 1);
+                } else {
+                    fwd_y_pos_i = trunc_to_int(new_y_pos_f);
                 }
             } else {
                 new_y_pos_f = 0;
                 fwd_y_pos_i = 0;
+                new_y_pos_i = 0;
             }
-            fwd_x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
-            new_x_pos_f = fwd_x_pos_i;
+            new_x_pos_f = keyframei.get_centered(x_pos_i);
+            new_x_pos_i = x_pos_i;
+            fwd_x_pos_i = x_pos_i;
             break;
 
         case direction_t::RIGHT:
             if( round_to_int(x_pos_f + fields_per_frame) < maze.get_width() ) {
-                new_x_pos_f = x_pos_f + fields_per_frame;
+                // next
+                new_x_pos_f = keyframei.get_aligned( x_pos_f + fields_per_frame );
                 fields_stepped_f = fields_per_frame;
-                if( new_x_pos_f > std::floor(new_x_pos_f) ) {
-                    fwd_x_pos_i = std::min(maze.get_width()-1, floor_to_int(x_pos_f) + 1);
+                if( new_x_pos_f - std::trunc(new_x_pos_f) >= center - fields_per_frame/2 ) {
+                    new_x_pos_i = trunc_to_int(new_x_pos_f);
                 } else {
-                    fwd_x_pos_i = std::min(maze.get_width()-1, floor_to_int(new_x_pos_f));
+                    new_x_pos_i = std::min(maze.get_width()-1, trunc_to_int(new_x_pos_f) - 1);
+                }
+                // forward
+                if( new_x_pos_f - std::trunc(new_x_pos_f) > center + fields_per_frame/2 ) {
+                    fwd_x_pos_i = std::min(maze.get_width()-1, trunc_to_int(new_x_pos_f) + 1);
+                } else {
+                    fwd_x_pos_i = trunc_to_int(new_x_pos_f);
                 }
             } else {
                 new_x_pos_f = 0;
                 fwd_x_pos_i = 0;
+                new_x_pos_i = 0;
             }
-            fwd_y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
-            new_y_pos_f = fwd_y_pos_i;
+            new_y_pos_f = keyframei.get_centered(y_pos_i);
+            new_y_pos_i = y_pos_i;
+            fwd_y_pos_i = y_pos_i;
             break;
 
         case direction_t::UP:
-            if( round_to_int(y_pos_f - fields_per_frame) >= 0 ) {
-                new_y_pos_f = y_pos_f - fields_per_frame;
+            if( trunc_to_int(y_pos_f - fields_per_frame) >= 0 ) {
+                // next
+                new_y_pos_f = keyframei.get_aligned( y_pos_f - fields_per_frame );
                 fields_stepped_f = fields_per_frame;
-                if( new_y_pos_f < std::ceil(new_y_pos_f) ) {
-                    fwd_y_pos_i = std::max(0, ceil_to_int(y_pos_f) - 1);
+                if( new_y_pos_f - std::trunc(new_y_pos_f) < center - fields_per_frame/2 ) {
+                    new_y_pos_i = std::max(0, trunc_to_int(new_y_pos_f) - 1);
                 } else {
-                    fwd_y_pos_i = std::max(0, ceil_to_int(new_y_pos_f));
+                    new_y_pos_i = trunc_to_int(new_y_pos_f);
                 }
+                // forward is same
+                fwd_y_pos_i = new_y_pos_i;
             } else {
                 new_y_pos_f = maze.get_height() - 1;
                 fwd_y_pos_i = ceil_to_int(new_y_pos_f);
+                new_y_pos_i = fwd_y_pos_i;
             }
-            fwd_x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
-            new_x_pos_f = fwd_x_pos_i;
+            new_x_pos_f = keyframei.get_centered(x_pos_i);
+            new_x_pos_i = x_pos_i;
+            fwd_x_pos_i = x_pos_i;
             break;
 
         case direction_t::LEFT:
             [[fallthrough]];
         default:
-            if( round_to_int(x_pos_f - fields_per_frame) >= 0 ) {
-                new_x_pos_f = x_pos_f - fields_per_frame;
+            if( trunc_to_int(x_pos_f - fields_per_frame) >= 0 ) {
+                // next
+                new_x_pos_f = keyframei.get_aligned( x_pos_f - fields_per_frame );
                 fields_stepped_f = fields_per_frame;
-                if( new_x_pos_f < std::ceil(new_x_pos_f) ) {
-                    fwd_x_pos_i = std::max(0, ceil_to_int(x_pos_f) - 1);
+                if( new_x_pos_f - std::trunc(new_x_pos_f) < center - fields_per_frame/2 ) {
+                    new_x_pos_i = std::max(0, trunc_to_int(new_x_pos_f) - 1);
                 } else {
-                    fwd_x_pos_i = std::max(0, ceil_to_int(new_x_pos_f));
+                    new_x_pos_i = trunc_to_int(new_x_pos_f);
                 }
+                // forward is same
+                fwd_x_pos_i = new_x_pos_i;
             } else {
                 new_x_pos_f = maze.get_width() - 1;
                 fwd_x_pos_i = ceil_to_int(new_x_pos_f);
+                new_x_pos_i = fwd_x_pos_i;
             }
-            fwd_y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
-            new_y_pos_f = fwd_y_pos_i;
+            new_y_pos_f = keyframei.get_centered(y_pos_i);
+            new_y_pos_i = y_pos_i;
+            fwd_y_pos_i = y_pos_i;
             break;
 
     }
     // Collision test with walls
-    const tile_t tile = maze.get_tile(fwd_x_pos_i, fwd_y_pos_i);
+    const tile_t fwd_tile = maze.get_tile(fwd_x_pos_i, fwd_y_pos_i);
+    const bool new_pos_is_centered = keyframei.is_center_dir(dir, new_x_pos_f, new_y_pos_f);
     bool collision;
     if( nullptr != ct0 ) {
-        collision = ct0(tile);
+        collision = ct0(fwd_tile);
     } else if( nullptr != ct1 ) {
-        collision = ct1(dir, new_x_pos_f, new_y_pos_f, is_inbetween(fields_per_frame, new_x_pos_f, new_y_pos_f),
-                             fwd_x_pos_i, fwd_y_pos_i, tile);
+        collision = ct1(dir, new_x_pos_f, new_y_pos_f, new_pos_is_centered,
+                             fwd_x_pos_i, fwd_y_pos_i, fwd_tile);
     } else {
         collision = false;
     }
-    if( DEBUG_BOUNDS ) {
-        log_printf("%s: %s -> %s: %5.2f/%5.2f %2.2d/%2.2d -> %5.2f/%5.2f %2.2d/%2.2d, tile '%s', collision %d\n",
+    if( !test_only && DEBUG_BOUNDS ) {
+        log_printf("%s: %s -> %s: %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> new %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> fwd %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",
                 to_string(last_dir).c_str(), to_string(dir).c_str(),
-                x_pos_f, y_pos_f, x_pos_i, y_pos_i,
-                new_x_pos_f, new_y_pos_f, fwd_x_pos_i, fwd_y_pos_i, to_string(tile).c_str(), collision);
+                x_pos_f, y_pos_f, x_pos_i, y_pos_i, keyframei.is_center_dir(last_dir, x_pos_f, y_pos_f), keyframei.entered_tile(last_dir, x_pos_f, y_pos_f),
+                new_x_pos_f, new_y_pos_f, new_x_pos_i, new_y_pos_i, new_pos_is_centered, keyframei.entered_tile(dir, new_x_pos_f, new_y_pos_f),
+                fwd_x_pos_i, fwd_y_pos_i,
+                to_string(fwd_tile).c_str(), collision);
     }
     if( !test_only ) {
         if( !collision ) {
@@ -349,35 +529,13 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const float fiel
             y_pos_f = new_y_pos_f;
             const int x_pos_i_old = x_pos_i;
             const int y_pos_i_old = y_pos_i;
-            /**
-             * Resulting int position is be weighted (rounded)
-             * as the original pacman game.
-             */
-            x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
-            y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
+            x_pos_i = new_x_pos_i;
+            y_pos_i = new_y_pos_i;
             last_dir = dir;
             fields_walked_i += std::abs(x_pos_i - x_pos_i_old) + std::abs(y_pos_i - y_pos_i_old);
             fields_walked_f += fields_stepped_f;
         } else {
             last_collided = true;
-            // re-align pixel accurate position, no 'overstepping'
-            switch( dir ) {
-                case direction_t::RIGHT:
-                    x_pos_f = std::floor(x_pos_f);
-                    break;
-
-                case direction_t::LEFT:
-                    x_pos_f = std::ceil(x_pos_f);
-                    break;
-
-                case direction_t::DOWN:
-                    y_pos_f = std::floor(y_pos_f);
-                    break;
-
-                case direction_t::UP:
-                    y_pos_f = std::ceil(y_pos_f);
-                    break;
-            }
         }
     }
     return !collision;

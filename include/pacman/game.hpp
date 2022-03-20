@@ -156,7 +156,9 @@ class ghost_t {
     private:
         const int ms_per_atex = 500;
 
-        const float fields_per_sec;
+        const float fields_per_sec_total;
+        float current_speed_pct;
+        keyframei_t keyframei;
 
         personality_t id; // not necessarily unique
         mode_t mode;
@@ -186,7 +188,7 @@ class ghost_t {
         void set_next_dir();
 
     public:
-        ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_=8);
+        ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_=10);
 
         ~ghost_t() {
             destroy();
@@ -196,9 +198,11 @@ class ghost_t {
 
         void set_log_moves(const bool v) { log_moves = v; }
 
+        const keyframei_t& get_keyframei() const { return keyframei; }
+
         mode_t get_mode() const { return mode; }
         void set_mode(const mode_t m);
-
+        void set_speed(const float pct);
         direction_t get_dir() const { return dir_; }
 
         const acoord_t& get_pos() const { return pos; }
@@ -245,7 +249,9 @@ class pacman_t {
         }
         const int ms_per_tex = 167;
 
-        const float fields_per_sec;
+        const float fields_per_sec_total;
+        float current_speed_pct;
+        keyframei_t keyframei;
 
         const bool auto_move;
 
@@ -256,7 +262,7 @@ class pacman_t {
         int frame_count;
         int steps_left;
         uint64_t score;
-        int audio_nopellet_cntr = 0;
+        int no_pellet_cntr = 0;
 
         animtex_t atex_left;
         animtex_t atex_right;
@@ -273,7 +279,7 @@ class pacman_t {
         animtex_t& get_tex();
 
     public:
-        pacman_t(SDL_Renderer* rend, const float fields_per_sec_=8, bool auto_move_=true);
+        pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_=10, bool auto_move_=true);
 
         ~pacman_t() {
             destroy();
@@ -282,6 +288,8 @@ class pacman_t {
         void destroy();
 
         void set_mode(const mode_t m);
+        void set_speed(const float pct);
+        const keyframei_t& get_keyframei() const { return keyframei; }
 
         /**
          * Set direction

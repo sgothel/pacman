@@ -82,9 +82,11 @@ class texture_t {
 
         void draw_scaled_dimpos(SDL_Renderer* rend, const int x_pos, const int y_pos);
         void draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y_pos);
-        void draw(SDL_Renderer* rend, const int x_pos, const int y_pos, const bool maze_offset);
+        void draw(SDL_Renderer* rend, const int x_pos, const int y_pos);
+        void draw2_i(SDL_Renderer* rend, const int x_pos, const int y_pos);
 
-        void draw(SDL_Renderer* rend, const float x_pos, const float y_pos, const bool maze_offset);
+        void draw(SDL_Renderer* rend, const float x_pos, const float y_pos);
+        void draw2_f(SDL_Renderer* rend, const float x_pos, const float y_pos);
 
         std::string toString() const;
 };
@@ -165,12 +167,7 @@ class animtex_t {
         void pause(bool enable);
         void tick();
 
-        void draw(SDL_Renderer* rend, const float x, const float y, const bool maze_offset) {
-            std::shared_ptr<texture_t> tex = get_tex();
-            if( nullptr != tex ) {
-                tex->draw(rend, x, y, maze_offset);
-            }
-        }
+        void draw(SDL_Renderer* rend, const float x, const float y);
 
         std::string toString() const;
 };
