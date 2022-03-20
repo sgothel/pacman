@@ -146,7 +146,7 @@ void pacman_t::set_mode(const mode_t m) {
 }
 
 void pacman_t::set_speed(const float pct) {
-    const float old = current_speed_pct;
+    // const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
     // log_printf("pacman set_speed: %5.2f -> %5.2f: %s\n", old, current_speed_pct, keyframei.toString().c_str());
