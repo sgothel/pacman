@@ -99,11 +99,13 @@ void ghost_t::set_next_target() {
                 break;
             } else {
                 target = global_maze->get_ghost_home_pos();
+                target.set_centered(keyframei);
                 break;
             }
 
         case mode_t::LEAVE_HOME:
             target = global_maze->get_ghost_start_pos();
+            target.set_centered(keyframei);
             break;
 
         case mode_t::CHASE:
@@ -113,6 +115,7 @@ void ghost_t::set_next_target() {
                     break;
                 case ghost_t::personality_t::CLYDE:
                     target = global_maze->get_top_left_corner();
+                    target.set_centered(keyframei);
                     break;
                 case ghost_t::personality_t::INKY: {
                     /**
@@ -169,10 +172,12 @@ void ghost_t::set_next_target() {
                     target = global_maze->get_bottom_right_corner();
                     break;
             }
+            target.set_centered(keyframei);
             break;
 
         case mode_t::PHANTOM:
             target = global_maze->get_ghost_home_pos();
+            target.set_centered(keyframei);
             break;
 
         case mode_t::SCARED:
@@ -180,6 +185,7 @@ void ghost_t::set_next_target() {
             // dummy, since an RNG is being used
         default:
             target = global_maze->get_ghost_start_pos();
+            target.set_centered(keyframei);
             break;
     }
 }
@@ -194,10 +200,12 @@ void ghost_t::set_mode(const mode_t m) {
                 mode_ms_left = number( mode_duration_t::CHASING );
                 dir_ = direction_t::LEFT;
                 pos = global_maze->get_ghost_start_pos();
+                pos.set_centered(keyframei);
             } else {
                 mode = m;
                 mode_ms_left = number( mode_duration_t::HOMESTAY );
                 pos = global_maze->get_ghost_home_pos();
+                pos.set_centered(keyframei);
             }
             set_speed(0.75f);
             break;
@@ -222,8 +230,8 @@ void ghost_t::set_mode(const mode_t m) {
                 // NOP
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
+                set_speed(0.75f);
             }
-            set_speed(0.75f);
             break;
         case mode_t::SCARED:
             if( mode_t::HOME == old_mode || mode_t::LEAVE_HOME == old_mode ) {
@@ -232,8 +240,8 @@ void ghost_t::set_mode(const mode_t m) {
                 mode = m;
                 mode_ms_left = number( mode_duration_t::SCARED );
                 dir_ = inverse(dir_);
+                set_speed(0.50f);
             }
-            set_speed(0.50f);
             break;
         case mode_t::PHANTOM:
             mode = m;
@@ -387,6 +395,7 @@ bool ghost_t::tick() {
             set_mode( mode_t::CHASE );
         } else if( 0 == mode_ms_left ) { // ooops
             pos = global_maze->get_ghost_start_pos();
+            pos.set_centered(keyframei);
             set_mode( mode_t::CHASE );
         }
     } else if( mode_t::CHASE == mode ) {

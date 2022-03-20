@@ -89,7 +89,9 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_, bool a
   atex_home( "H", ms_per_tex, { atex_dead.get_tex(0) }),
   atex( &get_tex() ),
   pos( global_maze->get_pacman_start_pos() )
-{ }
+{
+    set_mode( mode_t::HOME );
+}
 
 void pacman_t::destroy() {
     atex_left.destroy();
@@ -108,6 +110,7 @@ void pacman_t::set_mode(const mode_t m) {
             mode = m;
             mode_ms_left = -1;
             pos = global_maze->get_pacman_start_pos();
+            pos.set_centered(keyframei);
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::HOME);
             }

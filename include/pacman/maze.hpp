@@ -281,6 +281,7 @@ class acoord_t {
 
         void set_pos(const int x, const int y);
         void set_pos_clipped(const float x, const float y);
+        void set_centered(const keyframei_t& keyframei) { x_pos_f = keyframei.get_centered(x_pos_f); y_pos_f = keyframei.get_centered(y_pos_f); }
 
         int get_x_i() const { return x_pos_i; }
         int get_y_i() const { return y_pos_i; }
