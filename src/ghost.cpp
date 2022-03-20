@@ -68,12 +68,13 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.75f),
   keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
+  skip_tick_each_frames( -1 ),
+  skip_tick_counter( -1 ),
   id( id_ ),
   mode( mode_t::HOME ),
   mode_ms_left ( number( mode_duration_t::HOMESTAY ) ),
   dir_( direction_t::LEFT ),
   last_dir( dir_ ),
-  frame_count ( 0 ),
   atex_normal( "N", rend, ms_per_atex, global_tex->get_all_images(), 0, id_to_yoff(id), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex_scared( "S", rend, ms_per_atex, global_tex->get_all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->get_all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
@@ -259,10 +260,19 @@ void ghost_t::set_mode(const mode_t m) {
 }
 
 void ghost_t::set_speed(const float pct) {
-    // const float old = current_speed_pct;
+    const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
-    // log_printf("%s set_speed: %5.2f -> %5.2f: %s\n", to_string(id).c_str(), old, current_speed_pct, keyframei.toString().c_str());
+    const int fps_d = trunc_to_int( keyframei.get_frames_per_second_diff() );
+    if( fps_d > 0 ) {
+        skip_tick_each_frames = get_frames_per_sec() / fps_d;
+    } else {
+        skip_tick_each_frames = -1;
+    }
+    skip_tick_counter = skip_tick_each_frames;
+    if( log_moves ) {
+        log_printf("%s set_speed: %5.2f -> %5.2f: skip_tick_each_frames %d, %s\n", to_string(id).c_str(), old, current_speed_pct, skip_tick_each_frames, keyframei.toString().c_str());
+    }
 }
 
 void ghost_t::set_next_dir() {
@@ -373,7 +383,13 @@ void ghost_t::set_next_dir() {
 }
 
 bool ghost_t::tick() {
-    ++frame_count;
+    // skip_tick_counter = skip_tick_each_frames;
+    if( 0 < skip_tick_each_frames ) {
+        if( 0 >= --skip_tick_counter ) {
+            skip_tick_counter = skip_tick_each_frames; // reload
+            return true; // skip
+        }
+    }
 
     atex = &get_tex();
     atex->tick();
@@ -426,8 +442,8 @@ bool ghost_t::tick() {
     set_next_dir();
 
     if( DEBUG_GFX_BOUNDS ) {
-        log_printf("tick[%s]: frame %3.3d, %s, pos %s -> %s, crash[maze %d], textures %s\n",
-                to_string(id).c_str(), frame_count, to_string(dir_).c_str(), pos.toShortString().c_str(), target.toShortString().c_str(), collision_maze, atex->toString().c_str());
+        log_printf("tick[%s]: %s, pos %s -> %s, crash[maze %d], textures %s\n",
+                to_string(id).c_str(), to_string(dir_).c_str(), pos.toShortString().c_str(), target.toShortString().c_str(), collision_maze, atex->toString().c_str());
     }
     return true;
 }

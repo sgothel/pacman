@@ -159,12 +159,13 @@ class ghost_t {
         const float fields_per_sec_total;
         float current_speed_pct;
         keyframei_t keyframei;
+        int skip_tick_each_frames;
+        int skip_tick_counter;
 
         personality_t id; // not necessarily unique
         mode_t mode;
         int mode_ms_left;
         direction_t dir_, last_dir;
-        int frame_count;
 
         animtex_t atex_normal;
         animtex_t atex_scared;
@@ -252,6 +253,8 @@ class pacman_t {
         const float fields_per_sec_total;
         float current_speed_pct;
         keyframei_t keyframei;
+        int skip_tick_each_frames;
+        int skip_tick_counter;
 
         const bool auto_move;
 
@@ -259,7 +262,6 @@ class pacman_t {
         int mode_ms_left;
         int lives;
         direction_t dir_, last_dir;
-        int frame_count;
         int steps_left;
         uint64_t score;
         int no_pellet_cntr = 0;
@@ -274,6 +276,8 @@ class pacman_t {
 
         acoord_t pos;
 
+        bool log_moves = false;
+
         uint64_t perf_fields_walked_t0 =0;
 
         animtex_t& get_tex();
@@ -286,6 +290,8 @@ class pacman_t {
         }
 
         void destroy();
+
+        void set_log_moves(const bool v) { log_moves = v; }
 
         void set_mode(const mode_t m);
         void set_speed(const float pct);

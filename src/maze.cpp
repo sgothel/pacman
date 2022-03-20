@@ -122,9 +122,12 @@ int keyframei_t::calc_nearest_frames_per_field(const float frames_per_second, co
     }
 }
 
+float keyframei_t::get_frames_per_second_diff() const {
+    return get_fields_per_second_diff() * get_frames_per_field();
+}
+
 float keyframei_t::get_sync_delay() const {
-    const float frame_per_seconds_diff = 1.0f / get_fields_per_second_diff() * get_frames_per_field();
-    return ( 1000.0f / ( frames_per_second_const - frame_per_seconds_diff ) ) - ( 1000.0f / frames_per_second_const ) ;
+    return ( 1000.0f / ( frames_per_second_const - get_frames_per_second_diff() ) ) - ( 1000.0f / frames_per_second_const ) ;
 }
 
 bool keyframei_t::intersects_center(const float x, const float y) const {
@@ -222,9 +225,10 @@ float keyframei_t::get_centered(const float v) const {
 }
 
 std::string keyframei_t::toString() const {
-    return "[fps "+std::to_string(frames_per_second_const)+", frames_per_field "+std::to_string(frames_per_field)+
-            ", fields_per_frame "+std::to_string(get_fields_per_frame())+", fields_per_second "+std::to_string(get_fields_per_second())+
-            " (diff "+std::to_string(fields_per_second_diff)+", delay "+std::to_string(get_sync_delay())+"ms), center "+std::to_string(center)+"]";
+    return "[fps "+std::to_string(frames_per_second_const)+", frames "+std::to_string(frames_per_field)+
+            "/field, fields "+std::to_string(get_fields_per_second())+
+            "/s (diff "+std::to_string(fields_per_second_diff)+", "+std::to_string(get_frames_per_second_diff())+
+            "f/s, "+std::to_string(get_sync_delay())+"ms), center "+std::to_string(center)+"]";
 }
 
 //

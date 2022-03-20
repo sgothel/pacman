@@ -180,7 +180,7 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 
 static std::string get_usage(const std::string& exename) {
     // TODO: Keep in sync with README.md
-    return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_ghost_moves] [-show_targets] [-show_debug_gfx] [-bugfix] [-audio]";
+    return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_moves] [-no_ghosts] [-show_targets] [-show_debug_gfx] [-bugfix] [-audio]";
 }
 
 //
@@ -250,7 +250,8 @@ int main(int argc, char *argv[])
     int forced_fps = -1;
     float fields_per_sec_total=10;
     int win_width = 640, win_height = 720;
-    bool show_ghost_moves = false;
+    bool show_players_moves = false;
+    bool disable_all_ghosts = false;
     bool show_targets = false;
     bool use_audio = false;
     {
@@ -274,8 +275,10 @@ int main(int argc, char *argv[])
             } else if( 0 == strcmp("-wheight", argv[i]) && i+1<argc) {
                 win_height = atoi(argv[i+1]);
                 ++i;
-            } else if( 0 == strcmp("-show_ghost_moves", argv[i]) ) {
-                show_ghost_moves = true;
+            } else if( 0 == strcmp("-show_moves", argv[i]) ) {
+                show_players_moves = true;
+            } else if( 0 == strcmp("-no_ghosts", argv[i]) ) {
+                disable_all_ghosts = true;
             } else if( 0 == strcmp("-show_targets", argv[i]) ) {
                 show_targets = true;
             } else if( 0 == strcmp("-show_debug_gfx", argv[i]) ) {
@@ -294,7 +297,7 @@ int main(int argc, char *argv[])
         log_printf("- forced_fps %d\n", forced_fps);
         log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
         log_printf("- win size %d x %d\n", win_width, win_height);
-        log_printf("- show_ghost_moves %d\n", show_ghost_moves);
+        log_printf("- show_moves %d\n", show_players_moves);
         log_printf("- show_targets %d\n", show_targets);
         log_printf("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
         log_printf("- use_audio %d\n", use_audio);
@@ -412,13 +415,16 @@ int main(int argc, char *argv[])
     global_tex = std::make_shared<global_tex_t>(rend);
     pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total, auto_move);
     log_printf("%s\n", pacman->toString().c_str());
-    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
-    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec_total) );
-    ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec_total) );
-    // ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec_total) );
+    pacman->set_log_moves(show_players_moves);
+    if( !disable_all_ghosts ) {
+        ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
+        ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec_total) );
+        ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec_total) );
+        // ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec_total) );
+    }
     for(ghost_ref g : ghosts) {
         log_printf("%s\n", g->toString().c_str());
-        g->set_log_moves(show_ghost_moves);
+        g->set_log_moves(show_players_moves);
     }
 
     bool close = false;

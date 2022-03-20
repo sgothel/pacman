@@ -70,13 +70,14 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_, bool a
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.80f),
   keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
+  skip_tick_each_frames( -1 ),
+  skip_tick_counter( -1 ),
   auto_move(auto_move_),
   mode( mode_t::HOME ),
   mode_ms_left ( -1 ),
   lives( 3 ),
   dir_( direction_t::LEFT ),
   last_dir( dir_ ),
-  frame_count ( 0 ),
   steps_left( auto_move ? -1 : 0),
   score( 0 ),
   atex_left( "L", rend, ms_per_tex, global_tex->get_all_images(), 0, 28, 13, 13, { { 0*13, 0 }, { 1*13, 0 } }),
@@ -114,6 +115,7 @@ void pacman_t::set_mode(const mode_t m) {
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::HOME);
             }
+            set_speed(0.80f);
             break;
         case mode_t::NORMAL:
             mode = m;
@@ -149,10 +151,19 @@ void pacman_t::set_mode(const mode_t m) {
 }
 
 void pacman_t::set_speed(const float pct) {
-    // const float old = current_speed_pct;
+    const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
-    // log_printf("pacman set_speed: %5.2f -> %5.2f: %s\n", old, current_speed_pct, keyframei.toString().c_str());
+    const int fps_d = trunc_to_int( keyframei.get_frames_per_second_diff() );
+    if( fps_d > 0 ) {
+        skip_tick_each_frames = get_frames_per_sec() / fps_d;
+    } else {
+        skip_tick_each_frames = -1;
+    }
+    skip_tick_counter = skip_tick_each_frames;
+    if( log_moves ) {
+        log_printf("pacman set_speed: %5.2f -> %5.2f: skip_tick_each_frames %d, %s\n", old, current_speed_pct, skip_tick_each_frames, keyframei.toString().c_str());
+    }
 }
 
 void pacman_t::set_dir(direction_t dir) {
@@ -170,7 +181,13 @@ void pacman_t::set_dir(direction_t dir) {
 }
 
 bool pacman_t::tick() {
-    ++frame_count;
+    // skip_tick_counter = skip_tick_each_frames;
+    if( 0 < skip_tick_each_frames ) {
+        if( 0 >= --skip_tick_counter ) {
+            skip_tick_counter = skip_tick_each_frames; // reload
+            return true; // skip
+        }
+    }
 
     atex = &get_tex();
     atex->tick();
@@ -215,7 +232,7 @@ bool pacman_t::tick() {
                  uint64_t t1 = getCurrentMilliseconds();
                  if( pos.get_fields_walked_i() > 0 ) {
                      const float fps = get_fps(perf_fields_walked_t0, t1, pos.get_fields_walked_f());
-                     log_printf("pacman: fields %.2f/s, td %" PRIu64 " ms, %s\n", fps, t1-perf_fields_walked_t0, pos.toString().c_str());
+                     log_printf("pacman: fields %.2f/s, td %" PRIu64 " ms, %s, %s\n", fps, t1-perf_fields_walked_t0, pos.toString().c_str(), keyframei.toString().c_str());
                  }
                  pos.reset_stats();
                  perf_fields_walked_t0 = getCurrentMilliseconds();
@@ -268,8 +285,8 @@ bool pacman_t::tick() {
     }
 
     if( DEBUG_GFX_BOUNDS ) {
-        log_printf("tick: frame %3.3d, %s, %s, crash[maze %d, ghosts %d], textures %s\n",
-                frame_count, to_string(dir_).c_str(), pos.toString().c_str(), collision_maze, collision_enemies, atex->toString().c_str());
+        log_printf("tick: %s, %s, crash[maze %d, ghosts %d], textures %s\n",
+                to_string(dir_).c_str(), pos.toString().c_str(), collision_maze, collision_enemies, atex->toString().c_str());
     }
     return !collision_enemies;
 }

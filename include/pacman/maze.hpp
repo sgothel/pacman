@@ -176,6 +176,14 @@ class keyframei_t {
         float get_fields_per_second_diff() const { return fields_per_second_diff; }
 
         /**
+         * Return required delay in frames to sync for get_fields_per_second_diff() compensation, i.e. via repainting same frame.
+         *
+         * If positive, get_fields_per_second_diff() was positive hence actual faster stepping speed and the value should be used to sync delay.
+         * Otherwise value is negative, indicating slower stepping speed.
+         */
+        float get_frames_per_second_diff() const;
+
+        /**
          * Return required delay in milliseconds to sync for get_fields_per_second_diff() compensation.
          *
          * If positive, get_fields_per_second_diff() was positive hence actual faster stepping speed and the value should be used to sync delay.
