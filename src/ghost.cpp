@@ -74,7 +74,6 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   mode( mode_t::HOME ),
   mode_ms_left ( number( mode_duration_t::HOMESTAY ) ),
   dir_( direction_t::LEFT ),
-  last_dir( dir_ ),
   atex_normal( "N", rend, ms_per_atex, global_tex->get_all_images(), 0, id_to_yoff(id), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex_scared( "S", rend, ms_per_atex, global_tex->get_all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->get_all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
@@ -371,9 +370,6 @@ void ghost_t::set_next_dir() {
                 choice = 60;
             }
         }
-    }
-    if( dir_ != new_dir ) {
-        last_dir = dir_;
     }
     dir_ = new_dir;
     if( log_moves ) {

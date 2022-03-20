@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
                             }
                             break;
                         case SDL_SCANCODE_R:
-                            global_maze->reset();
+                            set_game_mode(game_mode_t::LEVEL_START);
                             break;
                         case SDL_SCANCODE_W:
                         case SDL_SCANCODE_UP:

@@ -77,7 +77,6 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_, bool a
   mode_ms_left ( -1 ),
   lives( 3 ),
   dir_( direction_t::LEFT ),
-  last_dir( dir_ ),
   steps_left( auto_move ? -1 : 0),
   score( 0 ),
   atex_left( "L", rend, ms_per_tex, global_tex->get_all_images(), 0, 28, 13, 13, { { 0*13, 0 }, { 1*13, 0 } }),
@@ -112,6 +111,8 @@ void pacman_t::set_mode(const mode_t m) {
             mode_ms_left = -1;
             pos = global_maze->get_pacman_start_pos();
             pos.set_centered(keyframei);
+            set_dir( direction_t::LEFT );
+            atex = &get_tex();
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::HOME);
             }

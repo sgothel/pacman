@@ -165,7 +165,7 @@ class ghost_t {
         personality_t id; // not necessarily unique
         mode_t mode;
         int mode_ms_left;
-        direction_t dir_, last_dir;
+        direction_t dir_;
 
         animtex_t atex_normal;
         animtex_t atex_scared;
@@ -261,7 +261,7 @@ class pacman_t {
         mode_t mode;
         int mode_ms_left;
         int lives;
-        direction_t dir_, last_dir;
+        direction_t dir_;
         int steps_left;
         uint64_t score;
         int no_pellet_cntr = 0;
