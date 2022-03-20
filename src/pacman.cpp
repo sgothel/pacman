@@ -248,17 +248,17 @@ bool pacman_t::tick() {
                      if( tile_t::PELLET == tile ) {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.71f);
-                         no_pellet_cntr = keyframei.get_frames_per_field();
+                         next_field_frame_cntr = keyframei.get_frames_per_field();
                      } else if( tile_t::PELLET_POWER == tile ) {
                          set_mode( mode_t::POWERED );
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.90f);
-                         no_pellet_cntr = keyframei.get_frames_per_field();
+                         next_field_frame_cntr = keyframei.get_frames_per_field();
                      }
                  } else if( tile_t::EMPTY == tile ) {
-                     if( 0 < no_pellet_cntr ) {
-                         // log_printf("no_pellet_cntr: %d\n", audio_nopellet_cntr);
-                         if( 0 == --no_pellet_cntr ) {
+                     if( 0 < next_field_frame_cntr ) {
+                         // log_printf("next_field_frame_cntr: %d\n", next_field_frame_cntr);
+                         if( 0 == --next_field_frame_cntr ) {
                              set_speed(0.80f);
                              audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                          }

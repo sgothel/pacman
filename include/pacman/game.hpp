@@ -166,6 +166,7 @@ class ghost_t {
         mode_t mode;
         int mode_ms_left;
         direction_t dir_;
+        int next_field_frame_cntr = 0;
 
         animtex_t atex_normal;
         animtex_t atex_scared;
@@ -264,7 +265,7 @@ class pacman_t {
         direction_t dir_;
         int steps_left;
         uint64_t score;
-        int no_pellet_cntr = 0;
+        int next_field_frame_cntr = 0;
 
         animtex_t atex_left;
         animtex_t atex_right;

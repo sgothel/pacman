@@ -275,7 +275,7 @@ void ghost_t::set_speed(const float pct) {
 }
 
 void ghost_t::set_next_dir() {
-    if( !pos.is_center_dir(keyframei) ) {
+    if( 0 < next_field_frame_cntr && !pos.is_center_dir(keyframei) ) {
         return; // NOP
     }
     /**
@@ -431,11 +431,19 @@ bool ghost_t::tick() {
         }
     }
 
+    if( 0 == next_field_frame_cntr ) {
+        next_field_frame_cntr = keyframei.get_frames_per_field();
+    }
+
     collision_maze = !pos.step(dir_, keyframei, [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode || mode_t::PHANTOM == mode ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
     set_next_dir();
+
+    if( 0 < next_field_frame_cntr ) {
+        --next_field_frame_cntr;
+    }
 
     if( DEBUG_GFX_BOUNDS ) {
         log_printf("tick[%s]: %s, pos %s -> %s, crash[maze %d], textures %s\n",
