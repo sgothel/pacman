@@ -30,8 +30,8 @@
 
 #include <ctime>
 
-static const uint64_t NanoPerMilli = 1000000UL;
-static const uint64_t MilliPerOne = 1000UL;
+static constexpr const uint64_t NanoPerMilli = 1000000UL;
+static constexpr const uint64_t MilliPerOne = 1000UL;
 
 //
 // Cut from jaulib

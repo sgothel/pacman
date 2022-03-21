@@ -57,6 +57,13 @@ static bool enable_all_debug_gfx = false;
 bool show_all_debug_gfx() { return enable_all_debug_gfx; }
 
 //
+// globals for this module
+//
+static constexpr const int64_t MilliPerOne = 1000L;
+static constexpr const int64_t NanoPerMilli = 1000000L;
+static constexpr const int64_t NanoPerOne = NanoPerMilli*MilliPerOne;
+
+//
 // score_t
 //
 
@@ -432,12 +439,10 @@ int main(int argc, char *argv[])
     bool level_start = true;
     direction_t dir = pacman->get_dir();
 
-    const uint64_t fps_range_ms = 3000;
+    const uint64_t fps_range_ms = 5000;
     uint64_t t0 = getCurrentMilliseconds();
-    uint64_t frame_count = 0;
     uint64_t t1 = t0;
-    uint64_t td_print_fps = t0;
-    uint64_t reset_fps_frame = fps_range_ms;
+    uint64_t frame_count = 0;
 
     uint64_t last_score = pacman->get_score();
     std::shared_ptr<text_texture_t> ttex_score = nullptr;
@@ -658,34 +663,33 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(rend);
         ++frame_count;
         if( !uses_vsync ) {
+            const int64_t fudge_ns = NanoPerMilli / 4;
             const uint64_t ms_per_frame = (uint64_t)std::round(1000.0 / (float)get_frames_per_sec());
             const uint64_t ms_last_frame = getCurrentMilliseconds() - t1;
-            if( ms_per_frame > ms_last_frame + 1 )
+            int64_t td_ns = int64_t( ms_per_frame - ms_last_frame ) * NanoPerMilli;
+            if( td_ns > fudge_ns )
             {
-                const uint64_t td = ms_per_frame - ms_last_frame;
-                #if 1
-                    struct timespec ts { (long)(td/1000UL), (long)((td%1000UL)*1000000UL) };
+                if( true ) {
+                    const int64_t td_ns_0 = td_ns%NanoPerOne;
+                    struct timespec ts { td_ns/NanoPerOne, td_ns_0 - fudge_ns };
                     nanosleep( &ts, NULL );
-                #else
-                    SDL_Delay( td );
-                #endif
-                // INFO_PRINT("soft-sync exp %zd > has %zd, delay %zd (%lds, %ldns)\n", ms_per_frame, ms_last_frame, td, ts.tv_sec, ts.tv_nsec);
+                    // log_printf("soft-sync [exp %zd > has %zd]ms, delay %" PRIi64 "ms (%lds, %ldns)\n", ms_per_frame, ms_last_frame, td_ns/NanoPerMilli, ts.tv_sec, ts.tv_nsec);
+                } else {
+                    SDL_Delay( td_ns / NanoPerMilli );
+                    // log_printf("soft-sync [exp %zd > has %zd]ms, delay %" PRIi64 "ms\n", ms_per_frame, ms_last_frame, td_ns/NanoPerMilli);
+                }
             }
         }
         t1 = getCurrentMilliseconds();
-        if( show_fps && fps_range_ms <= t1 - td_print_fps ) {
+        if( show_fps && fps_range_ms <= t1 - t0 ) {
             const float fps = get_fps(t0, t1, frame_count);
             std::string fps_str(64, '\0');
             const int written = std::snprintf(&fps_str[0], fps_str.size(), "fps %6.2f", fps);
             fps_str.resize(written);
-            // log_print("%s, td %" PRIu64 "ms, frames %" PRIu64 "\n", fps_str.c_str(), t1-t0, frame_count);
+            // log_printf("%s, td %" PRIu64 "ms, frames %" PRIu64 "\n", fps_str.c_str(), t1-t0, frame_count);
             log_printf("%s\n", fps_str.c_str());
-            td_print_fps = t1;
-        }
-        if( 0 == --reset_fps_frame ) {
             t0 = t1;
             frame_count = 0;
-            reset_fps_frame = fps_range_ms;
         }
     } // loop
 
