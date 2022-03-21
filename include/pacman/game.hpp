@@ -159,8 +159,8 @@ class ghost_t {
         const float fields_per_sec_total;
         float current_speed_pct;
         keyframei_t keyframei;
-        int skip_tick_each_frames;
-        int skip_tick_counter;
+        int sync_next_frame_cntr;
+        int synced_frame_count;
 
         personality_t id; // not necessarily unique
         mode_t mode;
@@ -254,8 +254,8 @@ class pacman_t {
         const float fields_per_sec_total;
         float current_speed_pct;
         keyframei_t keyframei;
-        int skip_tick_each_frames;
-        int skip_tick_counter;
+        int sync_next_frame_cntr;
+        int synced_frame_count;
 
         const bool auto_move;
 
@@ -279,7 +279,8 @@ class pacman_t {
 
         bool log_moves = false;
 
-        uint64_t perf_fields_walked_t0 =0;
+        uint64_t perf_fields_walked_t0 = 0;
+        uint64_t perf_frame_count_walked = 0;
 
         animtex_t& get_tex();
 

@@ -68,8 +68,8 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.75f),
   keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
-  skip_tick_each_frames( -1 ),
-  skip_tick_counter( -1 ),
+  sync_next_frame_cntr( keyframei.get_sync_frame_count() ),
+  synced_frame_count( 0 ),
   id( id_ ),
   mode( mode_t::HOME ),
   mode_ms_left ( number( mode_duration_t::HOMESTAY ) ),
@@ -259,18 +259,16 @@ void ghost_t::set_mode(const mode_t m) {
 }
 
 void ghost_t::set_speed(const float pct) {
+    if( std::abs( current_speed_pct - pct ) <= std::numeric_limits<float>::epsilon() ) {
+        return;
+    }
     const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
-    const int fps_d = trunc_to_int( keyframei.get_frames_per_second_diff() );
-    if( fps_d > 0 ) {
-        skip_tick_each_frames = get_frames_per_sec() / fps_d;
-    } else {
-        skip_tick_each_frames = -1;
-    }
-    skip_tick_counter = skip_tick_each_frames;
+    sync_next_frame_cntr = keyframei.get_sync_frame_count();
+    synced_frame_count = 0;
     if( log_moves ) {
-        log_printf("%s set_speed: %5.2f -> %5.2f: skip_tick_each_frames %d, %s\n", to_string(id).c_str(), old, current_speed_pct, skip_tick_each_frames, keyframei.toString().c_str());
+        log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %d, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr, keyframei.toString().c_str());
     }
 }
 
@@ -380,14 +378,13 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) {
 }
 
 bool ghost_t::tick() {
-    // skip_tick_counter = skip_tick_each_frames;
-    if( 0 < skip_tick_each_frames ) {
-        if( 0 >= --skip_tick_counter ) {
-            skip_tick_counter = skip_tick_each_frames; // reload
-            return true; // skip
+    if( 0 < sync_next_frame_cntr ) {
+        if( 0 >= --sync_next_frame_cntr ) {
+            sync_next_frame_cntr = keyframei.get_sync_frame_count();
+            synced_frame_count++;
+            return true; // skip tick, just repaint
         }
     }
-
     atex = &get_tex();
     atex->tick();
 
