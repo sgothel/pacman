@@ -63,6 +63,8 @@ static constexpr const int64_t MilliPerOne = 1000L;
 static constexpr const int64_t NanoPerMilli = 1000000L;
 static constexpr const int64_t NanoPerOne = NanoPerMilli*MilliPerOne;
 
+static constexpr const bool debug_key_input = false;
+
 //
 // score_t
 //
@@ -433,7 +435,8 @@ int main(int argc, char *argv[])
     bool close = false;
     bool set_dir = false;
     bool level_start = true;
-    direction_t dir = pacman->get_dir();
+    direction_t current_dir = pacman->get_dir();
+    SDL_Scancode current_scancode = SDL_SCANCODE_STOP;
 
     const uint64_t fps_range_ms = 5000;
     uint64_t t0 = getCurrentMilliseconds();
@@ -455,7 +458,25 @@ int main(int argc, char *argv[])
                     break;
 
                 case SDL_KEYUP:
-                    set_dir = false;
+                    /**
+                     * The following key sequence is possible, hence we need to validate whether the KEYUP
+                     * matches and releases the current active keyscan/direction:
+                     * - KEY DOWN: scancode 81 -> 'D', scancode 81, set_dir 1)
+                     * - [    3,131] KEY DOWN: scancode 81 -> 'D', scancode 81, set_dir 1)
+                     * - [    3,347] KEY DOWN: scancode 80 -> 'L', scancode 80, set_dir 1)
+                     * - [    3,394] KEY UP: scancode 81 (ignored) -> 'L', scancode 80, set_dir 1)
+                     * - [    4,061] KEY UP: scancode 80 (release) -> 'L', scancode 80, set_dir 0)
+                     */
+                    if ( event.key.keysym.scancode == current_scancode ) {
+                        set_dir = false;
+                        if( debug_key_input ) {
+                            log_printf("KEY UP: scancode %d (release) -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(current_dir).c_str(), current_scancode, set_dir);
+                        }
+                    } else {
+                        if( debug_key_input ) {
+                            log_printf("KEY UP: scancode %d (ignored) -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(current_dir).c_str(), current_scancode, set_dir);
+                        }
+                    }
                     break;
 
                 case SDL_WINDOWEVENT:
@@ -501,22 +522,22 @@ int main(int argc, char *argv[])
                             break;
                         case SDL_SCANCODE_W:
                         case SDL_SCANCODE_UP:
-                            dir = direction_t::UP;
+                            current_dir = direction_t::UP;
                             set_dir = true;
                             break;
                         case SDL_SCANCODE_A:
                         case SDL_SCANCODE_LEFT:
-                            dir = direction_t::LEFT;
+                            current_dir = direction_t::LEFT;
                             set_dir = true;
                             break;
                         case SDL_SCANCODE_S:
                         case SDL_SCANCODE_DOWN:
-                            dir = direction_t::DOWN;
+                            current_dir = direction_t::DOWN;
                             set_dir = true;
                             break;
                         case SDL_SCANCODE_D:
                         case SDL_SCANCODE_RIGHT:
-                            dir = direction_t::RIGHT;
+                            current_dir = direction_t::RIGHT;
                             set_dir = true;
                             break;
                         case SDL_SCANCODE_F:
@@ -526,6 +547,12 @@ int main(int argc, char *argv[])
                         default:
                             // nop
                             break;
+                    }
+                    if( set_dir ) {
+                        current_scancode = event.key.keysym.scancode;
+                    }
+                    if( debug_key_input ) {
+                        log_printf("KEY DOWN: scancode %d -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(current_dir).c_str(), current_scancode, set_dir);
                     }
             }
         }
@@ -561,7 +588,7 @@ int main(int argc, char *argv[])
 
         if( game_active ) {
             if( set_dir ) {
-                pacman->set_dir(dir);
+                pacman->set_dir(current_dir);
             }
             global_tex->tick();
             for(ghost_ref g : ghosts) {
