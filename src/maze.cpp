@@ -126,8 +126,17 @@ float keyframei_t::get_frames_per_second_diff() const {
     return get_fields_per_second_diff() * get_frames_per_field();
 }
 
+int keyframei_t::get_sync_frame_count() const {
+    const float fps_d = get_frames_per_second_diff();
+    if( fps_d > std::numeric_limits<float>::epsilon() ) {
+        return round_to_int( get_frames_per_second() / fps_d );
+    } else {
+        return -1;
+    }
+}
+
 float keyframei_t::get_sync_delay() const {
-    return ( 1000.0f / ( frames_per_second_const - get_frames_per_second_diff() ) ) - ( 1000.0f / frames_per_second_const ) ;
+    return ( 1000.0f / ( get_frames_per_second() - get_frames_per_second_diff() ) ) - ( 1000.0f / get_frames_per_second() ) ;
 }
 
 bool keyframei_t::intersects_center(const float x, const float y) const {
@@ -228,7 +237,7 @@ std::string keyframei_t::toString() const {
     return "[fps "+std::to_string(frames_per_second_const)+", frames "+std::to_string(frames_per_field)+
             "/field, fields "+std::to_string(get_fields_per_second())+
             "/s (diff "+std::to_string(fields_per_second_diff)+", "+std::to_string(get_frames_per_second_diff())+
-            "f/s, "+std::to_string(get_sync_delay())+"ms), center "+std::to_string(center)+"]";
+            "f/s, "+std::to_string(get_sync_delay())+"ms, repaint "+std::to_string(get_sync_frame_count())+"/f), center "+std::to_string(center)+"]";
 }
 
 //

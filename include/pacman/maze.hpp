@@ -172,16 +172,35 @@ class keyframei_t {
         /** Returns the fields per second actual 'moving' speed, i.e. get_frames_per_second() / get_frames_per_field() */
         float get_fields_per_second() const { return frames_per_second_const / frames_per_field; }
 
-        /** Return fields_per_second difference has - requested, i.e. negative if slower and positive if faster. */
+        /**
+         * Return fields_per_second difference `actual - requested`, i.e. negative if slower - and positive if faster frame rendering (fps) speed than animation.
+         *
+         * @see get_frames_per_second_diff()
+         * @see get_sync_frame_count()
+         */
         float get_fields_per_second_diff() const { return fields_per_second_diff; }
 
         /**
-         * Return required delay in frames to sync for get_fields_per_second_diff() compensation, i.e. via repainting same frame.
+         * Return delay in frames to sync for get_fields_per_second_diff() compensation, i.e. via repainting same frame.
          *
-         * If positive, get_fields_per_second_diff() was positive hence actual faster stepping speed and the value should be used to sync delay.
-         * Otherwise value is negative, indicating slower stepping speed.
+         * If positive, frame rendering (fps) is faster than animation and caller may sync via animation delay, see get_sync_frame_count().
+         * Otherwise value is negative, indicating slower frame rendeinf (fps) speed than animation.
+         *
+         * @see get_fields_per_second_diff()
+         * @see get_sync_frame_count()
          */
         float get_frames_per_second_diff() const;
+
+        /**
+         * Returns a positive frame_count to sync animation if frame rendering (fps) is faster than desired animation speed.
+         * Caller may insert one repaint w/o animation-tick every returned sync frame_count.
+         *
+         * Otherwise returns -1 if frame rendering (fps) is slower than desired animation speed.
+         *
+         * @see get_fields_per_second_diff()
+         * @see get_frames_per_second_diff()
+         */
+        int get_sync_frame_count() const;
 
         /**
          * Return required delay in milliseconds to sync for get_fields_per_second_diff() compensation.
