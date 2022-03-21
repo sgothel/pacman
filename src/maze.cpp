@@ -237,7 +237,7 @@ std::string keyframei_t::toString() const {
     return "[fps "+std::to_string(frames_per_second_const)+", frames "+std::to_string(frames_per_field)+
             "/field, fields "+std::to_string(get_fields_per_second())+
             "/s (diff "+std::to_string(fields_per_second_diff)+", "+std::to_string(get_frames_per_second_diff())+
-            "f/s, "+std::to_string(get_sync_delay())+"ms, repaint "+std::to_string(get_sync_frame_count())+"/f), center "+std::to_string(center)+"]";
+            "f/s, "+std::to_string(get_sync_delay())+"ms, sync "+std::to_string(get_sync_frame_count())+"/f), center "+std::to_string(center)+"]";
 }
 
 //
