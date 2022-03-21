@@ -257,13 +257,10 @@ class pacman_t {
         int sync_next_frame_cntr;
         int synced_frame_count;
 
-        const bool auto_move;
-
         mode_t mode;
         int mode_ms_left;
         int lives;
-        direction_t dir_;
-        int steps_left;
+        direction_t current_dir;
         uint64_t score;
         int next_field_frame_cntr = 0;
 
@@ -284,8 +281,10 @@ class pacman_t {
 
         animtex_t& get_tex();
 
+        void reset_stats();
+
     public:
-        pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_=10, bool auto_move_=true);
+        pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_=10);
 
         ~pacman_t() {
             destroy();
@@ -302,9 +301,9 @@ class pacman_t {
         /**
          * Set direction
          */
-        void set_dir(direction_t dir);
+        bool set_dir(direction_t new_dir);
 
-        direction_t get_dir() const { return dir_; }
+        direction_t get_dir() const { return current_dir; }
 
         const acoord_t& get_pos() const { return pos; }
 

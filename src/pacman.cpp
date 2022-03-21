@@ -44,7 +44,7 @@ animtex_t& pacman_t::get_tex() {
         case pacman_t::mode_t::NORMAL:
             [[fallthrough]];
         case pacman_t::mode_t::POWERED:
-            switch( dir_ ) {
+            switch( current_dir ) {
                 case direction_t::DOWN:
                     return atex_down;
 
@@ -66,18 +66,16 @@ animtex_t& pacman_t::get_tex() {
     }
 }
 
-pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_, bool auto_move_)
+pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_)
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.80f),
   keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
   sync_next_frame_cntr( keyframei.get_sync_frame_count() ),
   synced_frame_count( 0 ),
-  auto_move(auto_move_),
   mode( mode_t::HOME ),
   mode_ms_left ( -1 ),
   lives( 3 ),
-  dir_( direction_t::LEFT ),
-  steps_left( auto_move ? -1 : 0),
+  current_dir( direction_t::LEFT ),
   score( 0 ),
   atex_left( "L", rend, ms_per_tex, global_tex->get_all_images(), 0, 28, 13, 13, { { 0*13, 0 }, { 1*13, 0 } }),
   atex_right("R", rend, ms_per_tex, global_tex->get_all_images(), 0, 28, 13, 13, { { 2*13, 0 }, { 3*13, 0 } }),
@@ -112,6 +110,7 @@ void pacman_t::set_mode(const mode_t m) {
             pos = global_maze->get_pacman_start_pos();
             pos.set_centered(keyframei);
             set_dir( direction_t::LEFT );
+            reset_stats(); // always, even if speed is unchanged
             atex = &get_tex();
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::HOME);
@@ -121,9 +120,6 @@ void pacman_t::set_mode(const mode_t m) {
         case mode_t::NORMAL:
             mode = m;
             mode_ms_left = -1;
-            perf_fields_walked_t0 = getCurrentMilliseconds();
-            perf_frame_count_walked = 0;
-            pos.reset_stats();
             set_speed(0.80f);
             break;
         case mode_t::POWERED:
@@ -160,24 +156,33 @@ void pacman_t::set_speed(const float pct) {
     current_speed_pct = pct;
     keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
     sync_next_frame_cntr = keyframei.get_sync_frame_count();
-    synced_frame_count = 0;
+    reset_stats();
     if( log_moves ) {
         log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %d, %s\n", old, current_speed_pct, sync_next_frame_cntr, keyframei.toString().c_str());
     }
 }
 
-void pacman_t::set_dir(direction_t dir) {
-    const bool collision_maze = !pos.test(dir, keyframei, [](tile_t tile) -> bool {
+void pacman_t::reset_stats() {
+    perf_fields_walked_t0 = getCurrentMilliseconds();
+    perf_frame_count_walked = 0;
+    pos.reset_stats();
+    synced_frame_count = 0;
+}
+
+bool pacman_t::set_dir(direction_t new_dir) {
+    if( current_dir == new_dir ) {
+        return true;
+    }
+    const bool collision_maze = !pos.test(new_dir, keyframei, [](tile_t tile) -> bool {
         return tile_t::WALL == tile || tile_t::GATE == tile;
     });
+    // log_printf("pacman set_dir: %s -> %s, collision %d, %s\n", to_string(current_dir).c_str(), to_string(new_dir).c_str(), collision_maze, pos.toString().c_str());
     if( !collision_maze ) {
-        if( !auto_move ) {
-            ++steps_left;
-        }
-        dir_ = dir;
-        perf_fields_walked_t0 = getCurrentMilliseconds();
-        perf_frame_count_walked = 0;
-        pos.reset_stats();
+        current_dir = new_dir;
+        reset_stats();
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -220,11 +225,8 @@ bool pacman_t::tick() {
          * - speed (change_per_tick)
          * - environment
          */
-         if( auto_move || 0 < steps_left ) {
-             if( !auto_move ) {
-                 --steps_left;
-             }
-             collision_maze = !pos.step(dir_, keyframei, [](tile_t tile) -> bool {
+         {
+             collision_maze = !pos.step(current_dir, keyframei, [](tile_t tile) -> bool {
                  return tile_t::WALL == tile || tile_t::GATE == tile ;
              });
              const int x_i = pos.get_x_i();
@@ -232,7 +234,7 @@ bool pacman_t::tick() {
              const tile_t tile = global_maze->get_tile(x_i, y_i);
              if( log_moves || DEBUG_GFX_BOUNDS ) {
                  log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
-                         to_string(dir_).c_str(), pos.toString().c_str(), pos.is_center_dir(keyframei), pos.entered_tile(keyframei),
+                         to_string(current_dir).c_str(), pos.toString().c_str(), pos.is_center_dir(keyframei), pos.entered_tile(keyframei),
                          to_string(tile).c_str(),
                          collision_maze, collision_enemies, atex->toString().c_str());
              }
@@ -250,10 +252,7 @@ bool pacman_t::tick() {
                              current_speed_pct, fields_per_sec_total*current_speed_pct,
                              keyframei.toString().c_str(), pos.toString().c_str());
                  }
-                 synced_frame_count = 0;
-                 pos.reset_stats();
-                 perf_fields_walked_t0 = getCurrentMilliseconds();
-                 perf_frame_count_walked = 0;
+                 reset_stats();
              } else {
                  if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
                      score += ::number( tile_to_score(tile) );
@@ -319,7 +318,7 @@ void pacman_t::draw(SDL_Renderer* rend) {
 }
 
 std::string pacman_t::toString() const {
-    return "pacman["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos.toString()+", "+atex->toString()+", "+keyframei.toString()+"]";
+    return "pacman["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(current_dir)+", "+pos.toString()+", "+atex->toString()+", "+keyframei.toString()+"]";
 }
 
 

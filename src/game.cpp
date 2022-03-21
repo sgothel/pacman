@@ -187,7 +187,7 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 
 static std::string get_usage(const std::string& exename) {
     // TODO: Keep in sync with README.md
-    return "Usage: "+exename+" [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_moves] [-no_ghosts] [-show_targets] [-show_debug_gfx] [-bugfix] [-audio]";
+    return "Usage: "+exename+" [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_moves] [-no_ghosts] [-show_targets] [-show_debug_gfx] [-bugfix] [-audio]";
 }
 
 //
@@ -251,7 +251,6 @@ static void set_game_mode(const game_mode_t m) {
 
 int main(int argc, char *argv[])
 {
-    bool auto_move = true;
     bool show_fps = false;
     bool enable_vsync = true;
     int forced_fps = -1;
@@ -263,9 +262,7 @@ int main(int argc, char *argv[])
     bool use_audio = false;
     {
         for(int i=1; i<argc; ++i) {
-            if( 0 == strcmp("-step", argv[i]) ) {
-                auto_move = false;
-            } else if( 0 == strcmp("-show_fps", argv[i]) ) {
+            if( 0 == strcmp("-show_fps", argv[i]) ) {
                 show_fps = true;
             } else if( 0 == strcmp("-no_vsync", argv[i]) ) {
                 enable_vsync = false;
@@ -298,7 +295,6 @@ int main(int argc, char *argv[])
             }
         }
         log_printf("%s\n", get_usage(argv[0]).c_str());
-        log_printf("- auto_move %d\n", auto_move);
         log_printf("- show_fps %d\n", show_fps);
         log_printf("- enable_vsync %d\n", enable_vsync);
         log_printf("- forced_fps %d\n", forced_fps);
@@ -420,7 +416,7 @@ int main(int argc, char *argv[])
                            global_maze->get_pixel_height()*win_pixel_scale);
 
     global_tex = std::make_shared<global_tex_t>(rend);
-    pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total, auto_move);
+    pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total);
     log_printf("%s\n", pacman->toString().c_str());
     pacman->set_log_moves(show_players_moves);
     if( !disable_all_ghosts ) {
