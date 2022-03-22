@@ -45,7 +45,6 @@ The binary shall be build to `bin/pacman`.
 ## Usage
 
 Following commandline arguments are supported
-- `-step` to disable automatic moving forward of puckman
 - `-show_fps` to periodically show the frames per seconds (fps) value on the console
 - `-no_vsync` to force off hardware enabled vsync, which in turn enables manual fps synchronization
 - `-fps <int>` to enforce a specific fps value, which will also set `-no_vsync` naturally
@@ -60,7 +59,7 @@ Following commandline arguments are supported
 - `-use_audio` to turn on audio effects, i.e. playing the audio samples.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-step] [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_moves] [-no_ghosts] [-show_targets] [-show_debug_gfx] [-bugfix] [-use_audio]
+bin/pacman [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_moves] [-no_ghosts] [-show_targets] [-show_debug_gfx] [-bugfix] [-use_audio]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Bugfix Mode
