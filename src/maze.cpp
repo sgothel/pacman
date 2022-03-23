@@ -32,7 +32,7 @@
 //
 // tile_t
 //
-std::string to_string(tile_t tile) {
+std::string to_string(tile_t tile) noexcept {
     switch(tile) {
         case tile_t::EMPTY: return " ";
         case tile_t::PELLET: return ".";
@@ -47,45 +47,45 @@ std::string to_string(tile_t tile) {
 // acoord_t
 //
 
-acoord_t::acoord_t(const int x, const int y)
+acoord_t::acoord_t(const int x, const int y) noexcept
 : x_pos_i(x), y_pos_i(y),
   x_pos_f(x), y_pos_f(y),
-  last_dir(direction_t::LEFT),
+  last_dir_(direction_t::LEFT),
   last_collided(false),
-  fields_walked_i(0),
-  fields_walked_f(0)
+  fields_walked_i_(0),
+  fields_walked_f_(0)
 {}
 
-void acoord_t::reset_stats() {
-    fields_walked_i = 0;
-    fields_walked_f = 0;
+void acoord_t::reset_stats() noexcept {
+    fields_walked_i_ = 0;
+    fields_walked_f_ = 0;
 }
 
-void acoord_t::set_pos(const int x, const int y) {
+void acoord_t::set_pos(const int x, const int y) noexcept {
     x_pos_i = x;
     y_pos_i = y;
     x_pos_f = x;
     y_pos_f = y;
-    last_dir = direction_t::LEFT;
+    last_dir_ = direction_t::LEFT;
     last_collided = false;
 }
 
-void acoord_t::set_pos_clipped(const float x, const float y) {
+void acoord_t::set_pos_clipped(const float x, const float y) noexcept {
     maze_t& maze = *global_maze;
     x_pos_f = maze.clip_pos_x( x );
     y_pos_f = maze.clip_pos_y( y );
     x_pos_i = maze.clip_pos_x( round_to_int(x_pos_f) );
     y_pos_i = maze.clip_pos_y( round_to_int(y_pos_f) );
-    last_dir = direction_t::LEFT;
+    last_dir_ = direction_t::LEFT;
     last_collided = false;
 }
 
-bool acoord_t::intersects_f(const acoord_t& other) const {
+bool acoord_t::intersects_f(const acoord_t& other) const noexcept {
     // use machine epsilon delta to avoid matching direct neighbors
 #if 1
     // uniform dimension
-    return std::abs( x_pos_f - other.get_x_f() ) < 1.0f - std::numeric_limits<float>::epsilon() &&
-           std::abs( y_pos_f - other.get_y_f() ) < 1.0f - std::numeric_limits<float>::epsilon();
+    return std::abs( x_pos_f - other.x_f() ) < 1.0f - std::numeric_limits<float>::epsilon() &&
+           std::abs( y_pos_f - other.y_f() ) < 1.0f - std::numeric_limits<float>::epsilon();
 #else
     return !(       x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.x_pos_f ||
               other.x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() <       x_pos_f ||
@@ -94,83 +94,83 @@ bool acoord_t::intersects_f(const acoord_t& other) const {
 #endif
 }
 
-bool acoord_t::intersects_i(const acoord_t& other) const {
+bool acoord_t::intersects_i(const acoord_t& other) const noexcept {
     return x_pos_i == other.x_pos_i && y_pos_i == other.y_pos_i;
 }
 
-bool acoord_t::intersects(const acoord_t& other) const {
+bool acoord_t::intersects(const acoord_t& other) const noexcept {
     return use_original_pacman_behavior() ? intersects_i(other) : intersects_f(other);
 }
 
-bool acoord_t::intersects_f(const box_t& other) const {
-    return !( x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.get_x() || other.get_x() + other.get_width() < x_pos_f ||
-              y_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.get_y() || other.get_y() + other.get_height() < y_pos_f );
+bool acoord_t::intersects_f(const box_t& other) const noexcept {
+    return !( x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.x() || other.x() + other.width() < x_pos_f ||
+              y_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.y() || other.y() + other.height() < y_pos_f );
 }
 
-float acoord_t::distance(const float x, const float y) const {
+float acoord_t::distance(const float x, const float y) const noexcept {
     const float x_d = x - x_pos_f;
     const float y_d = y - y_pos_f;
     return std::sqrt(x_d * x_d + y_d * y_d);
 }
 
-float acoord_t::sq_distance(const float x, const float y) const {
+float acoord_t::sq_distance(const float x, const float y) const noexcept {
     const float x_d = x - x_pos_f;
     const float y_d = y - y_pos_f;
     return x_d * x_d + y_d * y_d;
 }
 
-void acoord_t::incr_fwd(const direction_t dir, const keyframei_t& keyframei, const int tile_count) {
+void acoord_t::incr_fwd(const direction_t dir, const keyframei_t& keyframei, const int tile_count) noexcept {
     const float fields_per_frame = tile_count;
     maze_t& maze = *global_maze;
 
     switch( dir ) {
         case direction_t::DOWN:
-            if( round_to_int(y_pos_f + fields_per_frame) < maze.get_height() ) {
-                y_pos_f = keyframei.get_aligned( y_pos_f + fields_per_frame );
+            if( round_to_int(y_pos_f + fields_per_frame) < maze.height() ) {
+                y_pos_f = keyframei.align_value( y_pos_f + fields_per_frame );
             } else {
-                y_pos_f = maze.get_height() - 1; // clip only, no overflow to other side
+                y_pos_f = maze.height() - 1; // clip only, no overflow to other side
             }
             y_pos_i = trunc_to_int(y_pos_f);
-            x_pos_f = keyframei.get_centered(x_pos_i);
+            x_pos_f = keyframei.center_valued(x_pos_i);
             break;
 
         case direction_t::RIGHT:
-            if( round_to_int(x_pos_f + fields_per_frame) < maze.get_width() ) {
-                x_pos_f = keyframei.get_aligned( x_pos_f + fields_per_frame );
+            if( round_to_int(x_pos_f + fields_per_frame) < maze.width() ) {
+                x_pos_f = keyframei.align_value( x_pos_f + fields_per_frame );
             } else {
-                x_pos_f = maze.get_width() - 1; // clip only, no overflow to other side
+                x_pos_f = maze.width() - 1; // clip only, no overflow to other side
             }
             x_pos_i = trunc_to_int(x_pos_f);
-            y_pos_f = keyframei.get_centered(y_pos_i);
+            y_pos_f = keyframei.center_valued(y_pos_i);
             break;
 
         case direction_t::UP:
             if( round_to_int(y_pos_f - fields_per_frame) >= 0 ) {
-                y_pos_f = keyframei.get_aligned( y_pos_f - fields_per_frame );
+                y_pos_f = keyframei.align_value( y_pos_f - fields_per_frame );
             } else {
                 y_pos_f = 0; // clip only, no overflow to other side
             }
             y_pos_i = trunc_to_int(y_pos_f);
-            x_pos_f = keyframei.get_centered(x_pos_i);
+            x_pos_f = keyframei.center_valued(x_pos_i);
             break;
 
         case direction_t::LEFT:
             [[fallthrough]];
         default:
             if( round_to_int(x_pos_f - fields_per_frame) >= 0 ) {
-                x_pos_f = keyframei.get_aligned( x_pos_f - fields_per_frame );
+                x_pos_f = keyframei.align_value( x_pos_f - fields_per_frame );
             } else {
                 x_pos_f = 0; // clip only, no overflow to other side
             }
             x_pos_i = trunc_to_int(x_pos_f);
-            y_pos_f = keyframei.get_centered(y_pos_i);
+            y_pos_f = keyframei.center_valued(y_pos_i);
             break;
     }
 }
 
-bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_t& keyframei, collisiontest_simple_t ct0, collisiontest_t ct1) {
-    const float fields_per_frame = keyframei.get_fields_per_frame();
-    const float center = keyframei.get_center();
+bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_t& keyframei, collisiontest_simple_t ct0, collisiontest_t ct1) noexcept {
+    const float fields_per_frame = keyframei.fields_per_frame();
+    const float center = keyframei.center();
 
     maze_t& maze = *global_maze;
 
@@ -204,26 +204,26 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
     float fields_stepped_f = 0;
 
     /**
-     * Resulting int position is be weighted
+     * Resulting int position is weighted
      * as the original pacman game.
      *
      * Note: This also allows 'cutting the corner' for pacman to speed up.
      */
     switch( dir ) {
         case direction_t::DOWN:
-            if( round_to_int(y_pos_f + fields_per_frame) < maze.get_height() ) {
+            if( round_to_int(y_pos_f + fields_per_frame) < maze.height() ) {
                 // next
-                new_y_pos_f = keyframei.get_aligned( y_pos_f + fields_per_frame );
+                new_y_pos_f = keyframei.align_value( y_pos_f + fields_per_frame );
                 fields_stepped_f = fields_per_frame;
 
                 if( new_y_pos_f - std::trunc(new_y_pos_f) >= center - fields_per_frame/2.0f ) {
                     new_y_pos_i = trunc_to_int(new_y_pos_f);
                 } else {
-                    new_y_pos_i = std::min(maze.get_height()-1, trunc_to_int(new_y_pos_f) - 1);
+                    new_y_pos_i = std::min(maze.height()-1, trunc_to_int(new_y_pos_f) - 1);
                 }
                 // forward
                 if( new_y_pos_f - std::trunc(new_y_pos_f) > center + fields_per_frame/2.0f ) {
-                    fwd_y_pos_i = std::min(maze.get_height()-1, trunc_to_int(new_y_pos_f) + 1);
+                    fwd_y_pos_i = std::min(maze.height()-1, trunc_to_int(new_y_pos_f) + 1);
                 } else {
                     fwd_y_pos_i = trunc_to_int(new_y_pos_f);
                 }
@@ -232,24 +232,24 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 fwd_y_pos_i = 0;
                 new_y_pos_i = 0;
             }
-            new_x_pos_f = keyframei.get_centered(x_pos_i);
+            new_x_pos_f = keyframei.center_valued(x_pos_i);
             new_x_pos_i = x_pos_i;
             fwd_x_pos_i = x_pos_i;
             break;
 
         case direction_t::RIGHT:
-            if( round_to_int(x_pos_f + fields_per_frame) < maze.get_width() ) {
+            if( round_to_int(x_pos_f + fields_per_frame) < maze.width() ) {
                 // next
-                new_x_pos_f = keyframei.get_aligned( x_pos_f + fields_per_frame );
+                new_x_pos_f = keyframei.align_value( x_pos_f + fields_per_frame );
                 fields_stepped_f = fields_per_frame;
                 if( new_x_pos_f - std::trunc(new_x_pos_f) >= center - fields_per_frame/2.0f ) {
                     new_x_pos_i = trunc_to_int(new_x_pos_f);
                 } else {
-                    new_x_pos_i = std::min(maze.get_width()-1, trunc_to_int(new_x_pos_f) - 1);
+                    new_x_pos_i = std::min(maze.width()-1, trunc_to_int(new_x_pos_f) - 1);
                 }
                 // forward
                 if( new_x_pos_f - std::trunc(new_x_pos_f) > center + fields_per_frame/2.0f ) {
-                    fwd_x_pos_i = std::min(maze.get_width()-1, trunc_to_int(new_x_pos_f) + 1);
+                    fwd_x_pos_i = std::min(maze.width()-1, trunc_to_int(new_x_pos_f) + 1);
                 } else {
                     fwd_x_pos_i = trunc_to_int(new_x_pos_f);
                 }
@@ -258,7 +258,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 fwd_x_pos_i = 0;
                 new_x_pos_i = 0;
             }
-            new_y_pos_f = keyframei.get_centered(y_pos_i);
+            new_y_pos_f = keyframei.center_valued(y_pos_i);
             new_y_pos_i = y_pos_i;
             fwd_y_pos_i = y_pos_i;
             break;
@@ -266,7 +266,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
         case direction_t::UP:
             if( trunc_to_int(y_pos_f - fields_per_frame) >= 0 ) {
                 // next
-                new_y_pos_f = keyframei.get_aligned( y_pos_f - fields_per_frame );
+                new_y_pos_f = keyframei.align_value( y_pos_f - fields_per_frame );
                 fields_stepped_f = fields_per_frame;
                 if( new_y_pos_f - std::trunc(new_y_pos_f) < center - fields_per_frame/2.0f ) {
                     new_y_pos_i = std::max(0, trunc_to_int(new_y_pos_f) - 1);
@@ -276,11 +276,11 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 // forward is same
                 fwd_y_pos_i = new_y_pos_i;
             } else {
-                new_y_pos_f = maze.get_height() - 1;
+                new_y_pos_f = maze.height() - 1;
                 fwd_y_pos_i = ceil_to_int(new_y_pos_f);
                 new_y_pos_i = fwd_y_pos_i;
             }
-            new_x_pos_f = keyframei.get_centered(x_pos_i);
+            new_x_pos_f = keyframei.center_valued(x_pos_i);
             new_x_pos_i = x_pos_i;
             fwd_x_pos_i = x_pos_i;
             break;
@@ -290,7 +290,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
         default:
             if( trunc_to_int(x_pos_f - fields_per_frame) >= 0 ) {
                 // next
-                new_x_pos_f = keyframei.get_aligned( x_pos_f - fields_per_frame );
+                new_x_pos_f = keyframei.align_value( x_pos_f - fields_per_frame );
                 fields_stepped_f = fields_per_frame;
                 if( new_x_pos_f - std::trunc(new_x_pos_f) < center - fields_per_frame/2.0f ) {
                     new_x_pos_i = std::max(0, trunc_to_int(new_x_pos_f) - 1);
@@ -300,18 +300,18 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 // forward is same
                 fwd_x_pos_i = new_x_pos_i;
             } else {
-                new_x_pos_f = maze.get_width() - 1;
+                new_x_pos_f = maze.width() - 1;
                 fwd_x_pos_i = ceil_to_int(new_x_pos_f);
                 new_x_pos_i = fwd_x_pos_i;
             }
-            new_y_pos_f = keyframei.get_centered(y_pos_i);
+            new_y_pos_f = keyframei.center_valued(y_pos_i);
             new_y_pos_i = y_pos_i;
             fwd_y_pos_i = y_pos_i;
             break;
 
     }
     // Collision test with walls
-    const tile_t fwd_tile = maze.get_tile(fwd_x_pos_i, fwd_y_pos_i);
+    const tile_t fwd_tile = maze.tile(fwd_x_pos_i, fwd_y_pos_i);
     const bool new_pos_is_centered = keyframei.is_center_dir(dir, new_x_pos_f, new_y_pos_f);
     bool collision;
     if( nullptr != ct0 ) {
@@ -325,9 +325,9 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
     if( !test_only && false ) {
         log_printf("%s: %s -> %s: %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> new %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> fwd %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",
-                to_string(last_dir).c_str(), to_string(dir).c_str(),
-                x_pos_f, y_pos_f, x_pos_i, y_pos_i, keyframei.is_center_dir(last_dir, x_pos_f, y_pos_f), keyframei.entered_tile(last_dir, x_pos_f, y_pos_f),
-                new_x_pos_f, new_y_pos_f, new_x_pos_i, new_y_pos_i, new_pos_is_centered, keyframei.entered_tile(dir, new_x_pos_f, new_y_pos_f),
+                to_string(last_dir_).c_str(), to_string(dir).c_str(),
+                x_pos_f, y_pos_f, x_pos_i, y_pos_i, keyframei.is_center_dir(last_dir_, x_pos_f, y_pos_f), keyframei.field_entered(last_dir_, x_pos_f, y_pos_f),
+                new_x_pos_f, new_y_pos_f, new_x_pos_i, new_y_pos_i, new_pos_is_centered, keyframei.field_entered(dir, new_x_pos_f, new_y_pos_f),
                 fwd_x_pos_i, fwd_y_pos_i,
                 to_string(fwd_tile).c_str(), collision);
     }
@@ -340,9 +340,9 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
             const int y_pos_i_old = y_pos_i;
             x_pos_i = new_x_pos_i;
             y_pos_i = new_y_pos_i;
-            last_dir = dir;
-            fields_walked_i += std::abs(x_pos_i - x_pos_i_old) + std::abs(y_pos_i - y_pos_i_old);
-            fields_walked_f += fields_stepped_f;
+            last_dir_ = dir;
+            fields_walked_i_ += std::abs(x_pos_i - x_pos_i_old) + std::abs(y_pos_i - y_pos_i_old);
+            fields_walked_f_ += fields_stepped_f;
         } else {
             last_collided = true;
         }
@@ -350,12 +350,12 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
     return !collision;
 }
 
-std::string acoord_t::toString() const {
+std::string acoord_t::toString() const noexcept {
     return "["+std::to_string(x_pos_f)+"/"+std::to_string(y_pos_f)+" "+std::to_string(x_pos_i)+"/"+std::to_string(y_pos_i)+
-            ", last[dir "+to_string(last_dir)+", collided "+std::to_string(last_collided)+"], walked["+std::to_string(fields_walked_f)+", "+std::to_string(fields_walked_i)+"]]";
+            ", last[dir "+to_string(last_dir_)+", collided "+std::to_string(last_collided)+"], walked["+std::to_string(fields_walked_f_)+", "+std::to_string(fields_walked_i_)+"]]";
 }
 
-std::string acoord_t::toShortString() const {
+std::string acoord_t::toShortString() const noexcept {
     return "["+std::to_string(x_pos_f)+"/"+std::to_string(y_pos_f)+" "+std::to_string(x_pos_i)+"/"+std::to_string(y_pos_i)+"]";
 }
 
@@ -363,49 +363,49 @@ std::string acoord_t::toShortString() const {
 // maze_t::field_t
 //
 
-maze_t::field_t::field_t()
-: width(0), height(0)
+maze_t::field_t::field_t() noexcept
+: width_(0), height_(0)
 {
-    bzero(&count, sizeof(count));
+    bzero(&count_, sizeof(count_));
 }
 
-void maze_t::field_t::clear() {
-    width = 0; height = 0;
+void maze_t::field_t::clear() noexcept {
+    width_ = 0; height_ = 0;
     tiles.clear();
-    bzero(&count, sizeof(count));
+    bzero(&count_, sizeof(count_));
 }
 
-tile_t maze_t::field_t::get_tile(const int x, const int y) const {
-    if( 0 <= x && x < width && 0 <= y && y < height ) {
-        return tiles[y*width+x];
+tile_t maze_t::field_t::tile(const int x, const int y) const noexcept {
+    if( 0 <= x && x < width_ && 0 <= y && y < height_ ) {
+        return tiles[y*width_+x];
     }
     return tile_t::EMPTY;
 }
 
-void maze_t::field_t::add_tile(const tile_t tile) {
+void maze_t::field_t::add_tile(const tile_t tile) noexcept {
     tiles.push_back(tile);
-    ++count[number(tile)];
+    ++count_[number(tile)];
 }
 
-void maze_t::field_t::set_tile(const int x, const int y, tile_t tile) {
-    if( 0 <= x && x < width && 0 <= y && y < height ) {
-        const tile_t old_tile = tiles[y*width+x];
-        tiles[y*width+x] = tile;
-        --count[number(old_tile)];
-        ++count[number(tile)];
+void maze_t::field_t::set_tile(const int x, const int y, tile_t tile) noexcept {
+    if( 0 <= x && x < width_ && 0 <= y && y < height_ ) {
+        const tile_t old_tile = tiles[y*width_+x];
+        tiles[y*width_+x] = tile;
+        --count_[number(old_tile)];
+        ++count_[number(tile)];
     }
 }
 
-std::string maze_t::field_t::toString() const {
-    return "field["+std::to_string(width)+"x"+std::to_string(height)+", pellets["+std::to_string(get_count(tile_t::PELLET))+", power "+std::to_string(get_count(tile_t::PELLET_POWER))+"]]";
+std::string maze_t::field_t::toString() const noexcept {
+    return "field["+std::to_string(width_)+"x"+std::to_string(height_)+", pellets["+std::to_string(count(tile_t::PELLET))+", power "+std::to_string(count(tile_t::PELLET_POWER))+"]]";
 }
 
 //
 // maze_t
 //
 
-bool maze_t::digest_position_line(const std::string& name, acoord_t& dest, const std::string& line) {
-    if( -1 == dest.get_x_i() || -1 == dest.get_y_i() ) {
+bool maze_t::digest_position_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept {
+    if( -1 == dest.x_i() || -1 == dest.y_i() ) {
         int x_pos = 0, y_pos = 0;
         sscanf(line.c_str(), "%d %d", &x_pos, &y_pos);
         dest.set_pos(x_pos, y_pos);
@@ -418,8 +418,8 @@ bool maze_t::digest_position_line(const std::string& name, acoord_t& dest, const
     }
 }
 
-bool maze_t::digest_box_line(const std::string& name, box_t& dest, const std::string& line) {
-    if( -1 == dest.get_x() || -1 == dest.get_y() ) {
+bool maze_t::digest_box_line(const std::string& name, box_t& dest, const std::string& line) noexcept {
+    if( -1 == dest.x() || -1 == dest.y() ) {
         int x_pos = 0, y_pos = 0, w = 0, h = 0;
         sscanf(line.c_str(), "%d %d %d %d", &x_pos, &y_pos, &w, &h);
         dest.set_dim(x_pos, y_pos, w, h);
@@ -432,18 +432,18 @@ bool maze_t::digest_box_line(const std::string& name, box_t& dest, const std::st
     }
 }
 
-maze_t::maze_t(const std::string& fname)
+maze_t::maze_t(const std::string& fname) noexcept
 : filename(fname),
   top_left_pos(-1, -1),
   bottom_left_pos(-1, -1),
   bottom_right_pos(-1, -1),
   top_right_pos(-1, -1),
-  pacman_start_pos(-1, -1),
+  pacman_start_pos_(-1, -1),
   ghost_home(-1, -1, -1, -1),
-  ghost_home_pos(-1, -1),
-  ghost_start_pos(-1, -1),
-  ppt_x( -1 ),
-  ppt_y( -1 )
+  ghost_home_pos_(-1, -1),
+  ghost_start_pos_(-1, -1),
+  ppt_x_( -1 ),
+  ppt_y_( -1 )
 {
     int field_line_iter = 0;
     std::fstream file;
@@ -451,13 +451,13 @@ maze_t::maze_t(const std::string& fname)
     if( file.is_open() ) {
         std::string line;
         while( std::getline(file, line) ) {
-            if( 0 == original.get_width() || 0 == original.get_height() ) {
+            if( 0 == original.width() || 0 == original.height() ) {
                 int w=-1, h=-1;
                 int visual_width=-1, visual_height=-1;
                 sscanf(line.c_str(), "%d %d %d %d", &w, &h, &visual_width, &visual_height);
                 original.set_dim(w, h);
-                ppt_x = visual_width / original.get_width();
-                ppt_y = visual_height / original.get_height();
+                ppt_x_ = visual_width / original.width();
+                ppt_y_ = visual_height / original.height();
                 if( DEBUG ) {
                     log_printf("maze: read dimension: %s\n", toString().c_str());
                 }
@@ -465,18 +465,18 @@ maze_t::maze_t(const std::string& fname)
             } else if( digest_position_line("bottom_left_pos", bottom_left_pos, line) ) {
             } else if( digest_position_line("bottom_right_pos", bottom_right_pos, line) ) {
             } else if( digest_position_line("top_right_pos", top_right_pos, line) ) {
-            } else if( digest_position_line("pacman", pacman_start_pos, line) ) {
+            } else if( digest_position_line("pacman", pacman_start_pos_, line) ) {
             } else if( digest_box_line("ghost_home", ghost_home, line) ) {
-            } else if( digest_position_line("ghost_home", ghost_home_pos, line) ) {
-            } else if( digest_position_line("ghost_start", ghost_start_pos, line) ) {
+            } else if( digest_position_line("ghost_home", ghost_home_pos_, line) ) {
+            } else if( digest_position_line("ghost_start", ghost_start_pos_, line) ) {
             } else if( 0 == texture_file.length() ) {
                 texture_file = line;
-            } else if( field_line_iter < original.get_height() ) {
+            } else if( field_line_iter < original.height() ) {
                 if( DEBUG ) {
                     log_printf("maze: read line y = %d, len = %zd: %s\n", field_line_iter, line.length(), line.c_str());
                 }
-                if( line.length() == (size_t)original.get_width() ) {
-                    for(int x=0; x<original.get_width(); ++x) {
+                if( line.length() == (size_t)original.width() ) {
+                    for(int x=0; x<original.width(); ++x) {
                         const char c = line[x];
                         switch( c ) {
                             case '_':
@@ -512,32 +512,32 @@ maze_t::maze_t(const std::string& fname)
         log_printf("Could not open maze file: %s\n", filename.c_str());
     }
     original.clear();
-    pacman_start_pos.set_pos(0, 0);
-    ghost_home_pos.set_pos(0, 0);
-    ghost_start_pos.set_pos(0, 0);
-    ppt_x = 0;
-    ppt_y = 0;
+    pacman_start_pos_.set_pos(0, 0);
+    ghost_home_pos_.set_pos(0, 0);
+    ghost_start_pos_.set_pos(0, 0);
+    ppt_x_ = 0;
+    ppt_y_ = 0;
 }
 
-void maze_t::draw(std::function<void(const int x, const int y, tile_t tile)> draw_pixel) {
-    for(int y=0; y<get_height(); ++y) {
-        for(int x=0; x<get_width(); ++x) {
-            draw_pixel(x, y, active.get_tile_nc(x, y));
+void maze_t::draw(std::function<void(const int x, const int y, tile_t tile)> draw_pixel) noexcept {
+    for(int y=0; y<height(); ++y) {
+        for(int x=0; x<width(); ++x) {
+            draw_pixel(x, y, active.tile_nc(x, y));
         }
     }
 }
 
-void maze_t::reset() {
+void maze_t::reset() noexcept {
     active = original;
 }
 
-std::string maze_t::toString() const {
+std::string maze_t::toString() const noexcept {
     std::string errstr = is_ok() ? "ok" : "error";
     return filename+"["+errstr+", "+active.toString()+
-                    ", pacman "+pacman_start_pos.toShortString()+
-                    ", ghost[box "+ghost_home.toString()+", home "+ghost_home_pos.toShortString()+
-                    ", start "+ghost_start_pos.toShortString()+
+                    ", pacman "+pacman_start_pos_.toShortString()+
+                    ", ghost[box "+ghost_home.toString()+", home "+ghost_home_pos_.toShortString()+
+                    ", start "+ghost_start_pos_.toShortString()+
                     "], tex "+texture_file+
-                    ", ppt "+std::to_string(ppt_x)+"x"+std::to_string(ppt_y)+
+                    ", ppt "+std::to_string(ppt_x_)+"x"+std::to_string(ppt_y_)+
                     "]";
 }

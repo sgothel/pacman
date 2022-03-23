@@ -50,7 +50,7 @@ enum class score_t : int {
 constexpr int number(const score_t item) noexcept {
     return static_cast<int>(item);
 }
-score_t tile_to_score(const tile_t tile);
+score_t tile_to_score(const tile_t tile) noexcept;
 
 //
 // global_tex_t
@@ -58,7 +58,7 @@ score_t tile_to_score(const tile_t tile);
 
 class global_tex_t {
     private:
-        std::shared_ptr<texture_t> all_images;
+        std::shared_ptr<texture_t> all_images_;
         std::vector<std::shared_ptr<texture_t>> textures;
         animtex_t atex_pellet_power;
 
@@ -66,13 +66,13 @@ class global_tex_t {
          * @param tile
          * @return -1 if tile not handled, otherwise a valid textures index
          */
-        int tile_to_texidx(const tile_t tile) const;
+        int tile_to_texidx(const tile_t tile) const noexcept;
 
         /**
          * @param idx
          * @return -1 if wrong idx, otherwise a valid textures index
          */
-        int validate_texidx(const int idx) const;
+        int validate_texidx(const int idx) const noexcept;
 
     public:
         enum class special_idx : int {
@@ -83,28 +83,28 @@ class global_tex_t {
             return static_cast<int>(item);
         }
 
-        global_tex_t(SDL_Renderer* rend);
+        global_tex_t(SDL_Renderer* rend) noexcept;
 
-        ~global_tex_t() {
+        ~global_tex_t() noexcept {
             destroy();
         }
 
-        void destroy();
+        void destroy() noexcept;
 
-        std::shared_ptr<texture_t> get_all_images() { return all_images; }
+        std::shared_ptr<texture_t> all_images() noexcept { return all_images_; }
 
-        std::shared_ptr<texture_t> get_tex(const tile_t tile);
-        std::shared_ptr<const texture_t> get_tex(const tile_t tile) const;
+        std::shared_ptr<texture_t> texture(const tile_t tile) noexcept;
+        std::shared_ptr<const texture_t> texture(const tile_t tile) const noexcept;
 
-        std::shared_ptr<texture_t> get_tex(const int idx);
-        std::shared_ptr<const texture_t> get_tex(const int idx) const;
+        std::shared_ptr<texture_t> texture(const int idx) noexcept;
+        std::shared_ptr<const texture_t> texture(const int idx) const noexcept;
 
-        bool tick() {
+        bool tick() noexcept {
             atex_pellet_power.tick();
             return true;
         }
 
-        void draw_tile(const tile_t tile, SDL_Renderer* rend, const int x, const int y);
+        void draw_tile(const tile_t tile, SDL_Renderer* rend, const int x, const int y) noexcept;
 
         std::string toString() const;
 };
@@ -158,12 +158,12 @@ class ghost_t {
 
         const float fields_per_sec_total;
         float current_speed_pct;
-        keyframei_t keyframei;
+        keyframei_t keyframei_;
         int sync_next_frame_cntr;
         int synced_frame_count;
 
         personality_t id; // not necessarily unique
-        mode_t mode;
+        mode_t mode_;
         int mode_ms_left;
         direction_t dir_;
         int next_field_frame_cntr = 0;
@@ -173,42 +173,40 @@ class ghost_t {
         animtex_t atex_phantom;
         animtex_t * atex;
 
-        acoord_t pos;
-        acoord_t target;
+        acoord_t pos_;
+        acoord_t target_;
 
         bool log_moves = false;
 
-        static int id_to_yoff(ghost_t::personality_t id);
+        static int id_to_yoff(ghost_t::personality_t id) noexcept;
 
-        animtex_t& get_tex();
+        animtex_t& get_tex() noexcept;
 
-        animtex_t& get_phantom_tex() {
-            return atex_phantom;
-        }
+        constexpr animtex_t& get_phantom_tex() noexcept { return atex_phantom; }
 
-        void set_next_target();
-        void set_next_dir(const bool collision, const bool is_center);
+        void set_next_target() noexcept;
+        void set_next_dir(const bool collision, const bool is_center) noexcept;
 
     public:
-        ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_=10);
+        ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_=10) noexcept;
 
-        ~ghost_t() {
+        ~ghost_t() noexcept {
             destroy();
         }
 
-        void destroy();
+        void destroy() noexcept;
 
-        void set_log_moves(const bool v) { log_moves = v; }
+        void set_log_moves(const bool v) noexcept { log_moves = v; }
 
-        const keyframei_t& get_keyframei() const { return keyframei; }
+        constexpr const keyframei_t& keyframei() const noexcept { return keyframei_; }
 
-        mode_t get_mode() const { return mode; }
-        void set_mode(const mode_t m);
-        void set_speed(const float pct);
-        direction_t get_dir() const { return dir_; }
+        constexpr mode_t mode() const noexcept { return mode_; }
+        void set_mode(const mode_t m) noexcept;
+        void set_speed(const float pct) noexcept;
 
-        const acoord_t& get_pos() const { return pos; }
-        const acoord_t& get_target() const { return target; }
+        constexpr direction_t direction() const noexcept { return dir_; }
+        constexpr const acoord_t& position() const noexcept { return pos_; }
+        constexpr const acoord_t& target() const noexcept { return target_; }
 
         /**
          * A game engine tick needs to:
@@ -217,15 +215,15 @@ class ghost_t {
          *
          * @return true if object is still alive, otherwise false
          */
-        bool tick();
+        bool tick() noexcept;
 
-        void draw(SDL_Renderer* rend);
+        void draw(SDL_Renderer* rend) noexcept;
 
-        std::string toString() const;
+        std::string toString() const noexcept;
 };
 
-std::string to_string(ghost_t::personality_t id);
-std::string to_string(ghost_t::mode_t m);
+std::string to_string(ghost_t::personality_t id) noexcept;
+std::string to_string(ghost_t::mode_t m) noexcept;
 
 //
 // pacman_t
@@ -261,7 +259,7 @@ class pacman_t {
         int mode_ms_left;
         int lives;
         direction_t current_dir;
-        uint64_t score;
+        uint64_t score_;
         int next_field_frame_cntr = 0;
 
         animtex_t atex_left;
@@ -272,42 +270,42 @@ class pacman_t {
         animtex_t atex_home;
         animtex_t * atex;
 
-        acoord_t pos;
+        acoord_t pos_;
 
         bool log_moves = false;
 
         uint64_t perf_fields_walked_t0 = 0;
         uint64_t perf_frame_count_walked = 0;
 
-        animtex_t& get_tex();
+        animtex_t& get_tex() noexcept;
 
-        void reset_stats();
+        void reset_stats() noexcept;
 
     public:
-        pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_=10);
+        pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_=10) noexcept;
 
-        ~pacman_t() {
+        ~pacman_t() noexcept {
             destroy();
         }
 
-        void destroy();
+        void destroy() noexcept;
 
-        void set_log_moves(const bool v) { log_moves = v; }
+        void set_log_moves(const bool v) noexcept { log_moves = v; }
 
-        void set_mode(const mode_t m);
-        void set_speed(const float pct);
-        const keyframei_t& get_keyframei() const { return keyframei; }
+        void set_mode(const mode_t m) noexcept;
+        void set_speed(const float pct) noexcept;
+        const keyframei_t& get_keyframei() const noexcept { return keyframei; }
 
         /**
          * Set direction
          */
-        bool set_dir(direction_t new_dir);
+        bool set_dir(direction_t new_dir) noexcept;
 
-        direction_t get_dir() const { return current_dir; }
+        constexpr direction_t direction() const noexcept { return current_dir; }
 
-        const acoord_t& get_pos() const { return pos; }
+        constexpr const acoord_t& position() const noexcept { return pos_; }
 
-        uint64_t get_score() const { return score; }
+        constexpr uint64_t score() const noexcept { return score_; }
 
         /**
          * A game engine tick needs to:
@@ -316,11 +314,11 @@ class pacman_t {
          *
          * @return true if object is still alive, otherwise false
          */
-        bool tick();
+        bool tick() noexcept;
 
-        void draw(SDL_Renderer* rend);
+        void draw(SDL_Renderer* rend) noexcept;
 
-        std::string toString() const;
+        std::string toString() const noexcept;
 };
 
 std::string to_string(pacman_t::mode_t m);

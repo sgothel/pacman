@@ -39,56 +39,56 @@
 class texture_t {
     private:
         static std::atomic<int> counter;
-        int id;
-        SDL_Texture* tex;
-        int x, y, width, height;
-        bool owner;
+        int id_;
+        SDL_Texture* tex_;
+        int x_, y_, width_, height_;
+        bool owner_;
 
     public:
         /**
          * Empty texture
          */
-        texture_t()
-        : id(counter++), tex(nullptr), x(0), y(0), width(0), height(0), owner(false) {}
+        texture_t() noexcept
+        : id_(counter++), tex_(nullptr), x_(0), y_(0), width_(0), height_(0), owner_(false) {}
 
-        texture_t(SDL_Renderer* rend, const std::string& fname);
+        texture_t(SDL_Renderer* rend, const std::string& fname) noexcept;
 
-        texture_t(SDL_Renderer* rend, SDL_Surface* surface);
+        texture_t(SDL_Renderer* rend, SDL_Surface* surface) noexcept;
 
-        texture_t(SDL_Texture* t, int x_, int y_, int w_, int h_, bool owner=true)
-        : id(counter++), tex(t), x(x_), y(y_), width(w_), height(h_), owner(owner) {}
+        texture_t(SDL_Texture* t, int x_, int y_, int w_, int h_, bool owner=true) noexcept
+        : id_(counter++), tex_(t), x_(x_), y_(y_), width_(w_), height_(h_), owner_(owner) {}
 
-        texture_t(SDL_Texture* t, int w_, int h_, bool owner=true)
-        : id(counter++), tex(t), x(0), y(0), width(w_), height(h_), owner(owner) {}
+        texture_t(SDL_Texture* t, int w_, int h_, bool owner=true) noexcept
+        : id_(counter++), tex_(t), x_(0), y_(0), width_(w_), height_(h_), owner_(owner) {}
 
         texture_t(const texture_t&) = delete;
         void operator=(const texture_t&) = delete;
 
-        ~texture_t() {
+        ~texture_t() noexcept {
             destroy();
         }
 
-        void destroy();
+        void destroy() noexcept;
 
-        bool is_owner() const { return owner; }
-        void disown() { owner = false; }
+        constexpr bool is_owner() const noexcept { return owner_; }
+        void disown() noexcept { owner_ = false; }
 
-        int get_id() const { return id; }
-        int get_x() const { return x; }
-        int get_y() const { return y; }
-        int get_width() const { return width; }
-        int get_height() const { return height; }
-        SDL_Texture* get_sdltex() { return tex; }
+        constexpr int id() const noexcept { return id_; }
+        constexpr int x() const noexcept { return x_; }
+        constexpr int y() const noexcept { return y_; }
+        constexpr int width() const noexcept { return width_; }
+        constexpr int height() const noexcept { return height_; }
+        constexpr SDL_Texture* sdl_texture() noexcept { return tex_; }
 
-        void draw_scaled_dimpos(SDL_Renderer* rend, const int x_pos, const int y_pos);
-        void draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y_pos);
-        void draw(SDL_Renderer* rend, const int x_pos, const int y_pos);
-        void draw2_i(SDL_Renderer* rend, const int x_pos, const int y_pos);
+        void draw_scaled_dimpos(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept;
+        void draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept;
+        void draw(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept;
+        void draw2_i(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept;
 
-        void draw(SDL_Renderer* rend, const float x_pos, const float y_pos);
-        void draw2_f(SDL_Renderer* rend, const float x_pos, const float y_pos);
+        void draw(SDL_Renderer* rend, const float x_pos, const float y_pos) noexcept;
+        void draw2_f(SDL_Renderer* rend, const float x_pos, const float y_pos) noexcept;
 
-        std::string toString() const;
+        std::string toString() const noexcept;
 };
 
 struct tex_sub_coord_t {
@@ -108,7 +108,7 @@ struct tex_sub_coord_t {
  * @return number of added sub-textures, last one is owner of the SDL_Texture instance
  */
 int add_sub_textures(std::vector<std::shared_ptr<texture_t>>& storage, SDL_Renderer* rend,
-                     const std::string& filename, int w, int h, int x_off);
+                     const std::string& filename, int w, int h, int x_off) noexcept;
 
 /**
  * Add sub-textures to the storage list of texture_t from given global texture owner.
@@ -126,50 +126,50 @@ int add_sub_textures(std::vector<std::shared_ptr<texture_t>>& storage, SDL_Rende
  */
 int add_sub_textures(std::vector<std::shared_ptr<texture_t>>& storage, SDL_Renderer* rend,
                      const std::shared_ptr<texture_t>& global_texture, int x_off, int y_off, int w, int h,
-                     const std::vector<tex_sub_coord_t>& tex_positions);
+                     const std::vector<tex_sub_coord_t>& tex_positions) noexcept;
 
 class animtex_t {
     private:
-        std::string name;
-        std::vector<std::shared_ptr<texture_t>> textures;
+        std::string name_;
+        std::vector<std::shared_ptr<texture_t>> textures_;
 
-        int ms_per_atex;
-        int atex_ms_left;
-        size_t animation_index;
-        bool paused;
+        int ms_per_atex_;
+        int atex_ms_left_;
+        size_t animation_index_;
+        bool paused_;
 
     public:
-        animtex_t(std::string name_, int ms_per_atex_, const std::vector<std::shared_ptr<texture_t>>& textures_);
+        animtex_t(std::string name, int ms_per_atex, const std::vector<std::shared_ptr<texture_t>>& textures) noexcept;
 
-        animtex_t(std::string name_, SDL_Renderer* rend, int ms_per_atex_, const std::vector<const char*>& filenames);
+        animtex_t(std::string name, SDL_Renderer* rend, int ms_per_atex, const std::vector<const char*>& filenames) noexcept;
 
-        animtex_t(std::string name_, SDL_Renderer* rend, int ms_per_atex_, const std::string& filename, int w, int h, int x_off);
+        animtex_t(std::string name, SDL_Renderer* rend, int ms_per_atex, const std::string& filename, int w, int h, int x_off) noexcept;
 
-        animtex_t(std::string name_, SDL_Renderer* rend, int ms_per_atex_, const std::shared_ptr<texture_t>& global_texture,
-                 int x_off, int y_off, int w, int h, const std::vector<tex_sub_coord_t>& tex_positions);
+        animtex_t(std::string name, SDL_Renderer* rend, int ms_per_atex, const std::shared_ptr<texture_t>& global_texture,
+                 int x_off, int y_off, int w, int h, const std::vector<tex_sub_coord_t>& tex_positions) noexcept;
 
-        ~animtex_t() {
+        ~animtex_t() noexcept {
             destroy();
         }
 
-        void destroy();
+        void destroy() noexcept;
 
-        std::shared_ptr<texture_t> get_tex(const size_t idx) { return idx < textures.size() ? textures[idx] : nullptr; }
-        std::shared_ptr<const texture_t> get_tex(const size_t idx) const { return idx < textures.size() ? textures[idx] : nullptr; }
+        std::shared_ptr<texture_t> texture(const size_t idx) noexcept { return idx < textures_.size() ? textures_[idx] : nullptr; }
+        std::shared_ptr<const texture_t> texture(const size_t idx) const noexcept { return idx < textures_.size() ? textures_[idx] : nullptr; }
 
-        std::shared_ptr<texture_t> get_tex() { return animation_index < textures.size() ? textures[animation_index] : nullptr; }
-        std::shared_ptr<const texture_t> get_tex() const { return animation_index < textures.size() ? textures[animation_index] : nullptr; }
+        std::shared_ptr<texture_t> texture() noexcept { return animation_index_ < textures_.size() ? textures_[animation_index_] : nullptr; }
+        std::shared_ptr<const texture_t> texture() const noexcept { return animation_index_ < textures_.size() ? textures_[animation_index_] : nullptr; }
 
-        int get_width() { std::shared_ptr<texture_t> tex = get_tex(); return nullptr!=tex ? tex->get_width() : 0; }
-        int get_height() { std::shared_ptr<texture_t> tex = get_tex(); return nullptr!=tex ? tex->get_height() : 0; }
+        int width() noexcept { std::shared_ptr<texture_t> tex = texture(); return nullptr!=tex ? tex->width() : 0; }
+        int height() noexcept { std::shared_ptr<texture_t> tex = texture(); return nullptr!=tex ? tex->height() : 0; }
 
-        void reset();
-        void pause(bool enable);
-        void tick();
+        void reset() noexcept;
+        void pause(bool enable) noexcept;
+        void tick() noexcept;
 
-        void draw(SDL_Renderer* rend, const float x, const float y);
+        void draw(SDL_Renderer* rend, const float x, const float y) noexcept;
 
-        std::string toString() const;
+        std::string toString() const noexcept;
 };
 
 /**
@@ -182,10 +182,10 @@ struct text_texture_t {
     int x_pos;
     int y_pos;
 
-    text_texture_t(const std::string text_, SDL_Renderer* rend, SDL_Surface* surface, bool scaled_pos_, int x_, int y_)
+    text_texture_t(const std::string text_, SDL_Renderer* rend, SDL_Surface* surface, bool scaled_pos_, int x_, int y_) noexcept
     : text(text_), texture(rend, surface), scaled_pos(scaled_pos_), x_pos(x_), y_pos(y_) {}
 
-    void redraw(SDL_Renderer* rend) {
+    void redraw(SDL_Renderer* rend) noexcept {
         if( scaled_pos ) {
             texture.draw_scaled_dimpos(rend, x_pos, y_pos);
         } else {
@@ -205,8 +205,8 @@ struct text_texture_t {
  * @param g
  * @param b
  */
-std::shared_ptr<text_texture_t> draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b);
+std::shared_ptr<text_texture_t> draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept;
 
-std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, std::function<void(const texture_t& texture, int &x, int&y)> scaled_coord);
+std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, std::function<void(const texture_t& texture, int &x_, int&y_)> scaled_coord) noexcept;
 
 #endif /* PACMAN_GRAPHICS_HPP_ */

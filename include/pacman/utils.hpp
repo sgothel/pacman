@@ -61,6 +61,9 @@ inline constexpr int floor_to_int(const float f) {
 inline constexpr int ceil_to_int(const float f) {
     return (int)std::ceil(f);
 }
+inline constexpr bool is_equal(const float a, const float b) {
+    return std::abs(a - b) < std::numeric_limits<float>::epsilon();
+}
 
 //
 // direction_t
@@ -78,10 +81,10 @@ enum class direction_t : int {
 constexpr int number(const direction_t d) noexcept {
     return static_cast<int>(d);
 }
-std::string to_string(direction_t dir);
-direction_t inverse(direction_t dir);
-direction_t rot_left(direction_t dir);
-direction_t rot_right(direction_t dir);
+std::string to_string(direction_t dir) noexcept;
+direction_t inverse(direction_t dir) noexcept;
+direction_t rot_left(direction_t dir) noexcept;
+direction_t rot_right(direction_t dir) noexcept;
 
 //
 // keyframei_t
@@ -92,31 +95,31 @@ direction_t rot_right(direction_t dir);
  */
 class keyframei_t {
     private:
-        float frames_per_second_const;
+        float frames_per_second_const_;
 
         /** frames_per_field, dividing the field in sub-fields. */
-        int frames_per_field;
+        int frames_per_field_;
 
         /**
          * Center x/y sub-field position of square field, i.e. fields_per_frame * frames_per_field/2
          *
          * Odd frames_per_field int-value gets truncated by div_2, matching the 0-based sub-field index.
          */
-        float center;
+        float center_;
 
         /** fields_per_second difference requested - has */
-        float fields_per_second_diff;
+        float fields_per_second_diff_;
 
         /**
          * Return an odd frames_per_field, which divides the field in sub-fields with a deterministic single center position.
          */
-        static int calc_odd_frames_per_field(const float frames_per_second, const float fields_per_second, const bool hint_slower);
+        static int calc_odd_frames_per_field(const float frames_per_second, const float fields_per_second, const bool hint_slower) noexcept;
 
         /**
          * Returns the closest frames_per_field, which can be odd or even.
          * If even, it can't be used for a single center position!
          */
-        static int calc_nearest_frames_per_field(const float frames_per_second, const float fields_per_second);
+        static int calc_nearest_frames_per_field(const float frames_per_second, const float fields_per_second) noexcept;
 
     public:
 
@@ -127,12 +130,12 @@ class keyframei_t {
          * @param fields_per_second_req desired fields per second 'moving' speed
          * @param hint_slower if true (default) and force_odd is also true, the higher fields_per_second value is chosen for slower speed, otherwise the opposite.
          */
-        keyframei_t(const bool force_odd, const float frames_per_second, float fields_per_second_req, const bool hint_slower=true)
-        : frames_per_second_const(frames_per_second),
-          frames_per_field( force_odd ? calc_odd_frames_per_field(frames_per_second_const, fields_per_second_req, hint_slower) :
-                                        calc_nearest_frames_per_field(frames_per_second_const, fields_per_second_req) ),
-          center( get_fields_per_frame() * ( frames_per_field / 2 ) ),
-          fields_per_second_diff( get_fields_per_second() - fields_per_second_req )
+        keyframei_t(const bool force_odd, const float frames_per_second, float fields_per_second_req, const bool hint_slower=true) noexcept
+        : frames_per_second_const_(frames_per_second),
+          frames_per_field_( force_odd ? calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req, hint_slower) :
+                                        calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req) ),
+          center_( fields_per_frame() * ( frames_per_field_ / 2 ) ),
+          fields_per_second_diff_( fields_per_second() - fields_per_second_req )
         { }
 
         /**
@@ -142,25 +145,25 @@ class keyframei_t {
          * @param fields_per_second_req desired fields per second 'moving' speed
          * @param hint_slower if true (default) and force_odd is also true, the higher fields_per_second value is chosen for slower speed, otherwise the opposite.
          */
-        void reset(const bool force_odd, const float frames_per_second, const float fields_per_second_req, const bool hint_slower=true) {
-            frames_per_second_const = frames_per_second;
-            frames_per_field = force_odd ? calc_odd_frames_per_field(frames_per_second_const, fields_per_second_req, hint_slower) :
-                                           calc_nearest_frames_per_field(frames_per_second_const, fields_per_second_req);
-            center = get_fields_per_frame() * ( frames_per_field / 2 );
-            fields_per_second_diff = get_fields_per_second() - fields_per_second_req;
+        void reset(const bool force_odd, const float frames_per_second, const float fields_per_second_req, const bool hint_slower=true) noexcept {
+            frames_per_second_const_ = frames_per_second;
+            frames_per_field_ = force_odd ? calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req, hint_slower) :
+                                           calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req);
+            center_ = fields_per_frame() * ( frames_per_field_ / 2 );
+            fields_per_second_diff_ = fields_per_second() - fields_per_second_req;
         }
 
         /** Return the renderer frames per second constant */
-        int get_frames_per_second() const { return frames_per_second_const; }
+        constexpr int frames_per_second() const noexcept { return frames_per_second_const_; }
 
         /** Return the number of frames per field, dividing the field in sub-fields. */
-        int  get_frames_per_field() const { return frames_per_field; }
+        constexpr int  frames_per_field() const noexcept { return frames_per_field_; }
 
         /** Return count of fields per frame, also the sub-field width or height, 1 / get_frames_per_field(). */
-        float get_fields_per_frame() const { return 1.0f / frames_per_field; }
+        constexpr float fields_per_frame() const noexcept { return 1.0f / frames_per_field_; }
 
         /** Returns the fields per second actual 'moving' speed, i.e. get_frames_per_second() / get_frames_per_field() */
-        float get_fields_per_second() const { return frames_per_second_const / frames_per_field; }
+        constexpr float fields_per_second() const noexcept { return frames_per_second_const_ / frames_per_field_; }
 
         /**
          * Return fields_per_second difference `actual - requested`, i.e. negative if slower - and positive if faster frame rendering (fps) speed than animation.
@@ -168,7 +171,7 @@ class keyframei_t {
          * @see get_frames_per_second_diff()
          * @see get_sync_frame_count()
          */
-        float get_fields_per_second_diff() const { return fields_per_second_diff; }
+        constexpr float fields_per_second_diff() const noexcept { return fields_per_second_diff_; }
 
         /**
          * Return delay in frames to sync for get_fields_per_second_diff() compensation, i.e. via repainting same frame.
@@ -179,7 +182,9 @@ class keyframei_t {
          * @see get_fields_per_second_diff()
          * @see get_sync_frame_count()
          */
-        float get_frames_per_second_diff() const;
+        constexpr float frames_per_second_diff() const noexcept {
+            return fields_per_second_diff() * frames_per_field();
+        }
 
         /**
          * Returns a positive frame_count to sync animation if frame rendering (fps) is faster than desired animation speed.
@@ -190,7 +195,7 @@ class keyframei_t {
          * @see get_fields_per_second_diff()
          * @see get_frames_per_second_diff()
          */
-        int get_sync_frame_count() const;
+        int sync_frame_count() const noexcept;
 
         /**
          * Return required delay in milliseconds to sync for get_fields_per_second_diff() compensation.
@@ -198,13 +203,13 @@ class keyframei_t {
          * If positive, get_fields_per_second_diff() was positive hence actual faster stepping speed and the value should be used to sync delay.
          * Otherwise value is negative, indicating slower stepping speed.
          */
-        float get_sync_delay() const;
+        float sync_delay() const noexcept;
 
         /**
          * If true, this instances uses odd frames_per_field, hence allowing a single center sub-field.
          * Otherwise the center sub-field might be 'walked' twice.
          */
-        bool uses_odd_frames_per_field() const { return 0 != frames_per_field / 2; }
+        constexpr bool uses_odd_frames_per_field() const noexcept { return 0 != frames_per_field_ / 2; }
 
         /**
          * Return center x/y sub-field position of square field, i.e. fields_per_frame * frames_per_field/2.
@@ -213,35 +218,35 @@ class keyframei_t {
          *
          * The center sub-field is defined by `{ .x = center, .y = center, .width = fields_per_frame, .height = fields_per_frame }`.
          **/
-        float get_center() const { return center; }
+        constexpr float center() const noexcept { return center_; }
 
         /**
          * Returns true if position lies within the center sub-field
          * as defined by `{ .x = center, .y = center, .width = fields_per_frame, .height = fields_per_frame }`.
          */
-        bool intersects_center(const float x, const float y) const;
+        bool intersects_center(const float x, const float y) const noexcept;
 
         /**
          * Returns true if position is exactly on the center sub-field within machine epsilon.
          */
-        bool is_center(const float x, const float y) const;
+        bool is_center(const float x, const float y) const noexcept;
 
         /**
          * Returns true if position component is exactly on the center sub-field within machine epsilon.
          */
-        bool is_center_xy(const float xy) const;
+        bool is_center_xy(const float xy) const noexcept;
 
         /**
          * Returns true if position in direction is exactly on the center sub-field within machine epsilon.
          */
-        bool is_center_dir(const direction_t dir, const float x, const float y) const;
+        bool is_center_dir(const direction_t dir, const float x, const float y) const noexcept;
 
-        bool entered_tile(const direction_t dir, const float x, const float y) const;
+        bool field_entered(const direction_t dir, const float x, const float y) const noexcept;
 
-        float get_aligned(const float v) const;
-        float get_centered(const float v) const;
+        float align_value(const float v) const noexcept;
+        float center_valued(const float v) const noexcept;
 
-        std::string toString() const;
+        std::string toString() const noexcept;
 };
 
 //
@@ -249,25 +254,47 @@ class keyframei_t {
 //
 class box_t {
     private:
-        int x_pos;
-        int y_pos;
-        int width;
-        int height;
+        int x_;
+        int y_;
+        int w_;
+        int h_;
 
     public:
-        box_t(const int x, const int y, const int w, const int h)
-        : x_pos(x), y_pos(y), width(w), height(h) {}
+        box_t(const int x, const int y, const int w, const int h) noexcept
+        : x_(x), y_(y), w_(w), h_(h) {}
 
-        void set_dim(const int x, const int y, const int w, const int h) {
-            x_pos = x; y_pos = y; width = w; height = h;
+        constexpr void set_dim(const int x, const int y, const int w, const int h) noexcept {
+            x_ = x; y_ = y; w_ = w; h_ = h;
         }
-        int get_x() const { return x_pos; }
-        int get_y() const { return y_pos; }
-        int get_width() const { return width; }
-        int get_height() const { return height; }
+        constexpr int x() const noexcept { return x_; }
+        constexpr int y() const noexcept { return y_; }
+        constexpr int width() const noexcept { return w_; }
+        constexpr int height() const noexcept { return h_; }
 
-        std::string toString() const;
+        std::string toString() const noexcept;
 };
 
+/**
+ * A non thread safe latch-type counter to count down.
+ */
+class countdown_t {
+    private:
+        size_t reload_value;
+        size_t counter;
+
+    public:
+        countdown_t(const size_t value, const bool auto_reload) noexcept
+        : reload_value( auto_reload ? value : 0 ), counter( value ) { }
+
+        constexpr size_t value() const noexcept { return counter; }
+        bool count_down() noexcept {
+            const bool r = 0 == --counter;
+            if( r && 0 < reload_value ) {
+                counter = reload_value;
+            }
+            return r;
+        }
+        void reload(const size_t value) { counter = value; }
+};
 
 #endif /* PACMAN_UTILS_HPP_ */
