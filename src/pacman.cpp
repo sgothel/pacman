@@ -70,8 +70,8 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.80f),
   keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
-  sync_next_frame_cntr( keyframei.sync_frame_count() ),
-  synced_frame_count( 0 ),
+  sync_next_frame_cntr( keyframei.sync_frame_count(), true /* auto_reload */),
+  next_field_frame_cntr(0, false /* auto_reload */),
   mode( mode_t::HOME ),
   mode_ms_left ( -1 ),
   lives( 3 ),
@@ -155,7 +155,6 @@ void pacman_t::set_speed(const float pct) noexcept {
     const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
-    sync_next_frame_cntr = keyframei.sync_frame_count();
     reset_stats();
     if( log_moves ) {
         log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %d, %s\n", old, current_speed_pct, sync_next_frame_cntr, keyframei.toString().c_str());
@@ -166,7 +165,7 @@ void pacman_t::reset_stats() noexcept {
     perf_fields_walked_t0 = getCurrentMilliseconds();
     perf_frame_count_walked = 0;
     pos_.reset_stats();
-    synced_frame_count = 0;
+    sync_next_frame_cntr.reset( keyframei.sync_frame_count(), true /* auto_reload */);
 }
 
 bool pacman_t::set_dir(direction_t new_dir) noexcept {
@@ -179,7 +178,6 @@ bool pacman_t::set_dir(direction_t new_dir) noexcept {
     // log_printf("pacman set_dir: %s -> %s, collision %d, %s\n", to_string(current_dir).c_str(), to_string(new_dir).c_str(), collision_maze, pos.toString().c_str());
     if( !collision_maze ) {
         current_dir = new_dir;
-        reset_stats();
         return true;
     } else {
         return false;
@@ -187,12 +185,8 @@ bool pacman_t::set_dir(direction_t new_dir) noexcept {
 }
 
 bool pacman_t::tick() noexcept {
-    if( 0 < sync_next_frame_cntr ) {
-        if( 0 >= --sync_next_frame_cntr ) {
-            sync_next_frame_cntr = keyframei.sync_frame_count();
-            synced_frame_count++;
-            return true; // skip tick, just repaint
-        }
+    if( sync_next_frame_cntr.count_down() ) {
+        return true; // skip tick, just repaint
     }
     atex = &get_tex();
     atex->tick();
@@ -244,10 +238,10 @@ bool pacman_t::tick() noexcept {
                      const uint64_t t1 = getCurrentMilliseconds();
                      const float fields_per_seconds = get_fps(perf_fields_walked_t0, t1, pos_.fields_walked_f());
                      const float fps_draw = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked);
-                     const float fps_tick = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked - synced_frame_count);
+                     const float fps_tick = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked - sync_next_frame_cntr.events());
                      log_printf("pacman: fields[%.2f walked, %.2f/s], fps[draw %.2f/s, tick %.2f/s], frames[draw %" PRIu64 ", synced %d], td %" PRIu64 " ms, req_speed[%f\%, fields %f/s], %s, %s\n",
                              pos_.fields_walked_f(), fields_per_seconds,
-                             fps_draw, fps_tick, perf_frame_count_walked, synced_frame_count,
+                             fps_draw, fps_tick, perf_frame_count_walked, sync_next_frame_cntr.events(),
                              t1-perf_fields_walked_t0,
                              current_speed_pct, fields_per_sec_total*current_speed_pct,
                              keyframei.toString().c_str(), pos_.toString().c_str());
@@ -260,20 +254,17 @@ bool pacman_t::tick() noexcept {
                      if( tile_t::PELLET == tile ) {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.71f);
-                         next_field_frame_cntr = keyframei.frames_per_field();
+                         next_field_frame_cntr.load( keyframei.frames_per_field() );
                      } else if( tile_t::PELLET_POWER == tile ) {
                          set_mode( mode_t::POWERED );
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.90f);
-                         next_field_frame_cntr = keyframei.frames_per_field();
+                         next_field_frame_cntr.load( keyframei.frames_per_field() );
                      }
                  } else if( tile_t::EMPTY == tile ) {
-                     if( 0 < next_field_frame_cntr ) {
-                         // log_printf("pacman next_field_frame_cntr: %d\n", next_field_frame_cntr);
-                         if( 0 == --next_field_frame_cntr ) {
-                             set_speed(0.80f);
-                             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                         }
+                     if( next_field_frame_cntr.count_down() ) {
+                         set_speed(0.80f);
+                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                      }
                  }
              }

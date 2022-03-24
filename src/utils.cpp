@@ -338,5 +338,25 @@ std::string box_t::toString() const noexcept {
     return "["+std::to_string(x_)+"/"+std::to_string(y_)+" "+std::to_string(w_)+"x"+std::to_string(h_)+"]";
 }
 
+//
+// countdown_t
+//
+bool countdown_t::count_down() noexcept {
+    if( 0 == counter_ ) {
+        return false;
+    }
+    const bool r = 0 == --counter_;
+    if( r ) {
+        ++events_;
+        if( 0 < reload_value_ ) {
+            counter_ = reload_value_;
+        }
+    }
+    return r;
+}
+
+std::string countdown_t::toString() const noexcept {
+    return "["+std::to_string(counter_)+"/"+std::to_string(reload_value_)+", events "+std::to_string(events_)+"]";
+}
 
 

@@ -159,14 +159,13 @@ class ghost_t {
         const float fields_per_sec_total;
         float current_speed_pct;
         keyframei_t keyframei_;
-        int sync_next_frame_cntr;
-        int synced_frame_count;
+        countdown_t sync_next_frame_cntr;
+        // countdown_t next_field_frame_cntr;
 
         personality_t id; // not necessarily unique
         mode_t mode_;
         int mode_ms_left;
         direction_t dir_;
-        int next_field_frame_cntr = 0;
 
         animtex_t atex_normal;
         animtex_t atex_scared;
@@ -252,15 +251,14 @@ class pacman_t {
         const float fields_per_sec_total;
         float current_speed_pct;
         keyframei_t keyframei;
-        int sync_next_frame_cntr;
-        int synced_frame_count;
+        countdown_t sync_next_frame_cntr;
+        countdown_t next_field_frame_cntr;
 
         mode_t mode;
         int mode_ms_left;
         int lives;
         direction_t current_dir;
         uint64_t score_;
-        int next_field_frame_cntr = 0;
 
         animtex_t atex_left;
         animtex_t atex_right;

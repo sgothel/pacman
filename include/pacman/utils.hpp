@@ -279,22 +279,51 @@ class box_t {
  */
 class countdown_t {
     private:
-        size_t reload_value;
-        size_t counter;
+        size_t reload_value_;
+        size_t counter_;
+        size_t events_;
 
     public:
         countdown_t(const size_t value, const bool auto_reload) noexcept
-        : reload_value( auto_reload ? value : 0 ), counter( value ) { }
+        : reload_value_( auto_reload ? value : 0 ), counter_( value ), events_(0) { }
 
-        constexpr size_t value() const noexcept { return counter; }
-        bool count_down() noexcept {
-            const bool r = 0 == --counter;
-            if( r && 0 < reload_value ) {
-                counter = reload_value;
+        /**
+         * Reset this instance as done via constructor.
+         *
+         * If clear_events := true (default), the events() count is also set to zero.
+         */
+        void reset(const size_t value, const bool auto_reload, const bool clear_events=true) noexcept {
+            reload_value_ = auto_reload ? value : 0;
+            counter_ = value;
+            if( clear_events ) {
+                events_ = 0;
             }
-            return r;
         }
-        void reload(const size_t value) { counter = value; }
+
+        constexpr size_t counter() const noexcept { return counter_; }
+
+        constexpr size_t events() const noexcept { return events_; }
+
+        void clear_events() noexcept { events_ = 0; }
+
+        /**
+         * Count down counter and increase events() count by one.
+         * Also reload the counter if auto_reload := true has been passed in constructor.
+         *
+         * If counter() is zero, do nothing and return false.
+         *
+         * @return true if an event has been reached, i.e. counter has reached zero,
+         * otherwise return false.
+         */
+        bool count_down() noexcept;
+
+        /**
+         * Manually reload counter with given value.
+         * This is intended if passing auto_reload := false in constructor.
+         */
+        void load(const size_t value) { counter_ = value; }
+
+        std::string toString() const noexcept;
 };
 
 #endif /* PACMAN_UTILS_HPP_ */
