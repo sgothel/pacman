@@ -69,8 +69,8 @@ animtex_t& pacman_t::get_tex() noexcept {
 pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexcept
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.80f),
-  keyframei(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
-  sync_next_frame_cntr( keyframei.sync_frame_count(), true /* auto_reload */),
+  keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
+  sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   next_field_frame_cntr(0, false /* auto_reload */),
   mode( mode_t::HOME ),
   mode_ms_left ( -1 ),
@@ -108,7 +108,7 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             mode = m;
             mode_ms_left = -1;
             pos_ = global_maze->pacman_start_pos();
-            pos_.set_centered(keyframei);
+            pos_.set_centered(keyframei_);
             set_dir( direction_t::LEFT );
             reset_stats(); // always, even if speed is unchanged
             atex = &get_tex();
@@ -154,10 +154,11 @@ void pacman_t::set_speed(const float pct) noexcept {
     }
     const float old = current_speed_pct;
     current_speed_pct = pct;
-    keyframei.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
+    keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
+    pos_.set_centered(keyframei_);
     reset_stats();
     if( log_moves ) {
-        log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %d, %s\n", old, current_speed_pct, sync_next_frame_cntr, keyframei.toString().c_str());
+        log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %s, %s\n", old, current_speed_pct, sync_next_frame_cntr.toString().c_str(), keyframei_.toString().c_str());
     }
 }
 
@@ -165,19 +166,25 @@ void pacman_t::reset_stats() noexcept {
     perf_fields_walked_t0 = getCurrentMilliseconds();
     perf_frame_count_walked = 0;
     pos_.reset_stats();
-    sync_next_frame_cntr.reset( keyframei.sync_frame_count(), true /* auto_reload */);
+    sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
 }
 
-bool pacman_t::set_dir(direction_t new_dir) noexcept {
+bool pacman_t::set_dir(const direction_t new_dir) noexcept {
     if( current_dir == new_dir ) {
         return true;
     }
-    const bool collision_maze = !pos_.test(new_dir, keyframei, [](tile_t tile) -> bool {
+    const bool collision_maze = !pos_.test(new_dir, keyframei_, [](tile_t tile) -> bool {
         return tile_t::WALL == tile || tile_t::GATE == tile;
     });
     // log_printf("pacman set_dir: %s -> %s, collision %d, %s\n", to_string(current_dir).c_str(), to_string(new_dir).c_str(), collision_maze, pos.toString().c_str());
     if( !collision_maze ) {
+        const direction_t old_dir = current_dir;
         current_dir = new_dir;
+        reset_stats();
+        if( log_moves ) {
+            log_printf("pacman set_dir: %s -> %s, %s c%d e%d\n",
+                    to_string(old_dir).c_str(), to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center_dir(keyframei_), pos_.entered_tile(keyframei_));
+        }
         return true;
     } else {
         return false;
@@ -220,15 +227,15 @@ bool pacman_t::tick() noexcept {
          * - environment
          */
          {
-             collision_maze = !pos_.step(current_dir, keyframei, [](tile_t tile) -> bool {
+             collision_maze = !pos_.step(current_dir, keyframei_, [](tile_t tile) -> bool {
                  return tile_t::WALL == tile || tile_t::GATE == tile ;
              });
              const int x_i = pos_.x_i();
              const int y_i = pos_.y_i();
              const tile_t tile = global_maze->tile(x_i, y_i);
-             if( log_moves || DEBUG_GFX_BOUNDS ) {
+             if( DEBUG_GFX_BOUNDS ) {
                  log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
-                         to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center_dir(keyframei), pos_.entered_tile(keyframei),
+                         to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center_dir(keyframei_), pos_.entered_tile(keyframei_),
                          to_string(tile).c_str(),
                          collision_maze, collision_enemies, atex->toString().c_str());
              }
@@ -244,7 +251,7 @@ bool pacman_t::tick() noexcept {
                              fps_draw, fps_tick, perf_frame_count_walked, sync_next_frame_cntr.events(),
                              t1-perf_fields_walked_t0,
                              current_speed_pct, fields_per_sec_total*current_speed_pct,
-                             keyframei.toString().c_str(), pos_.toString().c_str());
+                             keyframei_.toString().c_str(), pos_.toString().c_str());
                  }
                  reset_stats();
              } else {
@@ -254,12 +261,12 @@ bool pacman_t::tick() noexcept {
                      if( tile_t::PELLET == tile ) {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.71f);
-                         next_field_frame_cntr.load( keyframei.frames_per_field() );
+                         next_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                      } else if( tile_t::PELLET_POWER == tile ) {
                          set_mode( mode_t::POWERED );
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.90f);
-                         next_field_frame_cntr.load( keyframei.frames_per_field() );
+                         next_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                      }
                  } else if( tile_t::EMPTY == tile ) {
                      if( next_field_frame_cntr.count_down() ) {
@@ -292,7 +299,7 @@ bool pacman_t::tick() noexcept {
 
 void pacman_t::draw(SDL_Renderer* rend) noexcept {
     ++perf_frame_count_walked;
-    atex->draw(rend, pos_.x_f()-keyframei.center(), pos_.y_f()-keyframei.center());
+    atex->draw(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
 
     if( show_all_debug_gfx() || DEBUG_GFX_BOUNDS ) {
         uint8_t r, g, b, a;
@@ -309,7 +316,7 @@ void pacman_t::draw(SDL_Renderer* rend) noexcept {
 }
 
 std::string pacman_t::toString() const noexcept {
-    return "pacman["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(current_dir)+", "+pos_.toString()+", "+atex->toString()+", "+keyframei.toString()+"]";
+    return "pacman["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(current_dir)+", "+pos_.toString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
 }
 
 

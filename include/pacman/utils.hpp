@@ -112,12 +112,16 @@ class keyframei_t {
 
         /**
          * Return an odd frames_per_field, which divides the field in sub-fields with a deterministic single center position.
+         *
+         * Result either matches fields_per_second speed or is faster.
          */
-        static int calc_odd_frames_per_field(const float frames_per_second, const float fields_per_second, const bool hint_slower) noexcept;
+        static int calc_odd_frames_per_field(const float frames_per_second, const float fields_per_second) noexcept;
 
         /**
          * Returns the closest frames_per_field, which can be odd or even.
          * If even, it can't be used for a single center position!
+         *
+         * Result either matches fields_per_second speed or is faster.
          */
         static int calc_nearest_frames_per_field(const float frames_per_second, const float fields_per_second) noexcept;
 
@@ -125,30 +129,36 @@ class keyframei_t {
 
         /**
          * Constructs a keyframei_t instance.
-         * @param force_odd if true enforces an odd frames_per_field, which enables a single center position, otherwise the nearest is chosen.
+         *
+         * Resulting fields_per_second is leaning to the faster (lower) frames_per_field, close to the requested fields_per_second_req.
+         * The faster value allows caller to sync via sync_frame_count().
+         *
          * @param frames_per_second renderer frames per seconds
          * @param fields_per_second_req desired fields per second 'moving' speed
-         * @param hint_slower if true (default) and force_odd is also true, the higher fields_per_second value is chosen for slower speed, otherwise the opposite.
+         * @param nearest if true (default), choosing the nearest frames_per_field for most accurate timing. Otherwise enforces an odd frames_per_field, which enables a single center position.
          */
-        keyframei_t(const bool force_odd, const float frames_per_second, float fields_per_second_req, const bool hint_slower=true) noexcept
+        keyframei_t(const float frames_per_second, float fields_per_second_req, const bool nearest=true) noexcept
         : frames_per_second_const_(frames_per_second),
-          frames_per_field_( force_odd ? calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req, hint_slower) :
-                                        calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req) ),
+          frames_per_field_( nearest ? calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req) :
+                                       calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req) ),
           center_( fields_per_frame() * ( frames_per_field_ / 2 ) ),
           fields_per_second_diff_( fields_per_second() - fields_per_second_req )
         { }
 
         /**
          * Recalculates this keyframei_t instance's values
-         * @param force_odd if true enforces an odd frames_per_field, which enables a single center position, otherwise the nearest is chosen.
+         *
+         * Resulting fields_per_second is leaning to the faster (lower) frames_per_field, close to the requested fields_per_second_req.
+         * The faster value allows caller to sync via sync_frame_count().
+         *
          * @param frames_per_second renderer frames per seconds
          * @param fields_per_second_req desired fields per second 'moving' speed
-         * @param hint_slower if true (default) and force_odd is also true, the higher fields_per_second value is chosen for slower speed, otherwise the opposite.
+         * @param nearest if true (default), choosing the nearest frames_per_field for most accurate timing. Otherwise enforces an odd frames_per_field, which enables a single center position.
          */
-        void reset(const bool force_odd, const float frames_per_second, const float fields_per_second_req, const bool hint_slower=true) noexcept {
+        void reset(const float frames_per_second, const float fields_per_second_req, const bool nearest=true) noexcept {
             frames_per_second_const_ = frames_per_second;
-            frames_per_field_ = force_odd ? calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req, hint_slower) :
-                                           calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req);
+            frames_per_field_ = nearest ? calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req) :
+                                          calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req);
             center_ = fields_per_frame() * ( frames_per_field_ / 2 );
             fields_per_second_diff_ = fields_per_second() - fields_per_second_req;
         }
@@ -244,7 +254,7 @@ class keyframei_t {
         bool field_entered(const direction_t dir, const float x, const float y) const noexcept;
 
         float align_value(const float v) const noexcept;
-        float center_valued(const float v) const noexcept;
+        float center_value(const float v) const noexcept;
 
         std::string toString() const noexcept;
 };

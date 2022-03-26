@@ -250,7 +250,7 @@ class pacman_t {
 
         const float fields_per_sec_total;
         float current_speed_pct;
-        keyframei_t keyframei;
+        keyframei_t keyframei_;
         countdown_t sync_next_frame_cntr;
         countdown_t next_field_frame_cntr;
 
@@ -292,12 +292,12 @@ class pacman_t {
 
         void set_mode(const mode_t m) noexcept;
         void set_speed(const float pct) noexcept;
-        const keyframei_t& get_keyframei() const noexcept { return keyframei; }
+        const keyframei_t& get_keyframei() const noexcept { return keyframei_; }
 
         /**
          * Set direction
          */
-        bool set_dir(direction_t new_dir) noexcept;
+        bool set_dir(const direction_t new_dir) noexcept;
 
         constexpr direction_t direction() const noexcept { return current_dir; }
 

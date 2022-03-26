@@ -81,7 +81,7 @@ class acoord_t {
 
         void set_pos(const int x, const int y) noexcept;
         void set_pos_clipped(const float x, const float y) noexcept;
-        void set_centered(const keyframei_t& keyframei) noexcept { x_pos_f = keyframei.center_valued(x_pos_f); y_pos_f = keyframei.center_valued(y_pos_f); }
+        void set_centered(const keyframei_t& keyframei) noexcept { x_pos_f = keyframei.center_value(x_pos_f); y_pos_f = keyframei.center_value(y_pos_f); }
 
         constexpr direction_t last_dir() const noexcept { return last_dir_; }
         constexpr int x_i() const noexcept { return x_pos_i; }

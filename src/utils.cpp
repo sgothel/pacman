@@ -184,37 +184,23 @@ direction_t rot_right(direction_t dir) noexcept {
 //
 // keyframei_t
 //
-int keyframei_t::calc_odd_frames_per_field(const float frames_per_second, const float fields_per_second, const bool hint_slower) noexcept {
+int keyframei_t::calc_odd_frames_per_field(const float frames_per_second, const float fields_per_second) noexcept {
     const float v0 = frames_per_second / fields_per_second;
     const int v0_floor = floor_to_int( v0 );
-    const int v0_ceil = ceil_to_int( v0 );
     if( 0 != v0_floor % 2 ) {
         // Use faster floor, i.e. resulting in higher fields per second.
         // Difference is 'only' < 1
         return v0_floor;
-    } else if( 0 != v0_ceil % 2 ) {
-        // Use slower ceil, i.e. resulting in lower fields per second.
-        // Difference is 'only' < 1
-        return v0_ceil;
     } else {
-        // v0's mantissa == 0, difference of one full frame.
-        if( hint_slower ) {
-            return v0_floor + 1;
-        } else {
-            return v0_ceil - 1;
-        }
+        // Avoid slower ceiling, i.e. would result in lower fields per second.
+        return v0_floor - 1; // faster
     }
 }
 
 int keyframei_t::calc_nearest_frames_per_field(const float frames_per_second, const float fields_per_second) noexcept {
     const float v0 = frames_per_second / fields_per_second;
     const int v0_floor = floor_to_int( v0 );
-    const int v0_ceil = ceil_to_int( v0 );
-    if( v0 - v0_floor <= v0_ceil - v0 ) {
-        return v0_floor;
-    } else {
-        return v0_ceil;
-    }
+    return v0_floor;
 }
 
 int keyframei_t::sync_frame_count() const noexcept {
@@ -320,7 +306,7 @@ float keyframei_t::align_value(const float v) const noexcept {
     return v0_trunc + n*fields_per_frame_;
 }
 
-float keyframei_t::center_valued(const float v) const noexcept {
+float keyframei_t::center_value(const float v) const noexcept {
     return std::trunc(v) + center_;
 }
 

@@ -67,7 +67,7 @@ animtex_t& ghost_t::get_tex() noexcept {
 ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_) noexcept
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.75f),
-  keyframei_(true /* odd */, get_frames_per_sec(), fields_per_sec_total*current_speed_pct, false /* hint_slower */),
+  keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   // next_field_frame_cntr( keyframei_.frames_per_field(), true /* auto_reload */),
   id( id_ ),
@@ -130,8 +130,8 @@ void ghost_t::set_next_target() noexcept {
                     float p_[] = { p.x_f(), p.y_f() };
                     float b_[] = { b.x_f(), b.y_f() };
                     float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
-                    p.set_pos_clipped( keyframei_.center_valued( bp_[0] + b_[0] ),
-                                       keyframei_.center_valued( bp_[1] + b_[1] ) ); // add back to blinky
+                    p.set_pos_clipped( keyframei_.center_value( bp_[0] + b_[0] ),
+                                       keyframei_.center_value( bp_[1] + b_[1] ) ); // add back to blinky
                     target_ =  p;
                     break;
                 }
@@ -264,7 +264,8 @@ void ghost_t::set_speed(const float pct) noexcept {
     }
     const float old = current_speed_pct;
     current_speed_pct = pct;
-    keyframei_.reset(true /* odd */, get_frames_per_sec(), fields_per_sec_total*pct, false /* hint_slower */);
+    keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
+    pos_.set_centered(keyframei_);
     sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
     // next_field_frame_cntr.reset( keyframei_.frames_per_field(), true /* auto_reload */);
     if( log_moves ) {
