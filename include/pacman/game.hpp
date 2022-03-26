@@ -187,7 +187,7 @@ class ghost_t {
         void set_next_dir(const bool collision, const bool is_center) noexcept;
 
     public:
-        ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_=10) noexcept;
+        ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_) noexcept;
 
         ~ghost_t() noexcept {
             destroy();
@@ -280,7 +280,7 @@ class pacman_t {
         void reset_stats() noexcept;
 
     public:
-        pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_=10) noexcept;
+        pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexcept;
 
         ~pacman_t() noexcept {
             destroy();
