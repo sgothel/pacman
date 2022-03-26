@@ -176,10 +176,6 @@ class acoord_t {
             return keyframei.is_center(x_pos_f, y_pos_f);
         }
 
-        bool is_center_dir(const keyframei_t& keyframei) const noexcept {
-            return keyframei.is_center_dir(last_dir_, x_pos_f, y_pos_f);
-        }
-
         bool entered_tile(const keyframei_t& keyframei) const noexcept {
             return keyframei.field_entered(last_dir_, x_pos_f, y_pos_f);
         }

@@ -183,7 +183,7 @@ bool pacman_t::set_dir(const direction_t new_dir) noexcept {
         reset_stats();
         if( log_moves ) {
             log_printf("pacman set_dir: %s -> %s, %s c%d e%d\n",
-                    to_string(old_dir).c_str(), to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center_dir(keyframei_), pos_.entered_tile(keyframei_));
+                    to_string(old_dir).c_str(), to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_));
         }
         return true;
     } else {
@@ -235,7 +235,7 @@ bool pacman_t::tick() noexcept {
              const tile_t tile = global_maze->tile(x_i, y_i);
              if( DEBUG_GFX_BOUNDS ) {
                  log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
-                         to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center_dir(keyframei_), pos_.entered_tile(keyframei_),
+                         to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_),
                          to_string(tile).c_str(),
                          collision_maze, collision_enemies, atex->toString().c_str());
              }

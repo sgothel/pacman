@@ -240,29 +240,9 @@ bool keyframei_t::is_center(const float x, const float y) const noexcept {
            std::abs( cy - y ) <= std::numeric_limits<float>::epsilon();
 }
 
-bool keyframei_t::is_center_xy(const float xy) const noexcept {
-    const float cx = std::trunc(xy) + center_;
-    return std::abs( cx - xy ) <= std::numeric_limits<float>::epsilon();
-}
-
-bool keyframei_t::is_center_dir(const direction_t dir, const float x, const float y) const noexcept {
-    // use epsilon delta to have tolerance
-    switch( dir ) {
-        case direction_t::RIGHT:
-            [[fallthrough]];
-        case direction_t::LEFT: {
-            const float cx = std::trunc(x) + center_;
-            return std::abs( cx - x ) <= std::numeric_limits<float>::epsilon();
-        }
-        case direction_t::DOWN:
-            [[fallthrough]];
-        case direction_t::UP:
-            [[fallthrough]];
-        default: {
-            const float cy = std::trunc(y) + center_;
-            return std::abs( cy - y ) <= std::numeric_limits<float>::epsilon();
-        }
-    }
+bool keyframei_t::is_center(const float v) const noexcept {
+    const float cv = std::trunc(v) + center_;
+    return std::abs( cv - v ) <= std::numeric_limits<float>::epsilon();
 }
 
 bool keyframei_t::field_entered(const direction_t dir, const float x, const float y) const noexcept {

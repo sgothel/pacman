@@ -244,12 +244,7 @@ class keyframei_t {
         /**
          * Returns true if position component is exactly on the center sub-field within machine epsilon.
          */
-        bool is_center_xy(const float xy) const noexcept;
-
-        /**
-         * Returns true if position in direction is exactly on the center sub-field within machine epsilon.
-         */
-        bool is_center_dir(const direction_t dir, const float x, const float y) const noexcept;
+        bool is_center(const float v) const noexcept;
 
         bool field_entered(const direction_t dir, const float x, const float y) const noexcept;
 

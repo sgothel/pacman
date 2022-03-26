@@ -374,7 +374,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
     dir_ = new_dir;
     if( log_moves ) {
         log_printf("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s c%d e%d -> %s\n", to_string(id).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
-                choice, to_string(mode_).c_str(), mode_ms_left, pos_.toShortString().c_str(), pos_.is_center_dir(keyframei_), pos_.entered_tile(keyframei_), target_.toShortString().c_str());
+                choice, to_string(mode_).c_str(), mode_ms_left, pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), target_.toShortString().c_str());
     }
 }
 
@@ -436,11 +436,11 @@ bool ghost_t::tick() noexcept {
     if( log_moves || DEBUG_GFX_BOUNDS ) {
         log_printf("%s tick: %s, %s [%d ms], pos %s c%d e%d crash %d -> %s, textures %s\n",
                 to_string(id).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
-                pos_.toShortString().c_str(), pos_.is_center_dir(keyframei_), pos_.entered_tile(keyframei_), collision_maze,
+                pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), collision_maze,
                 target_.toShortString().c_str(), atex->toString().c_str());
     }
 
-    set_next_dir(collision_maze, pos_.is_center_dir(keyframei_));
+    set_next_dir(collision_maze, pos_.is_center(keyframei_));
 
     return true;
 }

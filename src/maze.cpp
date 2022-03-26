@@ -313,7 +313,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
     }
     // Collision test with walls
     const tile_t fwd_tile = maze.tile(fwd_x_pos_i, fwd_y_pos_i);
-    const bool new_pos_is_centered = keyframei.is_center_dir(dir, new_x_pos_f, new_y_pos_f);
+    const bool new_pos_is_centered = keyframei.is_center(new_x_pos_f, new_y_pos_f);
     bool collision;
     if( nullptr != ct0 ) {
         collision = ct0(fwd_tile);
@@ -327,7 +327,7 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
         log_printf("%s: %s -> %s: %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> new %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> fwd %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",
                 to_string(last_dir_).c_str(), to_string(dir).c_str(),
-                x_pos_f, y_pos_f, x_pos_i, y_pos_i, keyframei.is_center_dir(last_dir_, x_pos_f, y_pos_f), keyframei.field_entered(last_dir_, x_pos_f, y_pos_f),
+                x_pos_f, y_pos_f, x_pos_i, y_pos_i, keyframei.is_center(x_pos_f, y_pos_f), keyframei.field_entered(last_dir_, x_pos_f, y_pos_f),
                 new_x_pos_f, new_y_pos_f, new_x_pos_i, new_y_pos_i, new_pos_is_centered, keyframei.field_entered(dir, new_x_pos_f, new_y_pos_f),
                 fwd_x_pos_i, fwd_y_pos_i,
                 to_string(fwd_tile).c_str(), collision);
