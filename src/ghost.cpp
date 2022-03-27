@@ -69,7 +69,6 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   current_speed_pct(0.75f),
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
-  // next_field_frame_cntr( keyframei_.frames_per_field(), true /* auto_reload */),
   id( id_ ),
   mode_( mode_t::HOME ),
   mode_ms_left ( number( mode_duration_t::HOMESTAY ) ),
@@ -267,7 +266,6 @@ void ghost_t::set_speed(const float pct) noexcept {
     keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
     pos_.set_aligned_dir(keyframei_);
     sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
-    // next_field_frame_cntr.reset( keyframei_.frames_per_field(), true /* auto_reload */);
     if( log_moves ) {
         log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
     }
@@ -425,8 +423,6 @@ bool ghost_t::tick() noexcept {
             set_mode( mode_t::HOME );
         }
     }
-
-    // next_field_frame_cntr.count_down(); // FIXME: Usage ???
 
     collision_maze = !pos_.step(dir_, keyframei_, [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode_ || mode_t::PHANTOM == mode_ ) ?

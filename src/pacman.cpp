@@ -71,7 +71,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   current_speed_pct(0.80f),
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
-  // next_field_frame_cntr(0, false /* auto_reload */),
+  next_empty_field_frame_cntr(0, false /* auto_reload */),
   mode( mode_t::HOME ),
   mode_ms_left ( -1 ),
   lives( 3 ),
@@ -260,21 +260,25 @@ bool pacman_t::tick() noexcept {
              if( collision_maze ) {
                  audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                  reset_stats();
-             } else if( entered_tile ) {
+             } else { // if( entered_tile ) {
                  if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
                      score_ += ::number( tile_to_score(tile) );
                      global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                      if( tile_t::PELLET == tile ) {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.71f);
+                         next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                      } else if( tile_t::PELLET_POWER == tile ) {
                          set_mode( mode_t::POWERED );
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.90f);
+                         next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                      }
                  } else if( tile_t::EMPTY == tile ) {
-                     set_speed(0.80f);
-                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+                     if( next_empty_field_frame_cntr.count_down() ) {
+                         set_speed(0.80f);
+                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+                     }
                  }
              }
          }

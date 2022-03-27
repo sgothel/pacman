@@ -160,7 +160,6 @@ class ghost_t {
         float current_speed_pct;
         keyframei_t keyframei_;
         countdown_t sync_next_frame_cntr;
-        // countdown_t next_field_frame_cntr;
 
         personality_t id; // not necessarily unique
         mode_t mode_;
@@ -252,7 +251,7 @@ class pacman_t {
         float current_speed_pct;
         keyframei_t keyframei_;
         countdown_t sync_next_frame_cntr;
-        // countdown_t next_field_frame_cntr;
+        countdown_t next_empty_field_frame_cntr;
 
         mode_t mode;
         int mode_ms_left;
