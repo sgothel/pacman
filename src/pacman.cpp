@@ -106,14 +106,14 @@ void pacman_t::set_mode(const mode_t m) noexcept {
         case mode_t::HOME:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
             mode = m;
-            mode_ms_left = -1;
+            mode_ms_left = number( mode_duration_t::HOMESTAY );
             pos_ = global_maze->pacman_start_pos();
             pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
             set_dir( direction_t::LEFT );
             reset_stats(); // always, even if speed is unchanged
             atex = &get_tex();
             for(ghost_ref g : ghosts) {
-                g->set_mode(ghost_t::mode_t::HOME);
+                g->set_mode(ghost_t::mode_t::HOME, mode_ms_left);
             }
             set_speed(0.80f);
             break;
@@ -223,7 +223,11 @@ bool pacman_t::tick() noexcept {
     }
 
     if( mode_t::HOME == mode ) {
-        set_mode( mode_t::NORMAL );
+        if( 0 == mode_ms_left ) {
+            set_mode( mode_t::NORMAL );
+        } else {
+            return true; // wait
+        }
     } else if( mode_t::DEAD == mode ) {
         if( 0 == mode_ms_left ) {
             set_mode( mode_t::HOME );

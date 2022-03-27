@@ -213,7 +213,7 @@ static std::string to_string(game_mode_t m) noexcept {
     }
 }
 enum class game_mode_duration_t : int {
-    LEVEL_START = 4000
+    LEVEL_START = 4000 - pacman_t::number(pacman_t::mode_duration_t::HOMESTAY)
 };
 static constexpr int number(const game_mode_duration_t item) noexcept {
     return static_cast<int>(item);

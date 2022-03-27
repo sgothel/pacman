@@ -144,11 +144,9 @@ class ghost_t {
 
         /** mode durations in ms */
         enum class mode_duration_t : int {
-            HOMESTAY = 4000,
             CHASING = 20000,
             SCATTERING = 7000,
-            SCARED = 10000,
-            PHANTOM = 20000
+            SCARED = 10000
         };
         static constexpr int number(const mode_duration_t item) noexcept {
             return static_cast<int>(item);
@@ -162,6 +160,7 @@ class ghost_t {
         countdown_t sync_next_frame_cntr;
 
         personality_t id; // not necessarily unique
+        int live_counter;
         mode_t mode_;
         int mode_ms_left;
         direction_t dir_;
@@ -199,7 +198,7 @@ class ghost_t {
         constexpr const keyframei_t& keyframei() const noexcept { return keyframei_; }
 
         constexpr mode_t mode() const noexcept { return mode_; }
-        void set_mode(const mode_t m) noexcept;
+        void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
         void set_speed(const float pct) noexcept;
 
         constexpr direction_t direction() const noexcept { return dir_; }
@@ -236,15 +235,16 @@ class pacman_t {
             DEAD
         };
 
-    private:
         /** mode durations in ms */
         enum class mode_duration_t : int {
+            HOMESTAY = 2000,
             INPOWER = ghost_t::number(ghost_t::mode_duration_t::SCARED),
             DEADANIM = 2000
         };
         static constexpr int number(const mode_duration_t item) noexcept {
             return static_cast<int>(item);
         }
+    private:
         const int ms_per_tex = 167;
 
         const float fields_per_sec_total;

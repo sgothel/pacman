@@ -70,8 +70,9 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   id( id_ ),
+  live_counter( 0 ),
   mode_( mode_t::HOME ),
-  mode_ms_left ( number( mode_duration_t::HOMESTAY ) ),
+  mode_ms_left ( 0 ),
   dir_( direction_t::LEFT ),
   atex_normal( "N", rend, ms_per_atex, global_tex->all_images(), 0, id_to_yoff(id), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex_scared( "S", rend, ms_per_atex, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
@@ -188,33 +189,29 @@ void ghost_t::set_next_target() noexcept {
     }
 }
 
-void ghost_t::set_mode(const mode_t m) noexcept {
+void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     const mode_t old_mode = mode_;
     switch( m ) {
         case mode_t::HOME:
-            if( ghost_t::personality_t::BLINKY == id ) {
-                // positioned outside of the box and chasing right away
-                mode_ = mode_t::CHASE;
-                mode_ms_left = number( mode_duration_t::CHASING );
-                dir_ = direction_t::LEFT;
+            mode_ = m;
+            mode_ms_left = 0 <= mode_ms ? mode_ms : 0;
+            if( ghost_t::personality_t::BLINKY == id && 0 <= mode_ms /** pacman's call */ ) {
+                // positioned outside of the box at start
                 pos_ = global_maze->ghost_start_pos();
-                pos_.set_centered(keyframei_);
             } else {
-                mode_ = m;
-                mode_ms_left = number( mode_duration_t::HOMESTAY );
                 pos_ = global_maze->ghost_home_pos();
-                pos_.set_centered(keyframei_);
             }
+            pos_.set_centered(keyframei_);
             set_speed(0.75f);
             break;
         case mode_t::LEAVE_HOME:
             mode_ = m;
-            mode_ms_left = number( mode_duration_t::HOMESTAY );
+            mode_ms_left = -1;
             break;
         case mode_t::CHASE:
             mode_ = m;
-            mode_ms_left = number( mode_duration_t::CHASING );
-            if( mode_t::LEAVE_HOME != old_mode ) {
+            mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::CHASING );
+            if( mode_t::LEAVE_HOME == old_mode ) {
                 dir_ = direction_t::LEFT;
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
@@ -223,9 +220,9 @@ void ghost_t::set_mode(const mode_t m) noexcept {
             break;
         case mode_t::SCATTER:
             mode_ = m;
-            mode_ms_left = number( mode_duration_t::SCATTERING );
-            if( mode_t::HOME == old_mode || mode_t::LEAVE_HOME == old_mode ) {
-                // NOP
+            mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCATTERING );
+            if( mode_t::LEAVE_HOME == old_mode ) {
+                dir_ = direction_t::LEFT;
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
                 set_speed(0.75f);
@@ -236,14 +233,15 @@ void ghost_t::set_mode(const mode_t m) noexcept {
                 // NOP
             } else {
                 mode_ = m;
-                mode_ms_left = number( mode_duration_t::SCARED );
+                mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCARED );
                 dir_ = inverse(dir_);
                 set_speed(0.50f);
             }
             break;
         case mode_t::PHANTOM:
             mode_ = m;
-            mode_ms_left = number( mode_duration_t::PHANTOM );
+            mode_ms_left = -1;
+            ++live_counter;
             set_speed(0.75f);
             break;
         default:
@@ -393,15 +391,13 @@ bool ghost_t::tick() noexcept {
     } else if( mode_t::HOME == mode_ ) {
         if( 0 == mode_ms_left ) {
             set_mode( mode_t::LEAVE_HOME );
+        } else {
+            return true; // wait
         }
     } else if( mode_t::LEAVE_HOME == mode_ ) {
         if( pos_.intersects(target_) ) {
-            set_mode( mode_t::CHASE );
-        } else if( 0 == mode_ms_left ) { // ooops
-            pos_ = global_maze->ghost_start_pos();
-            pos_.set_centered(keyframei_);
-            set_mode( mode_t::CHASE );
-        }
+            set_mode( mode_t::SCATTER );
+        } // else move for exit
     } else if( mode_t::CHASE == mode_ ) {
         if( !pos_.intersects_f( global_maze->ghost_home_box() ) ) {
             set_next_target(); // update ...
