@@ -167,6 +167,10 @@ class ghost_t {
         mode_t mode_;
         int mode_ms_left;
         direction_t dir_;
+        bool pellet_counter_active_;
+        int pellet_counter_;
+        static bool global_pellet_counter_active;
+        static int global_pellet_counter;
 
         animtex_t atex_normal;
         animtex_t atex_scared;
@@ -201,8 +205,17 @@ class ghost_t {
         constexpr const keyframei_t& keyframei() const noexcept { return keyframei_; }
 
         constexpr mode_t mode() const noexcept { return mode_; }
+        constexpr bool at_home() const noexcept { return mode_t::HOME == mode_; }
+        constexpr bool in_house() const noexcept { return mode_t::HOME == mode_ || mode_t::LEAVE_HOME == mode_; }
         void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
+
         void set_speed(const float pct) noexcept;
+
+        static std::string pellet_counter_string() noexcept;
+        static void notify_pellet_eaten() noexcept;
+        int pellet_counter() const noexcept;
+        int pellet_counter_limit() const noexcept;
+        bool can_leave_home() noexcept;
 
         constexpr direction_t direction() const noexcept { return dir_; }
         constexpr const acoord_t& position() const noexcept { return pos_; }

@@ -31,10 +31,14 @@
 #include <time.h>
 
 static constexpr const bool DEBUG_GFX_BOUNDS = false;
+static constexpr const bool DEBUG_PELLET_COUNTER = false;
 
 //
 // ghost_t
 //
+
+bool ghost_t::global_pellet_counter_active = false;
+int ghost_t::global_pellet_counter = 0;
 
 int ghost_t::id_to_yoff(ghost_t::personality_t id) noexcept {
     switch( id ) {
@@ -74,6 +78,8 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   mode_( mode_t::AWAY ),
   mode_ms_left ( 0 ),
   dir_( direction_t::LEFT ),
+  pellet_counter_active_( false ),
+  pellet_counter_( 0 ),
   atex_normal( "N", rend, ms_per_atex, global_tex->all_images(), 0, id_to_yoff(id), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex_scared( "S", rend, ms_per_atex, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
@@ -194,6 +200,10 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     mode_t m1 = m;
     switch( m ) {
         case mode_t::LEVEL_START:
+            pellet_counter_active_ = true;
+            pellet_counter_ = 0;
+            global_pellet_counter_active = false;
+            global_pellet_counter = 0;
             m1 = mode_t::HOME;
             [[fallthrough]];
         case mode_t::HOME: {
@@ -202,6 +212,12 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
             if( pacman_initiated ) {
                 live_counter_during_pacman_live = 0;
+                if( mode_t::HOME == m ) {
+                    // pacman died -> use global counter
+                    pellet_counter_active_ = false;
+                    global_pellet_counter_active = true;
+                    global_pellet_counter = 0;
+                }
             }
             if( ghost_t::personality_t::BLINKY == id && pacman_initiated ) {
                 // positioned outside of the box at start
@@ -251,8 +267,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::PHANTOM:
             mode_ = m1;
             mode_ms_left = -1;
-            set_speed(0.75f);
             ++live_counter_during_pacman_live;
+            set_speed(1.00f);
             break;
         default:
             mode_ = m1;
@@ -279,6 +295,124 @@ void ghost_t::set_speed(const float pct) noexcept {
     if( log_moves ) {
         log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
     }
+}
+
+std::string ghost_t::pellet_counter_string() noexcept {
+    std::string str = "global_pellet[on "+std::to_string(global_pellet_counter_active)+", ctr "+std::to_string(global_pellet_counter)+"], pellet[";
+    for(ghost_ref g : ghosts) {
+        str += to_string(g->id)+"[on "+std::to_string(g->pellet_counter_active_)+", ctr "+std::to_string(g->pellet_counter_)+"], ";
+    }
+    str += "]";
+    return str;
+}
+
+void ghost_t::notify_pellet_eaten() noexcept {
+    if( global_pellet_counter_active ) {
+        ++global_pellet_counter;
+    } else {
+        ghost_ref blinky = ghosts[ number(personality_t::BLINKY)];
+        ghost_ref pinky = ghosts[ number(personality_t::PINKY)];
+        ghost_ref inky = ghosts[ number(personality_t::INKY)];
+        ghost_ref clyde = ghosts[ number(personality_t::CLYDE)];
+
+        // Blinky is always out
+        if( pinky->at_home() && pinky->pellet_counter_active_ ) {
+            pinky->pellet_counter_++;
+        } else if( inky->at_home() && inky->pellet_counter_active_ ) {
+            inky->pellet_counter_++;
+        } else if( clyde->at_home() && clyde->pellet_counter_active_ ) {
+            clyde->pellet_counter_++;
+        }
+    }
+    if( DEBUG_PELLET_COUNTER ) {
+        log_printf("%s\n", pellet_counter_string().c_str());
+    }
+}
+
+int ghost_t::pellet_counter() const noexcept {
+    if( pellet_counter_active_ ) {
+        return pellet_counter_;
+    }
+    if( global_pellet_counter_active ) {
+        return global_pellet_counter;
+    }
+    return -1;
+}
+
+int ghost_t::pellet_counter_limit() const noexcept {
+    if( pellet_counter_active_ ) {
+        if( 2 <= get_current_level() ) {
+            // level >= 3 at start of every level
+            return 0;
+        }
+        if( 1 == get_current_level() ) {
+            // level == 2
+            switch( id ) {
+                case ghost_t::personality_t::BLINKY:
+                    return 0;
+                case ghost_t::personality_t::PINKY:
+                    return 0;
+                case ghost_t::personality_t::INKY:
+                    return 0;
+                case ghost_t::personality_t::CLYDE:
+                    [[fallthrough]];
+                default:
+                    return 50;
+            }
+        } else {
+            // level == 1
+            switch( id ) {
+                case ghost_t::personality_t::BLINKY:
+                    return 0;
+                case ghost_t::personality_t::PINKY:
+                    return 0;
+                case ghost_t::personality_t::INKY:
+                    return 30;
+                case ghost_t::personality_t::CLYDE:
+                    [[fallthrough]];
+                default:
+                    return 60;
+            }
+        }
+    }
+    // global
+    switch( id ) {
+        case ghost_t::personality_t::BLINKY:
+            return 0;
+        case ghost_t::personality_t::PINKY:
+            return 7;
+        case ghost_t::personality_t::INKY:
+            return 17;
+        case ghost_t::personality_t::CLYDE:
+            [[fallthrough]];
+        default:
+            return 32;
+    }
+}
+
+bool ghost_t::can_leave_home() noexcept {
+    if( at_home() ) {
+        // FIXME: Add no_eating_pellet timout, duration for pacman not eating any pellets
+        // Level <= 4: 4000ms
+        // Level >= 5: 3000ms
+        if( 0 < live_counter_during_pacman_live ) {
+            return true;
+        }
+        const int counter = pellet_counter();
+        const int limit = pellet_counter_limit();
+        if( counter >= limit ) {
+            if( global_pellet_counter_active && ghost_t::personality_t::CLYDE == id ) {
+                // re-enable local counter
+                global_pellet_counter_active = false;
+                global_pellet_counter = 0;
+                for(ghost_ref g : ghosts) {
+                    g->pellet_counter_active_ = true;
+                }
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept {
@@ -402,7 +536,7 @@ bool ghost_t::tick() noexcept {
     if( mode_t::AWAY == mode_ ) {
         return true; // NOP
     } else if( mode_t::HOME == mode_ ) {
-        if( 0 == mode_ms_left ) {
+        if( 0 == mode_ms_left && can_leave_home() ) {
             set_mode( mode_t::LEAVE_HOME );
         } else {
             return true; // wait

@@ -278,6 +278,7 @@ bool pacman_t::tick() noexcept {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.71f);
                          next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
+                         ghost_t::notify_pellet_eaten();
                      } else if( tile_t::PELLET_POWER == tile ) {
                          set_mode( mode_t::POWERED );
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
