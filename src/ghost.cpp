@@ -154,21 +154,20 @@ void ghost_t::set_next_target() noexcept {
             break;
 
         case mode_t::SCATTER:
-            // FIXME ???
             switch( id ) {
                 case ghost_t::personality_t::BLINKY:
                     target_ = global_maze->top_right_corner();
                     break;
-                case ghost_t::personality_t::CLYDE:
+                case ghost_t::personality_t::PINKY:
                     target_ = global_maze->top_left_corner();
                     break;
                 case ghost_t::personality_t::INKY:
-                    target_ = global_maze->bottom_left_corner();
+                    target_ = global_maze->bottom_right_corner();
                     break;
-                case ghost_t::personality_t::PINKY:
+                case ghost_t::personality_t::CLYDE:
                     [[fallthrough]];
                 default:
-                    target_ = global_maze->bottom_right_corner();
+                    target_ = global_maze->bottom_left_corner();
                     break;
             }
             target_.set_centered(keyframei_);
