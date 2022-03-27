@@ -78,6 +78,31 @@ void acoord_t::set_pos_clipped(const float x, const float y) noexcept {
     last_collided = false;
 }
 
+void acoord_t::set_centered(const keyframei_t& keyframei) noexcept {
+    x_pos_f = keyframei.center_value(x_pos_f);
+    y_pos_f = keyframei.center_value(y_pos_f);
+}
+
+void acoord_t::set_aligned_dir(const keyframei_t& keyframei) noexcept {
+    switch( last_dir_ ) {
+        case direction_t::RIGHT:
+            [[fallthrough]];
+        case direction_t::LEFT:
+            x_pos_f = keyframei.align_value( x_pos_f );
+            y_pos_f = keyframei.center_value( y_pos_f );
+            break;
+
+        case direction_t::DOWN:
+            [[fallthrough]];
+        case direction_t::UP:
+            [[fallthrough]];
+        default:
+            x_pos_f = keyframei.center_value( x_pos_f );
+            y_pos_f = keyframei.align_value( y_pos_f );
+            break;
+    }
+}
+
 bool acoord_t::intersects_f(const acoord_t& other) const noexcept {
     // use machine epsilon delta to avoid matching direct neighbors
 #if 1

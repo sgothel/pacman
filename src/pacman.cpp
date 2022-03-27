@@ -155,7 +155,7 @@ void pacman_t::set_speed(const float pct) noexcept {
     const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
-    pos_.set_centered(keyframei_);
+    pos_.set_aligned_dir(keyframei_);
     reset_stats();
     if( log_moves ) {
         log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %s, %s\n", old, current_speed_pct, sync_next_frame_cntr.toString().c_str(), keyframei_.toString().c_str());

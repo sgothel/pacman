@@ -265,7 +265,7 @@ void ghost_t::set_speed(const float pct) noexcept {
     const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
-    pos_.set_centered(keyframei_);
+    pos_.set_aligned_dir(keyframei_);
     sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
     // next_field_frame_cntr.reset( keyframei_.frames_per_field(), true /* auto_reload */);
     if( log_moves ) {
