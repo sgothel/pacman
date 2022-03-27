@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
     bool show_fps = false;
     bool enable_vsync = true;
     int forced_fps = -1;
-    float fields_per_sec_total=11;
+    float fields_per_sec_total=10;
     int win_width = 640, win_height = 720;
     bool show_players_moves = false;
     bool disable_all_ghosts = false;
