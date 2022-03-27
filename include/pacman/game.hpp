@@ -252,7 +252,7 @@ class pacman_t {
         float current_speed_pct;
         keyframei_t keyframei_;
         countdown_t sync_next_frame_cntr;
-        countdown_t next_field_frame_cntr;
+        // countdown_t next_field_frame_cntr;
 
         mode_t mode;
         int mode_ms_left;

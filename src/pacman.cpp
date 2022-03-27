@@ -71,7 +71,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   current_speed_pct(0.80f),
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
-  next_field_frame_cntr(0, false /* auto_reload */),
+  // next_field_frame_cntr(0, false /* auto_reload */),
   mode( mode_t::HOME ),
   mode_ms_left ( -1 ),
   lives( 3 ),
@@ -250,34 +250,31 @@ bool pacman_t::tick() noexcept {
              const int x_i = pos_.x_i();
              const int y_i = pos_.y_i();
              const tile_t tile = global_maze->tile(x_i, y_i);
+             const bool entered_tile = pos_.entered_tile(keyframei_);
              if( DEBUG_GFX_BOUNDS ) {
                  log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
-                         to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_),
+                         to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), entered_tile,
                          to_string(tile).c_str(),
                          collision_maze, collision_enemies, atex->toString().c_str());
              }
              if( collision_maze ) {
                  audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                  reset_stats();
-             } else {
+             } else if( entered_tile ) {
                  if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
                      score_ += ::number( tile_to_score(tile) );
                      global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                      if( tile_t::PELLET == tile ) {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.71f);
-                         next_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                      } else if( tile_t::PELLET_POWER == tile ) {
                          set_mode( mode_t::POWERED );
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                          set_speed(0.90f);
-                         next_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                      }
                  } else if( tile_t::EMPTY == tile ) {
-                     if( next_field_frame_cntr.count_down() ) {
-                         set_speed(0.80f);
-                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                     }
+                     set_speed(0.80f);
+                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                  }
              }
          }
