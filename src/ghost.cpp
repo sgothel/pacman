@@ -113,10 +113,19 @@ void ghost_t::set_next_target() noexcept {
                 case ghost_t::personality_t::BLINKY:
                     target_ = pacman->position();
                     break;
-                case ghost_t::personality_t::CLYDE:
-                    target_ = global_maze->top_left_corner();
-                    target_.set_centered(keyframei_);
+                case ghost_t::personality_t::PINKY: {
+                    acoord_t p = pacman->position();
+                    if( use_original_pacman_behavior() && direction_t::UP == pacman->direction() ) {
+                        // See http://donhodges.com/pacman_pinky_explanation.htm
+                        // See https://gameinternals.com/understanding-pac-man-ghost-behavior
+                        p.incr_fwd(keyframei_, 4);
+                        p.incr_left(keyframei_, 4);
+                    } else {
+                        p.incr_fwd(keyframei_, 4);
+                    }
+                    target_ =  p;
                     break;
+                }
                 case ghost_t::personality_t::INKY: {
                     /**
                      * Selecting the position two tiles in front of Pac-Man in his current direction of travel.
@@ -135,19 +144,11 @@ void ghost_t::set_next_target() noexcept {
                     target_ =  p;
                     break;
                 }
-                case ghost_t::personality_t::PINKY: {
-                    acoord_t p = pacman->position();
-                    if( use_original_pacman_behavior() && direction_t::UP == pacman->direction() ) {
-                        // See http://donhodges.com/pacman_pinky_explanation.htm
-                        // See https://gameinternals.com/understanding-pac-man-ghost-behavior
-                        p.incr_fwd(keyframei_, 4);
-                        p.incr_left(keyframei_, 4);
-                    } else {
-                        p.incr_fwd(keyframei_, 4);
-                    }
-                    target_ =  p;
+                case ghost_t::personality_t::CLYDE:
+                    // FIXME
+                    target_ = global_maze->top_left_corner();
+                    target_.set_centered(keyframei_);
                     break;
-                }
                 default:
                     target_ = pacman->position();
                     break;
@@ -464,12 +465,12 @@ std::string to_string(ghost_t::personality_t id) noexcept {
     switch( id ) {
         case ghost_t::personality_t::BLINKY:
             return "blinky";
-        case ghost_t::personality_t::CLYDE:
-            return "clyde";
-        case ghost_t::personality_t::INKY:
-            return "inky";
         case ghost_t::personality_t::PINKY:
             return "pinky";
+        case ghost_t::personality_t::INKY:
+            return "inky";
+        case ghost_t::personality_t::CLYDE:
+            return "clyde";
         default:
             return "unknown";
     }
