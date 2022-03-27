@@ -43,6 +43,9 @@ int win_pixel_scale = 1;
 static int frames_per_sec=0;
 int get_frames_per_sec() { return frames_per_sec; }
 
+static int current_level=-1;
+int get_current_level() { return current_level; }
+
 std::unique_ptr<maze_t> global_maze;
 std::shared_ptr<global_tex_t> global_tex;
 std::vector<ghost_ref> ghosts;
@@ -226,7 +229,8 @@ static void set_game_mode(const game_mode_t m) noexcept {
     const game_mode_t old_mode = game_mode;
     switch( m ) {
         case game_mode_t::LEVEL_START:
-            pacman->set_mode( pacman_t::mode_t::HOME );
+            ++current_level;
+            pacman->set_mode( pacman_t::mode_t::LEVEL_START );
             global_maze->reset();
             game_mode = m;
             if( audio_samples[ number( audio_clip_t::INTRO ) ]->is_valid() ) {
@@ -518,6 +522,7 @@ int main(int argc, char *argv[])
                             }
                             break;
                         case SDL_SCANCODE_R:
+                            current_level = -1;
                             set_game_mode(game_mode_t::LEVEL_START);
                             break;
                         case SDL_SCANCODE_W:

@@ -133,6 +133,9 @@ class ghost_t {
         }
 
         enum class mode_t {
+            /** Transitions to HOME right away */
+            LEVEL_START,
+            /** Turned off ghosts while pacman's death animation */
             AWAY,
             HOME,
             LEAVE_HOME,
@@ -159,8 +162,8 @@ class ghost_t {
         keyframei_t keyframei_;
         countdown_t sync_next_frame_cntr;
 
-        personality_t id; // not necessarily unique
-        int live_counter;
+        personality_t id;
+        int live_counter_during_pacman_live;
         mode_t mode_;
         int mode_ms_left;
         direction_t dir_;
@@ -229,6 +232,8 @@ std::string to_string(ghost_t::mode_t m) noexcept;
 class pacman_t {
     public:
         enum class mode_t {
+            /** Transitions to HOME right away */
+            LEVEL_START,
             HOME,
             NORMAL,
             POWERED,

@@ -70,8 +70,8 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   id( id_ ),
-  live_counter( 0 ),
-  mode_( mode_t::HOME ),
+  live_counter_during_pacman_live( 0 ),
+  mode_( mode_t::AWAY ),
   mode_ms_left ( 0 ),
   dir_( direction_t::LEFT ),
   atex_normal( "N", rend, ms_per_atex, global_tex->all_images(), 0, id_to_yoff(id), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
@@ -81,7 +81,6 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   pos_( global_maze->ghost_home_pos() ),
   target_( global_maze->ghost_home_pos() )
 {
-    set_mode( mode_t::HOME );
 }
 
 
@@ -192,11 +191,19 @@ void ghost_t::set_next_target() noexcept {
 
 void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     const mode_t old_mode = mode_;
+    mode_t m1 = m;
     switch( m ) {
-        case mode_t::HOME:
-            mode_ = m;
+        case mode_t::LEVEL_START:
+            m1 = mode_t::HOME;
+            [[fallthrough]];
+        case mode_t::HOME: {
+            mode_ = m1;
             mode_ms_left = 0 <= mode_ms ? mode_ms : 0;
-            if( ghost_t::personality_t::BLINKY == id && 0 <= mode_ms /** pacman's call */ ) {
+            const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
+            if( pacman_initiated ) {
+                live_counter_during_pacman_live = 0;
+            }
+            if( ghost_t::personality_t::BLINKY == id && pacman_initiated ) {
                 // positioned outside of the box at start
                 pos_ = global_maze->ghost_start_pos();
             } else {
@@ -205,12 +212,14 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             pos_.set_centered(keyframei_);
             set_speed(0.75f);
             break;
+        }
         case mode_t::LEAVE_HOME:
-            mode_ = m;
+            mode_ = m1;
             mode_ms_left = -1;
+            pellet_counter_active_ = false;
             break;
         case mode_t::CHASE:
-            mode_ = m;
+            mode_ = m1;
             mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::CHASING );
             if( mode_t::LEAVE_HOME == old_mode ) {
                 dir_ = direction_t::LEFT;
@@ -220,7 +229,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             set_speed(0.75f);
             break;
         case mode_t::SCATTER:
-            mode_ = m;
+            mode_ = m1;
             mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCATTERING );
             if( mode_t::LEAVE_HOME == old_mode ) {
                 dir_ = direction_t::LEFT;
@@ -233,26 +242,29 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             if( mode_t::HOME == old_mode || mode_t::LEAVE_HOME == old_mode ) {
                 // NOP
             } else {
-                mode_ = m;
+                mode_ = m1;
                 mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCARED );
                 dir_ = inverse(dir_);
                 set_speed(0.50f);
             }
             break;
         case mode_t::PHANTOM:
-            mode_ = m;
+            mode_ = m1;
             mode_ms_left = -1;
-            ++live_counter;
             set_speed(0.75f);
+            ++live_counter_during_pacman_live;
             break;
         default:
-            mode_ = m;
+            mode_ = m1;
             mode_ms_left = -1;
             break;
     }
     set_next_target();
-    log_printf("%s set_mode: %s -> %s [%d ms], pos %s -> %s\n", to_string(id).c_str(), to_string(old_mode).c_str(), to_string(mode_).c_str(), mode_ms_left,
-            pos_.toShortString().c_str(), target_.toShortString().c_str());
+    if( log_moves ) {
+        log_printf("%s set_mode: %s -> %s -> %s [%d ms], pos %s -> %s\n", to_string(id).c_str(),
+                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms_left,
+                pos_.toShortString().c_str(), target_.toShortString().c_str());
+    }
 }
 
 void ghost_t::set_speed(const float pct) noexcept {

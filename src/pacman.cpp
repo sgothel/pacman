@@ -72,7 +72,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   next_empty_field_frame_cntr(0, false /* auto_reload */),
-  mode( mode_t::HOME ),
+  mode( mode_t::LEVEL_START ),
   mode_ms_left ( -1 ),
   lives( 3 ),
   current_dir( direction_t::LEFT ),
@@ -88,7 +88,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   atex( &get_tex() ),
   pos_( global_maze->pacman_start_pos() )
 {
-    set_mode( mode_t::HOME );
+    set_mode( mode_t::LEVEL_START );
 }
 
 void pacman_t::destroy() noexcept {
@@ -102,10 +102,16 @@ void pacman_t::destroy() noexcept {
 
 void pacman_t::set_mode(const mode_t m) noexcept {
     const mode_t old_mode = mode;
+    mode_t m1 = m;
+    ghost_t::mode_t gm = ghost_t::mode_t::HOME;
     switch( m ) {
+        case mode_t::LEVEL_START:
+            m1 = mode_t::HOME;
+            gm = ghost_t::mode_t::LEVEL_START;
+            [[fallthrough]];
         case mode_t::HOME:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-            mode = m;
+            mode = m1;
             mode_ms_left = number( mode_duration_t::HOMESTAY );
             pos_ = global_maze->pacman_start_pos();
             pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
@@ -113,17 +119,17 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             reset_stats(); // always, even if speed is unchanged
             atex = &get_tex();
             for(ghost_ref g : ghosts) {
-                g->set_mode(ghost_t::mode_t::HOME, mode_ms_left);
+                g->set_mode(gm, mode_ms_left);
             }
             set_speed(0.80f);
             break;
         case mode_t::NORMAL:
-            mode = m;
+            mode = m1;
             mode_ms_left = -1;
             set_speed(0.80f);
             break;
         case mode_t::POWERED:
-            mode = m;
+            mode = m1;
             mode_ms_left = number( mode_duration_t::INPOWER );
             for(ghost_ref g : ghosts) {
                 g->set_mode(ghost_t::mode_t::SCARED);
@@ -132,7 +138,7 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             break;
         case mode_t::DEAD:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-            mode = m;
+            mode = m1;
             mode_ms_left = number( mode_duration_t::DEADANIM );
             atex_dead.reset();
             for(ghost_ref g : ghosts) {
@@ -141,11 +147,11 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             audio_samples[ ::number( audio_clip_t::DEATH ) ]->play();
             break;
         default:
-            mode = m;
+            mode = m1;
             mode_ms_left = -1;
             break;
     }
-    log_printf("pacman set_mode: %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(mode).c_str(), mode_ms_left, pos_.toShortString().c_str());
+    log_printf("pacman set_mode: %s -> %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode).c_str(), mode_ms_left, pos_.toShortString().c_str());
 }
 
 void pacman_t::set_speed(const float pct) noexcept {
