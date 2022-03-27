@@ -230,7 +230,7 @@ void ghost_t::set_next_target() noexcept {
                     } else {
                         p.incr_fwd(keyframei_, 4);
                     }
-                    target_ =  p;
+                    target_ = p;
                     break;
                 }
                 case ghost_t::personality_t::INKY: {
@@ -248,20 +248,19 @@ void ghost_t::set_next_target() noexcept {
                     float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
                     p.set_pos_clipped( keyframei_.center_value( bp_[0] + b_[0] ),
                                        keyframei_.center_value( bp_[1] + b_[1] ) ); // add back to blinky
-                    target_ =  p;
+                    target_ = p;
                     break;
                 }
                 case ghost_t::personality_t::CLYDE: {
                     acoord_t p = pacman->position();
-                    if( use_original_pacman_behavior() && direction_t::UP == pacman->direction() ) {
-                        // See http://donhodges.com/pacman_pinky_explanation.htm
-                        // See https://gameinternals.com/understanding-pac-man-ghost-behavior
-                        p.incr_fwd(keyframei_, 4);
-                        p.incr_left(keyframei_, 4);
+                    const float d_p = pos_.sq_distance(p);
+                    // farther than eight tiles away, his targeting is identical to Blinky
+                    if( d_p > 8*8 ) {
+                        target_ = pacman->position();
                     } else {
-                        p.incr_fwd(keyframei_, 4);
+                        target_ = global_maze->bottom_left_corner();
+                        target_.set_centered(keyframei_);
                     }
-                    target_ =  p;
                     break;
                 }
                 default:
