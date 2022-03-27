@@ -162,7 +162,24 @@ void pacman_t::set_speed(const float pct) noexcept {
     }
 }
 
+void pacman_t::print_stats() noexcept {
+    const acoord_t::stats_t &stats = pos_.get_stats();
+    if( stats.fields_walked_i > 0 && perf_frame_count_walked > 0) {
+        const uint64_t t1 = getCurrentMilliseconds();
+        const float fields_per_seconds = get_fps(perf_fields_walked_t0, t1, stats.fields_walked_f);
+        const float fps_draw = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked);
+        const float fps_tick = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked - sync_next_frame_cntr.events());
+        log_printf("pacman stats: fields[%.2f walked, %.2f/s], fps[draw %.2f/s, tick %.2f/s], frames[draw %" PRIu64 ", synced %d], td %" PRIu64 " ms, req_speed[%f\%, fields %f/s], %s, %s\n",
+                stats.fields_walked_f, fields_per_seconds,
+                fps_draw, fps_tick, perf_frame_count_walked, sync_next_frame_cntr.events(),
+                t1-perf_fields_walked_t0,
+                current_speed_pct, fields_per_sec_total*current_speed_pct,
+                keyframei_.toString().c_str(), pos_.toString().c_str());
+    }
+}
+
 void pacman_t::reset_stats() noexcept {
+    print_stats();
     perf_fields_walked_t0 = getCurrentMilliseconds();
     perf_frame_count_walked = 0;
     pos_.reset_stats();
@@ -241,18 +258,6 @@ bool pacman_t::tick() noexcept {
              }
              if( collision_maze ) {
                  audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                 if( pos_.fields_walked_i() > 0 && perf_frame_count_walked > 0) {
-                     const uint64_t t1 = getCurrentMilliseconds();
-                     const float fields_per_seconds = get_fps(perf_fields_walked_t0, t1, pos_.fields_walked_f());
-                     const float fps_draw = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked);
-                     const float fps_tick = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked - sync_next_frame_cntr.events());
-                     log_printf("pacman: fields[%.2f walked, %.2f/s], fps[draw %.2f/s, tick %.2f/s], frames[draw %" PRIu64 ", synced %d], td %" PRIu64 " ms, req_speed[%f\%, fields %f/s], %s, %s\n",
-                             pos_.fields_walked_f(), fields_per_seconds,
-                             fps_draw, fps_tick, perf_frame_count_walked, sync_next_frame_cntr.events(),
-                             t1-perf_fields_walked_t0,
-                             current_speed_pct, fields_per_sec_total*current_speed_pct,
-                             keyframei_.toString().c_str(), pos_.toString().c_str());
-                 }
                  reset_stats();
              } else {
                  if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {

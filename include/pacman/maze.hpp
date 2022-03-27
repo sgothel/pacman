@@ -64,32 +64,62 @@ class acoord_t {
         typedef std::function<bool(tile_t)> collisiontest_simple_t;
         typedef std::function<bool(direction_t d, float x_pos_f, float y_pos_f, bool center, int x_pos, int y_pos, tile_t)> collisiontest_t;
 
+        struct stats_t {
+            int fields_walked_i;
+            float fields_walked_f;
+
+            int field_center_count;
+            int field_entered_count;
+
+            stats_t() noexcept { reset(); }
+
+            void reset() noexcept {
+                fields_walked_i = 0;
+                fields_walked_f = 0.0f;
+                field_center_count = 0;
+                field_entered_count = 0;
+            }
+            std::string toString() const noexcept;
+        };
+
     private:
+        // tile int position
         int x_pos_i, y_pos_i;
+
+        // tile float position, center of object
         float x_pos_f, y_pos_f;
+
         direction_t last_dir_;
         bool last_collided;
-        int fields_walked_i_;
-        float fields_walked_f_;
+
+        stats_t stats_;
 
         bool step_impl(direction_t dir, const bool test_only, const keyframei_t& keyframei, collisiontest_simple_t ct0, collisiontest_t ct1) noexcept;
 
     public:
         acoord_t(const int x, const int y) noexcept;
 
-        void reset_stats() noexcept;
+        void reset_stats() noexcept { stats_.reset(); }
 
         void set_pos(const int x, const int y) noexcept;
         void set_pos_clipped(const float x, const float y) noexcept;
         void set_centered(const keyframei_t& keyframei) noexcept { x_pos_f = keyframei.center_value(x_pos_f); y_pos_f = keyframei.center_value(y_pos_f); }
 
         constexpr direction_t last_dir() const noexcept { return last_dir_; }
+
+        /** Return tile int position, x component. */
         constexpr int x_i() const noexcept { return x_pos_i; }
+
+        /** Return tile int position, y component. */
         constexpr int y_i() const noexcept { return y_pos_i; }
-        constexpr int fields_walked_i() const noexcept { return fields_walked_i_; }
+
+        /** Return tile float position, center of object, x component. */
         constexpr float x_f() const noexcept { return x_pos_f; }
+
+        /** Return tile float position, center of object, y component. */
         constexpr float y_f() const noexcept { return y_pos_f; }
-        constexpr float fields_walked_f() const noexcept { return fields_walked_f_; }
+
+        constexpr const stats_t& get_stats() const noexcept { return stats_; }
 
         /**
          * Almost pixel accurate collision test.
@@ -176,8 +206,10 @@ class acoord_t {
             return keyframei.is_center(x_pos_f, y_pos_f);
         }
 
+        static bool entered_tile(const keyframei_t& keyframei, const direction_t dir, const float x, const float y) noexcept;
+
         bool entered_tile(const keyframei_t& keyframei) const noexcept {
-            return keyframei.field_entered(last_dir_, x_pos_f, y_pos_f);
+            return entered_tile(keyframei, last_dir_, x_pos_f, y_pos_f);
         }
 
         /**

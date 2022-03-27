@@ -277,6 +277,7 @@ class pacman_t {
 
         animtex_t& get_tex() noexcept;
 
+        void print_stats() noexcept;
         void reset_stats() noexcept;
 
     public:

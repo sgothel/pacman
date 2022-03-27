@@ -47,19 +47,17 @@ std::string to_string(tile_t tile) noexcept {
 // acoord_t
 //
 
+std::string acoord_t::stats_t::toString() const noexcept {
+    return "[walked["+std::to_string(fields_walked_f)+", "+std::to_string(fields_walked_i)+"], center "+std::to_string(field_center_count)+", entered "+std::to_string(field_entered_count)+"]";
+
+}
+
 acoord_t::acoord_t(const int x, const int y) noexcept
 : x_pos_i(x), y_pos_i(y),
   x_pos_f(x), y_pos_f(y),
   last_dir_(direction_t::LEFT),
-  last_collided(false),
-  fields_walked_i_(0),
-  fields_walked_f_(0)
+  last_collided(false)
 {}
-
-void acoord_t::reset_stats() noexcept {
-    fields_walked_i_ = 0;
-    fields_walked_f_ = 0;
-}
 
 void acoord_t::set_pos(const int x, const int y) noexcept {
     x_pos_i = x;
@@ -313,12 +311,13 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
     }
     // Collision test with walls
     const tile_t fwd_tile = maze.tile(fwd_x_pos_i, fwd_y_pos_i);
-    const bool new_pos_is_centered = keyframei.is_center(new_x_pos_f, new_y_pos_f);
+    const bool new_pos_is_center = keyframei.is_center(new_x_pos_f, new_y_pos_f);
+    const bool new_pos_entered = entered_tile(keyframei, dir, new_x_pos_f, new_y_pos_f);
     bool collision;
     if( nullptr != ct0 ) {
         collision = ct0(fwd_tile);
     } else if( nullptr != ct1 ) {
-        collision = ct1(dir, new_x_pos_f, new_y_pos_f, new_pos_is_centered,
+        collision = ct1(dir, new_x_pos_f, new_y_pos_f, new_pos_is_center,
                              fwd_x_pos_i, fwd_y_pos_i, fwd_tile);
     } else {
         collision = false;
@@ -327,8 +326,8 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
         log_printf("%s: %s -> %s: %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> new %9.6f/%9.6f %2.2d/%2.2d c%d e%d -> fwd %2.2d/%2.2d, tile '%s', collision %d\n",
                 test_only ? "test" : "step",
                 to_string(last_dir_).c_str(), to_string(dir).c_str(),
-                x_pos_f, y_pos_f, x_pos_i, y_pos_i, keyframei.is_center(x_pos_f, y_pos_f), keyframei.field_entered(last_dir_, x_pos_f, y_pos_f),
-                new_x_pos_f, new_y_pos_f, new_x_pos_i, new_y_pos_i, new_pos_is_centered, keyframei.field_entered(dir, new_x_pos_f, new_y_pos_f),
+                x_pos_f, y_pos_f, x_pos_i, y_pos_i, keyframei.is_center(x_pos_f, y_pos_f), entered_tile(keyframei, dir, x_pos_f, y_pos_f),
+                new_x_pos_f, new_y_pos_f, new_x_pos_i, new_y_pos_i, new_pos_is_center, new_pos_entered,
                 fwd_x_pos_i, fwd_y_pos_i,
                 to_string(fwd_tile).c_str(), collision);
     }
@@ -342,8 +341,14 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
             x_pos_i = new_x_pos_i;
             y_pos_i = new_y_pos_i;
             last_dir_ = dir;
-            fields_walked_i_ += std::abs(x_pos_i - x_pos_i_old) + std::abs(y_pos_i - y_pos_i_old);
-            fields_walked_f_ += fields_stepped_f;
+            stats_.fields_walked_i += std::abs(x_pos_i - x_pos_i_old) + std::abs(y_pos_i - y_pos_i_old);
+            stats_.fields_walked_f += fields_stepped_f;
+            if( new_pos_is_center ) {
+                stats_.field_center_count++;
+            }
+            if( new_pos_entered ) {
+                stats_.field_entered_count++;
+            }
         } else {
             last_collided = true;
         }
@@ -351,9 +356,45 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
     return !collision;
 }
 
+bool acoord_t::entered_tile(const keyframei_t& keyframei, const direction_t dir, const float x, const float y) noexcept {
+    const float epsilon = std::numeric_limits<float>::epsilon();
+    const float step_width = keyframei.fields_per_frame();
+    const float half_step = step_width / 2.0f;
+    const float center = keyframei.center();
+
+    switch( dir ) {
+        case direction_t::RIGHT: {
+            const float center_p1 = center - half_step - epsilon;
+            const float center_p2 = center + half_step - epsilon;
+            const float v0_m = x - std::trunc(x);
+            return center_p1 < v0_m && v0_m < center_p2;
+        }
+        case direction_t::LEFT: {
+            const float center_p1 = std::max(0.0f, center - step_width - half_step - epsilon);
+            const float center_p2 = center - half_step - epsilon;
+            const float v0_m = x - std::trunc(x);
+            return center_p1 < v0_m && v0_m < center_p2;
+        }
+        case direction_t::DOWN: {
+            const float center_p1 = center - half_step - epsilon;
+            const float center_p2 = center + half_step - epsilon;
+            const float v0_m = y - std::trunc(y);
+            return center_p1 < v0_m && v0_m < center_p2;
+        }
+        case direction_t::UP:
+            [[fallthrough]];
+        default: {
+            const float center_p1 = std::max(0.0f, center - step_width - half_step - epsilon);
+            const float center_p2 = center - half_step - epsilon;
+            const float v0_m = y - std::trunc(y);
+            return center_p1 < v0_m && v0_m < center_p2;
+        }
+    }
+}
+
 std::string acoord_t::toString() const noexcept {
     return "["+std::to_string(x_pos_f)+"/"+std::to_string(y_pos_f)+" "+std::to_string(x_pos_i)+"/"+std::to_string(y_pos_i)+
-            ", last[dir "+to_string(last_dir_)+", collided "+std::to_string(last_collided)+"], walked["+std::to_string(fields_walked_f_)+", "+std::to_string(fields_walked_i_)+"]]";
+            ", last[dir "+to_string(last_dir_)+", collided "+std::to_string(last_collided)+"], "+stats_.toString()+"]";
 }
 
 std::string acoord_t::toShortString() const noexcept {

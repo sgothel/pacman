@@ -246,8 +246,6 @@ class keyframei_t {
          */
         bool is_center(const float v) const noexcept;
 
-        bool field_entered(const direction_t dir, const float x, const float y) const noexcept;
-
         float align_value(const float v) const noexcept;
         float center_value(const float v) const noexcept;
 

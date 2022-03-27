@@ -245,39 +245,6 @@ bool keyframei_t::is_center(const float v) const noexcept {
     return std::abs( cv - v ) <= std::numeric_limits<float>::epsilon();
 }
 
-bool keyframei_t::field_entered(const direction_t dir, const float x, const float y) const noexcept {
-    // FIXME: Wrong code, need to act solely on center tile
-    // use epsilon delta to have tolerance
-    const float fields_per_frame_ = fields_per_frame();
-    switch( dir ) {
-        case direction_t::RIGHT: {
-            const float v0_trunc = std::trunc(x);
-            const float v0_m = x - v0_trunc;
-            return v0_m <= std::numeric_limits<float>::epsilon();
-        }
-        case direction_t::LEFT: {
-            const float v0_trunc = std::trunc(x);
-            const float v0_m = x - v0_trunc;
-            // at the tile edge
-            return 1.0f - v0_m <= fields_per_frame_ + std::numeric_limits<float>::epsilon();
-            // return v0_m <= std::numeric_limits<float>::epsilon();
-        }
-        case direction_t::DOWN: {
-            const float v0_trunc = std::trunc(y);
-            const float v0_m = y - v0_trunc;
-            return v0_m <= std::numeric_limits<float>::epsilon();
-        }
-        case direction_t::UP:
-            [[fallthrough]];
-        default: {
-            const float v0_trunc = std::trunc(y);
-            const float v0_m = y - v0_trunc;
-            return 1.0f - v0_m <= fields_per_frame_ + std::numeric_limits<float>::epsilon();
-            // return v0_m <= std::numeric_limits<float>::epsilon();
-        }
-    }
-}
-
 float keyframei_t::align_value(const float v) const noexcept {
     const float fields_per_frame_ = fields_per_frame();
     const float v0_trunc = std::trunc(v);
