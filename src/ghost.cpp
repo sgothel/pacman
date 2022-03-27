@@ -96,102 +96,17 @@ void ghost_t::destroy() noexcept {
     atex_phantom.destroy();
 }
 
-void ghost_t::set_next_target() noexcept {
-    switch( mode_ ) {
-        case mode_t::HOME:
-            if( ghost_t::personality_t::BLINKY == id ) {
-                target_ = pacman->position();
-                break;
-            } else {
-                target_ = global_maze->ghost_home_pos();
-                target_.set_centered(keyframei_);
-                break;
-            }
-
-        case mode_t::LEAVE_HOME:
-            target_ = global_maze->ghost_start_pos();
-            target_.set_centered(keyframei_);
-            break;
-
-        case mode_t::CHASE:
-            switch( id ) {
-                case ghost_t::personality_t::BLINKY:
-                    target_ = pacman->position();
-                    break;
-                case ghost_t::personality_t::PINKY: {
-                    acoord_t p = pacman->position();
-                    if( use_original_pacman_behavior() && direction_t::UP == pacman->direction() ) {
-                        // See http://donhodges.com/pacman_pinky_explanation.htm
-                        // See https://gameinternals.com/understanding-pac-man-ghost-behavior
-                        p.incr_fwd(keyframei_, 4);
-                        p.incr_left(keyframei_, 4);
-                    } else {
-                        p.incr_fwd(keyframei_, 4);
-                    }
-                    target_ =  p;
-                    break;
-                }
-                case ghost_t::personality_t::INKY: {
-                    /**
-                     * Selecting the position two tiles in front of Pac-Man in his current direction of travel.
-                     * From there, imagine drawing a vector from Blinky's position to this tile,
-                     * and then doubling the length of the vector.
-                     * The tile that this new, extended vector ends on will be Inky's actual target.
-                     */
-                    acoord_t p = pacman->position();
-                    acoord_t b = ghosts[ number( ghost_t::personality_t::BLINKY ) ]->position();
-                    p.incr_fwd(keyframei_, 2);
-                    float p_[] = { p.x_f(), p.y_f() };
-                    float b_[] = { b.x_f(), b.y_f() };
-                    float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
-                    p.set_pos_clipped( keyframei_.center_value( bp_[0] + b_[0] ),
-                                       keyframei_.center_value( bp_[1] + b_[1] ) ); // add back to blinky
-                    target_ =  p;
-                    break;
-                }
-                case ghost_t::personality_t::CLYDE:
-                    // FIXME
-                    target_ = global_maze->top_left_corner();
-                    target_.set_centered(keyframei_);
-                    break;
-                default:
-                    target_ = pacman->position();
-                    break;
-            }
-            break;
-
-        case mode_t::SCATTER:
-            switch( id ) {
-                case ghost_t::personality_t::BLINKY:
-                    target_ = global_maze->top_right_corner();
-                    break;
-                case ghost_t::personality_t::PINKY:
-                    target_ = global_maze->top_left_corner();
-                    break;
-                case ghost_t::personality_t::INKY:
-                    target_ = global_maze->bottom_right_corner();
-                    break;
-                case ghost_t::personality_t::CLYDE:
-                    [[fallthrough]];
-                default:
-                    target_ = global_maze->bottom_left_corner();
-                    break;
-            }
-            target_.set_centered(keyframei_);
-            break;
-
-        case mode_t::PHANTOM:
-            target_ = global_maze->ghost_home_pos();
-            target_.set_centered(keyframei_);
-            break;
-
-        case mode_t::SCARED:
-            [[fallthrough]];
-            // dummy, since an RNG is being used
-        default:
-            target_ = global_maze->ghost_start_pos();
-            target_.set_centered(keyframei_);
-            break;
+void ghost_t::set_speed(const float pct) noexcept {
+    if( std::abs( current_speed_pct - pct ) <= std::numeric_limits<float>::epsilon() ) {
+        return;
+    }
+    const float old = current_speed_pct;
+    current_speed_pct = pct;
+    keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
+    pos_.set_aligned_dir(keyframei_);
+    sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
+    if( log_moves ) {
+        log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
     }
 }
 
@@ -283,136 +198,111 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     }
 }
 
-void ghost_t::set_speed(const float pct) noexcept {
-    if( std::abs( current_speed_pct - pct ) <= std::numeric_limits<float>::epsilon() ) {
-        return;
-    }
-    const float old = current_speed_pct;
-    current_speed_pct = pct;
-    keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
-    pos_.set_aligned_dir(keyframei_);
-    sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
-    if( log_moves ) {
-        log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
-    }
-}
+void ghost_t::set_next_target() noexcept {
+    switch( mode_ ) {
+        case mode_t::HOME:
+            if( ghost_t::personality_t::BLINKY == id ) {
+                target_ = pacman->position();
+                break;
+            } else {
+                target_ = global_maze->ghost_home_pos();
+                target_.set_centered(keyframei_);
+                break;
+            }
 
-std::string ghost_t::pellet_counter_string() noexcept {
-    std::string str = "global_pellet[on "+std::to_string(global_pellet_counter_active)+", ctr "+std::to_string(global_pellet_counter)+"], pellet[";
-    for(ghost_ref g : ghosts) {
-        str += to_string(g->id)+"[on "+std::to_string(g->pellet_counter_active_)+", ctr "+std::to_string(g->pellet_counter_)+"], ";
-    }
-    str += "]";
-    return str;
-}
+        case mode_t::LEAVE_HOME:
+            target_ = global_maze->ghost_start_pos();
+            target_.set_centered(keyframei_);
+            break;
 
-void ghost_t::notify_pellet_eaten() noexcept {
-    if( global_pellet_counter_active ) {
-        ++global_pellet_counter;
-    } else {
-        ghost_ref blinky = ghosts[ number(personality_t::BLINKY)];
-        ghost_ref pinky = ghosts[ number(personality_t::PINKY)];
-        ghost_ref inky = ghosts[ number(personality_t::INKY)];
-        ghost_ref clyde = ghosts[ number(personality_t::CLYDE)];
-
-        // Blinky is always out
-        if( pinky->at_home() && pinky->pellet_counter_active_ ) {
-            pinky->pellet_counter_++;
-        } else if( inky->at_home() && inky->pellet_counter_active_ ) {
-            inky->pellet_counter_++;
-        } else if( clyde->at_home() && clyde->pellet_counter_active_ ) {
-            clyde->pellet_counter_++;
-        }
-    }
-    if( DEBUG_PELLET_COUNTER ) {
-        log_printf("%s\n", pellet_counter_string().c_str());
-    }
-}
-
-int ghost_t::pellet_counter() const noexcept {
-    if( pellet_counter_active_ ) {
-        return pellet_counter_;
-    }
-    if( global_pellet_counter_active ) {
-        return global_pellet_counter;
-    }
-    return -1;
-}
-
-int ghost_t::pellet_counter_limit() const noexcept {
-    if( pellet_counter_active_ ) {
-        if( 2 <= get_current_level() ) {
-            // level >= 3 at start of every level
-            return 0;
-        }
-        if( 1 == get_current_level() ) {
-            // level == 2
+        case mode_t::CHASE:
             switch( id ) {
                 case ghost_t::personality_t::BLINKY:
-                    return 0;
-                case ghost_t::personality_t::PINKY:
-                    return 0;
-                case ghost_t::personality_t::INKY:
-                    return 0;
-                case ghost_t::personality_t::CLYDE:
-                    [[fallthrough]];
-                default:
-                    return 50;
-            }
-        } else {
-            // level == 1
-            switch( id ) {
-                case ghost_t::personality_t::BLINKY:
-                    return 0;
-                case ghost_t::personality_t::PINKY:
-                    return 0;
-                case ghost_t::personality_t::INKY:
-                    return 30;
-                case ghost_t::personality_t::CLYDE:
-                    [[fallthrough]];
-                default:
-                    return 60;
-            }
-        }
-    }
-    // global
-    switch( id ) {
-        case ghost_t::personality_t::BLINKY:
-            return 0;
-        case ghost_t::personality_t::PINKY:
-            return 7;
-        case ghost_t::personality_t::INKY:
-            return 17;
-        case ghost_t::personality_t::CLYDE:
-            [[fallthrough]];
-        default:
-            return 32;
-    }
-}
-
-bool ghost_t::can_leave_home() noexcept {
-    if( at_home() ) {
-        // FIXME: Add no_eating_pellet timout, duration for pacman not eating any pellets
-        // Level <= 4: 4000ms
-        // Level >= 5: 3000ms
-        if( 0 < live_counter_during_pacman_live ) {
-            return true;
-        }
-        const int counter = pellet_counter();
-        const int limit = pellet_counter_limit();
-        if( counter >= limit ) {
-            if( global_pellet_counter_active && ghost_t::personality_t::CLYDE == id ) {
-                // re-enable local counter
-                global_pellet_counter_active = false;
-                global_pellet_counter = 0;
-                for(ghost_ref g : ghosts) {
-                    g->pellet_counter_active_ = true;
+                    target_ = pacman->position();
+                    break;
+                case ghost_t::personality_t::PINKY: {
+                    acoord_t p = pacman->position();
+                    if( use_original_pacman_behavior() && direction_t::UP == pacman->direction() ) {
+                        // See http://donhodges.com/pacman_pinky_explanation.htm
+                        // See https://gameinternals.com/understanding-pac-man-ghost-behavior
+                        p.incr_fwd(keyframei_, 4);
+                        p.incr_left(keyframei_, 4);
+                    } else {
+                        p.incr_fwd(keyframei_, 4);
+                    }
+                    target_ =  p;
+                    break;
                 }
+                case ghost_t::personality_t::INKY: {
+                    /**
+                     * Selecting the position two tiles in front of Pac-Man in his current direction of travel.
+                     * From there, imagine drawing a vector from Blinky's position to this tile,
+                     * and then doubling the length of the vector.
+                     * The tile that this new, extended vector ends on will be Inky's actual target.
+                     */
+                    acoord_t p = pacman->position();
+                    acoord_t b = ghosts[ number( ghost_t::personality_t::BLINKY ) ]->position();
+                    p.incr_fwd(keyframei_, 2);
+                    float p_[] = { p.x_f(), p.y_f() };
+                    float b_[] = { b.x_f(), b.y_f() };
+                    float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
+                    p.set_pos_clipped( keyframei_.center_value( bp_[0] + b_[0] ),
+                                       keyframei_.center_value( bp_[1] + b_[1] ) ); // add back to blinky
+                    target_ =  p;
+                    break;
+                }
+                case ghost_t::personality_t::CLYDE: {
+                    acoord_t p = pacman->position();
+                    if( use_original_pacman_behavior() && direction_t::UP == pacman->direction() ) {
+                        // See http://donhodges.com/pacman_pinky_explanation.htm
+                        // See https://gameinternals.com/understanding-pac-man-ghost-behavior
+                        p.incr_fwd(keyframei_, 4);
+                        p.incr_left(keyframei_, 4);
+                    } else {
+                        p.incr_fwd(keyframei_, 4);
+                    }
+                    target_ =  p;
+                    break;
+                }
+                default:
+                    target_ = pacman->position();
+                    break;
             }
-            return true;
-        }
+            break;
+
+        case mode_t::SCATTER:
+            switch( id ) {
+                case ghost_t::personality_t::BLINKY:
+                    target_ = global_maze->top_right_corner();
+                    break;
+                case ghost_t::personality_t::PINKY:
+                    target_ = global_maze->top_left_corner();
+                    break;
+                case ghost_t::personality_t::INKY:
+                    target_ = global_maze->bottom_right_corner();
+                    break;
+                case ghost_t::personality_t::CLYDE:
+                    [[fallthrough]];
+                default:
+                    target_ = global_maze->bottom_left_corner();
+                    break;
+            }
+            target_.set_centered(keyframei_);
+            break;
+
+        case mode_t::PHANTOM:
+            target_ = global_maze->ghost_home_pos();
+            target_.set_centered(keyframei_);
+            break;
+
+        case mode_t::SCARED:
+            [[fallthrough]];
+            // dummy, since an RNG is being used
+        default:
+            target_ = global_maze->ghost_start_pos();
+            target_.set_centered(keyframei_);
+            break;
     }
-    return false;
 }
 
 void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept {
@@ -602,6 +492,131 @@ void ghost_t::draw(SDL_Renderer* rend) noexcept {
         }
     }
 }
+
+//
+// ghost_t pellet counter
+//
+std::string ghost_t::pellet_counter_string() noexcept {
+    std::string str = "global_pellet[on "+std::to_string(global_pellet_counter_active)+", ctr "+std::to_string(global_pellet_counter)+"], pellet[";
+    for(ghost_ref g : ghosts) {
+        str += to_string(g->id)+"[on "+std::to_string(g->pellet_counter_active_)+", ctr "+std::to_string(g->pellet_counter_)+"], ";
+    }
+    str += "]";
+    return str;
+}
+
+void ghost_t::notify_pellet_eaten() noexcept {
+    if( global_pellet_counter_active ) {
+        ++global_pellet_counter;
+    } else {
+        ghost_ref blinky = ghosts[ number(personality_t::BLINKY)];
+        ghost_ref pinky = ghosts[ number(personality_t::PINKY)];
+        ghost_ref inky = ghosts[ number(personality_t::INKY)];
+        ghost_ref clyde = ghosts[ number(personality_t::CLYDE)];
+
+        // Blinky is always out
+        if( pinky->at_home() && pinky->pellet_counter_active_ ) {
+            pinky->pellet_counter_++;
+        } else if( inky->at_home() && inky->pellet_counter_active_ ) {
+            inky->pellet_counter_++;
+        } else if( clyde->at_home() && clyde->pellet_counter_active_ ) {
+            clyde->pellet_counter_++;
+        }
+    }
+    if( DEBUG_PELLET_COUNTER ) {
+        log_printf("%s\n", pellet_counter_string().c_str());
+    }
+}
+
+int ghost_t::pellet_counter() const noexcept {
+    if( pellet_counter_active_ ) {
+        return pellet_counter_;
+    }
+    if( global_pellet_counter_active ) {
+        return global_pellet_counter;
+    }
+    return -1;
+}
+
+int ghost_t::pellet_counter_limit() const noexcept {
+    if( pellet_counter_active_ ) {
+        if( 2 <= get_current_level() ) {
+            // level >= 3 at start of every level
+            return 0;
+        }
+        if( 1 == get_current_level() ) {
+            // level == 2
+            switch( id ) {
+                case ghost_t::personality_t::BLINKY:
+                    return 0;
+                case ghost_t::personality_t::PINKY:
+                    return 0;
+                case ghost_t::personality_t::INKY:
+                    return 0;
+                case ghost_t::personality_t::CLYDE:
+                    [[fallthrough]];
+                default:
+                    return 50;
+            }
+        } else {
+            // level == 1
+            switch( id ) {
+                case ghost_t::personality_t::BLINKY:
+                    return 0;
+                case ghost_t::personality_t::PINKY:
+                    return 0;
+                case ghost_t::personality_t::INKY:
+                    return 30;
+                case ghost_t::personality_t::CLYDE:
+                    [[fallthrough]];
+                default:
+                    return 60;
+            }
+        }
+    }
+    // global
+    switch( id ) {
+        case ghost_t::personality_t::BLINKY:
+            return 0;
+        case ghost_t::personality_t::PINKY:
+            return 7;
+        case ghost_t::personality_t::INKY:
+            return 17;
+        case ghost_t::personality_t::CLYDE:
+            [[fallthrough]];
+        default:
+            return 32;
+    }
+}
+
+bool ghost_t::can_leave_home() noexcept {
+    if( at_home() ) {
+        // FIXME: Add no_eating_pellet timout, duration for pacman not eating any pellets
+        // Level <= 4: 4s000ms
+        // Level >= 5: 3000ms
+        if( 0 < live_counter_during_pacman_live ) {
+            return true;
+        }
+        const int counter = pellet_counter();
+        const int limit = pellet_counter_limit();
+        if( counter >= limit ) {
+            if( global_pellet_counter_active && ghost_t::personality_t::CLYDE == id ) {
+                // re-enable local counter
+                global_pellet_counter_active = false;
+                global_pellet_counter = 0;
+                for(ghost_ref g : ghosts) {
+                    g->pellet_counter_active_ = true;
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+//
+// ghost_t strings
+//
 
 std::string ghost_t::toString() const noexcept {
     return to_string(id)+"["+to_string(mode_)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos_.toString()+" -> "+target_.toShortString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
