@@ -3,7 +3,7 @@
  1 32 // bottom-left corner
 26 32 // bottom-right corner
 26  4 // top-right corner
-14 26 // pacman start position
+14.0 26.0 // pacman start position
 10 15 8 5 // ghost home box incl. walls and gate [x, y, widht, height]
 13 17 // ghost home center position
 14 14 // ghost start position

@@ -108,7 +108,7 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             mode = m;
             mode_ms_left = -1;
             pos_ = global_maze->pacman_start_pos();
-            pos_.set_centered(keyframei_);
+            pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
             set_dir( direction_t::LEFT );
             reset_stats(); // always, even if speed is unchanged
             atex = &get_tex();

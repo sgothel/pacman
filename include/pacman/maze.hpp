@@ -102,9 +102,15 @@ class acoord_t {
         void reset_stats() noexcept { stats_.reset(); }
 
         void set_pos(const int x, const int y) noexcept;
+
+        void set_pos(const float x, const float y) noexcept;
+
         void set_pos_clipped(const float x, const float y) noexcept;
+
         void set_centered(const keyframei_t& keyframei) noexcept;
-        void set_aligned_dir(const keyframei_t& keyframei) noexcept;
+
+        void set_aligned_dir(const direction_t dir, const keyframei_t& keyframei) noexcept;
+        void set_aligned_dir(const keyframei_t& keyframei) noexcept { set_aligned_dir(last_dir_, keyframei); }
 
         constexpr direction_t last_dir() const noexcept { return last_dir_; }
 
@@ -272,8 +278,9 @@ class maze_t {
         field_t active;
         field_t original;
 
-        bool digest_position_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept;
-        bool digest_box_line(const std::string& name, box_t& dest, const std::string& line) noexcept;
+        bool digest_iposition_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept;
+        bool digest_fposition_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept;
+        bool digest_ibox_line(const std::string& name, box_t& dest, const std::string& line) noexcept;
 
     public:
         maze_t(const std::string& fname) noexcept;

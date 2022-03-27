@@ -68,6 +68,15 @@ void acoord_t::set_pos(const int x, const int y) noexcept {
     last_collided = false;
 }
 
+void acoord_t::set_pos(const float x, const float y) noexcept {
+    x_pos_f = x;
+    y_pos_f = y;
+    x_pos_i = round_to_int(x_pos_f);
+    y_pos_i = round_to_int(y_pos_f);
+    last_dir_ = direction_t::LEFT;
+    last_collided = false;
+}
+
 void acoord_t::set_pos_clipped(const float x, const float y) noexcept {
     maze_t& maze = *global_maze;
     x_pos_f = maze.clip_pos_x( x );
@@ -83,8 +92,8 @@ void acoord_t::set_centered(const keyframei_t& keyframei) noexcept {
     y_pos_f = keyframei.center_value(y_pos_f);
 }
 
-void acoord_t::set_aligned_dir(const keyframei_t& keyframei) noexcept {
-    switch( last_dir_ ) {
+void acoord_t::set_aligned_dir(const direction_t dir, const keyframei_t& keyframei) noexcept {
+    switch( dir ) {
         case direction_t::RIGHT:
             [[fallthrough]];
         case direction_t::LEFT:
@@ -471,7 +480,7 @@ std::string maze_t::field_t::toString() const noexcept {
 // maze_t
 //
 
-bool maze_t::digest_position_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept {
+bool maze_t::digest_iposition_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept {
     if( -1 == dest.x_i() || -1 == dest.y_i() ) {
         int x_pos = 0, y_pos = 0;
         sscanf(line.c_str(), "%d %d", &x_pos, &y_pos);
@@ -485,7 +494,21 @@ bool maze_t::digest_position_line(const std::string& name, acoord_t& dest, const
     }
 }
 
-bool maze_t::digest_box_line(const std::string& name, box_t& dest, const std::string& line) noexcept {
+bool maze_t::digest_fposition_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept {
+    if( -1 == dest.x_i() || -1 == dest.y_i() ) {
+        float x_pos = 0.0f, y_pos = 0.0f;
+        sscanf(line.c_str(), "%f %f", &x_pos, &y_pos);
+        dest.set_pos(x_pos, y_pos);
+        if( DEBUG ) {
+            log_printf("maze: read %s position: %s\n", name.c_str(), dest.toString().c_str());
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool maze_t::digest_ibox_line(const std::string& name, box_t& dest, const std::string& line) noexcept {
     if( -1 == dest.x() || -1 == dest.y() ) {
         int x_pos = 0, y_pos = 0, w = 0, h = 0;
         sscanf(line.c_str(), "%d %d %d %d", &x_pos, &y_pos, &w, &h);
@@ -528,14 +551,14 @@ maze_t::maze_t(const std::string& fname) noexcept
                 if( DEBUG ) {
                     log_printf("maze: read dimension: %s\n", toString().c_str());
                 }
-            } else if( digest_position_line("top_left_pos", top_left_pos, line) ) {
-            } else if( digest_position_line("bottom_left_pos", bottom_left_pos, line) ) {
-            } else if( digest_position_line("bottom_right_pos", bottom_right_pos, line) ) {
-            } else if( digest_position_line("top_right_pos", top_right_pos, line) ) {
-            } else if( digest_position_line("pacman", pacman_start_pos_, line) ) {
-            } else if( digest_box_line("ghost_home", ghost_home, line) ) {
-            } else if( digest_position_line("ghost_home", ghost_home_pos_, line) ) {
-            } else if( digest_position_line("ghost_start", ghost_start_pos_, line) ) {
+            } else if( digest_iposition_line("top_left_pos", top_left_pos, line) ) {
+            } else if( digest_iposition_line("bottom_left_pos", bottom_left_pos, line) ) {
+            } else if( digest_iposition_line("bottom_right_pos", bottom_right_pos, line) ) {
+            } else if( digest_iposition_line("top_right_pos", top_right_pos, line) ) {
+            } else if( digest_fposition_line("pacman", pacman_start_pos_, line) ) {
+            } else if( digest_ibox_line("ghost_home", ghost_home, line) ) {
+            } else if( digest_iposition_line("ghost_home", ghost_home_pos_, line) ) {
+            } else if( digest_iposition_line("ghost_start", ghost_start_pos_, line) ) {
             } else if( 0 == texture_file.length() ) {
                 texture_file = line;
             } else if( field_line_iter < original.height() ) {
