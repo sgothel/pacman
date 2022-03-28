@@ -57,7 +57,17 @@ score_t tile_to_score(const tile_t tile) noexcept;
 //
 
 /**
- * Level Specification from [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
+ * Ghost wave timings for each scatter and chase duration per phase and per level
+ * from [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier).
+ */
+struct ghost_wave_t {
+    int scatter_ms;
+    int chase_ms;
+};
+typedef std::vector<ghost_wave_t> ghost_wave_vec_t;
+
+/**
+ * `Level Specification` from [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
  * Appendix A: Reference Tables.
  */
 struct game_level_spec_t {
@@ -76,12 +86,14 @@ struct game_level_spec_t {
     float ghost_fright_speed;
     int fright_time_ms;
     int fright_flash_count;
+    ghost_wave_vec_t ghost_waves;
 };
 
 const game_level_spec_t& game_level_spec(const int level) noexcept;
 const game_level_spec_t& game_level_spec() noexcept;
 
-tile_t level_to_fruit(const int level) noexcept;
+const ghost_wave_t& get_ghost_wave(const int level, const int phase_idx) noexcept;
+const ghost_wave_t& get_ghost_wave(const int phase_idx) noexcept;
 
 //
 // global_tex_t

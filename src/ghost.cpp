@@ -398,12 +398,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
         }
         case mode_t::CHASE:
             global_mode = m;
-            switch( global_scatter_mode_count ) {
-                case 0: global_mode_ms_left = 20000; break;
-                case 1: global_mode_ms_left = 20000; break;
-                case 2: global_mode_ms_left = 20000; break;
-                default: global_mode_ms_left = -1; /** indefinite **/ break;
-            }
+            global_mode_ms_left = get_ghost_wave(global_scatter_mode_count).chase_ms;
             for(ghost_ref g : ghosts) {
                 if( g->is_scattering_or_chasing() ) {
                     g->set_mode( m );
@@ -412,11 +407,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
             break;
         case mode_t::SCATTER:
             global_mode = m;
-            switch( global_scatter_mode_count ) {
-                case 0: global_mode_ms_left = 7000; break;
-                case 1: global_mode_ms_left = 7000; break;
-                default: global_mode_ms_left = 5000; break;
-            }
+            global_mode_ms_left = get_ghost_wave(global_scatter_mode_count).scatter_ms;
             for(ghost_ref g : ghosts) {
                 if( g->is_scattering_or_chasing() ) {
                     g->set_mode( m );
