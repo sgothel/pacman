@@ -257,7 +257,7 @@ static std::string get_usage(const std::string& exename) noexcept {
     // TODO: Keep in sync with README.md
     return "Usage: "+exename+" [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
               "[-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] "+
-              "[-no_ghosts] [-bugfix] [-audio]";
+              "[-no_ghosts] [-bugfix] [-audio] [-level <int>]";
 }
 
 //
@@ -375,20 +375,11 @@ int main(int argc, char *argv[])
                 original_pacman_behavior = false;
             } else if( 0 == strcmp("-audio", argv[i]) ) {
                 use_audio = true;
+            } else if( 0 == strcmp("-level", argv[i]) && i+1<argc) {
+                current_level = atoi(argv[i+1]);
+                ++i;
             }
         }
-        log_printf("%s\n", get_usage(argv[0]).c_str());
-        log_printf("- show_fps %d\n", log_fps());
-        log_printf("- show_modes %d\n", log_modes());
-        log_printf("- show_moves %d\n", log_moves());
-        log_printf("- show_targets %d\n", show_targets);
-        log_printf("- show_debug_gfx %d\n", show_debug_gfx());
-        log_printf("- enable_vsync %d\n", enable_vsync);
-        log_printf("- forced_fps %d\n", forced_fps);
-        log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
-        log_printf("- win size %d x %d\n", win_width, win_height);
-        log_printf("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
-        log_printf("- use_audio %d\n", use_audio);
     }
 
     global_maze = std::make_unique<maze_t>("media/playfield_pacman.txt");
@@ -409,6 +400,21 @@ int main(int argc, char *argv[])
         });
         log_printf("--- >8 ---\n");
         log_printf("Maze: %s\n", global_maze->toString().c_str());
+    }
+    {
+        log_printf("\n%s\n\n", get_usage(argv[0]).c_str());
+        log_printf("- show_fps %d\n", log_fps());
+        log_printf("- show_modes %d\n", log_modes());
+        log_printf("- show_moves %d\n", log_moves());
+        log_printf("- show_targets %d\n", show_targets);
+        log_printf("- show_debug_gfx %d\n", show_debug_gfx());
+        log_printf("- enable_vsync %d\n", enable_vsync);
+        log_printf("- forced_fps %d\n", forced_fps);
+        log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
+        log_printf("- win size %d x %d\n", win_width, win_height);
+        log_printf("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
+        log_printf("- use_audio %d\n", use_audio);
+        log_printf("- level %d\n", get_current_level());
     }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {

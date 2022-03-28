@@ -59,9 +59,10 @@ Following commandline arguments are supported
 - `-no_ghosts` to disable all ghosts
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
 - `-audio` to turn on audio effects, i.e. playing the audio samples.
+- `-level <int>` to start at given level
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-audio]
+bin/pacman [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-audio] [-level <int>]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Bugfix Mode
