@@ -59,6 +59,14 @@ std::string to_string(tile_t tile) noexcept;
 // acoord_t
 //
 
+/**
+ * @anchor position_semantics
+ * ### Positioning
+ * The int position represents the tile index.
+ *
+ * The float position represents the center of the object moving across tiles.
+ * It is positioned on the edge of keyframei_t sub-tiles in its moving direction_t with a centered opposite component.
+ */
 class acoord_t {
     public:
         typedef std::function<bool(tile_t)> collisiontest_simple_t;
@@ -86,7 +94,7 @@ class acoord_t {
         // tile int position
         int x_pos_i, y_pos_i;
 
-        // tile float position, center of object
+        // see @ref position_semantics
         float x_pos_f, y_pos_f;
 
         direction_t last_dir_;
@@ -120,10 +128,18 @@ class acoord_t {
         /** Return tile int position, y component. */
         constexpr int y_i() const noexcept { return y_pos_i; }
 
-        /** Return tile float position, center of object, x component. */
+        /**
+         * Return tile float position, center of object, x component.
+         *
+         * @see @ref position_semantics
+         */
         constexpr float x_f() const noexcept { return x_pos_f; }
 
-        /** Return tile float position, center of object, y component. */
+        /**
+         * Return tile float position, center of object, y component.
+         *
+         * @see @ref position_semantics
+         */
         constexpr float y_f() const noexcept { return y_pos_f; }
 
         constexpr const stats_t& get_stats() const noexcept { return stats_; }
