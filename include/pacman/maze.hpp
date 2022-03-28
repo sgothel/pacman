@@ -43,7 +43,7 @@ enum class tile_t : int {
     PELLET_POWER = 4,
     CHERRY = 5,
     STRAWBERRY = 6,
-    ORANGE = 7,
+    PEACH = 7,
     APPLE = 8,
     MELON = 9,
     GALAXIAN = 10,

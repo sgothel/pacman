@@ -35,10 +35,18 @@
 std::string to_string(tile_t tile) noexcept {
     switch(tile) {
         case tile_t::EMPTY: return " ";
-        case tile_t::PELLET: return ".";
-        case tile_t::PELLET_POWER: return "*";
         case tile_t::WALL: return "X";
         case tile_t::GATE: return "-";
+        case tile_t::PELLET: return ".";
+        case tile_t::PELLET_POWER: return "*";
+        case tile_t::CHERRY: return "C";
+        case tile_t::STRAWBERRY: return "S";
+        case tile_t::PEACH: return "P";
+        case tile_t::APPLE: return "A";
+        case tile_t::MELON: return "M";
+        case tile_t::GALAXIAN: return "G";
+        case tile_t::BELL: return "B";
+        case tile_t::KEY: return "K";
         default: return "?";
     }
 }

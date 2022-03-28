@@ -40,7 +40,7 @@ enum class score_t : int {
     GHOST_4 = 1600,
     CHERRY = 100,
     STRAWBERRY = 300,
-    ORANGE = 500,
+    PEACH = 500,
     APPLE = 700,
     MELON = 1000,
     GALAXIAN = 2000,
@@ -51,6 +51,8 @@ constexpr int number(const score_t item) noexcept {
     return static_cast<int>(item);
 }
 score_t tile_to_score(const tile_t tile) noexcept;
+
+tile_t level_to_fruit(const int level) noexcept;
 
 //
 // global_tex_t

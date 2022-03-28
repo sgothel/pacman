@@ -40,10 +40,10 @@
 int win_pixel_width = 0;
 int win_pixel_scale = 1;
 
-static int frames_per_sec=0;
+static int frames_per_sec = 0;
 int get_frames_per_sec() { return frames_per_sec; }
 
-static int current_level=-1;
+static int current_level = 1;
 int get_current_level() { return current_level; }
 
 std::unique_ptr<maze_t> global_maze;
@@ -78,13 +78,31 @@ score_t tile_to_score(const tile_t tile) noexcept {
         case tile_t::PELLET_POWER: return score_t::PELLET_POWER;
         case tile_t::CHERRY: return score_t::CHERRY;
         case tile_t::STRAWBERRY: return score_t::STRAWBERRY;
-        case tile_t::ORANGE: return score_t::ORANGE;
+        case tile_t::PEACH: return score_t::PEACH;
         case tile_t::APPLE: return score_t::APPLE;
         case tile_t::MELON: return score_t::MELON;
         case tile_t::GALAXIAN: return score_t::GALAXIAN;
         case tile_t::BELL: return score_t::BELL;
         case tile_t::KEY: return score_t::KEY;
         default: return score_t::NONE;
+    }
+}
+
+tile_t level_to_fruit(const int level) noexcept {
+    switch( level ) {
+        case  1: return tile_t::CHERRY;
+        case  2: return tile_t::STRAWBERRY;
+        case  3: [[fallthrough]];
+        case  4: return tile_t::PEACH;
+        case  5: [[fallthrough]];
+        case  6: return tile_t::APPLE;
+        case  7: [[fallthrough]];
+        case  8: return tile_t::MELON;
+        case  9: [[fallthrough]];
+        case 10: return tile_t::GALAXIAN;
+        case 11: [[fallthrough]];
+        case 12: return tile_t::BELL;
+        default: return tile_t::KEY;
     }
 }
 
