@@ -26,6 +26,7 @@
 #include <pacman/globals.hpp>
 
 #include <limits>
+#include <random>
 
 #include <cstdio>
 #include <time.h>
@@ -304,101 +305,134 @@ void ghost_t::set_next_target() noexcept {
     }
 }
 
+direction_t ghost_t::get_random_dir() noexcept {
+    static std::default_random_engine rng;
+
+    std::uniform_int_distribution<int> dist(::number(direction_t::RIGHT), ::number(direction_t::UP));
+    return static_cast<direction_t>( dist(rng) );
+}
+
 void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept {
     if( !is_center && !collision ) {
         return; // NOP
     }
 
-    /**
-     * Original Puckman direction encoding, see http://donhodges.com/pacman_pinky_explanation.htm
-     */
-    constexpr const int R = 0;
-    constexpr const int D = 1;
-    constexpr const int L = 2;
-    constexpr const int U = 3;
-
-    const direction_t cur_dir = dir_;
-    const direction_t inv_dir = inverse(cur_dir);
-    const direction_t left_dir = rot_left(cur_dir);
-    const direction_t right_dir = rot_right(cur_dir);
-    direction_t new_dir;
-    int choice = 0;
-    const float d_inf = global_maze->width() * global_maze->height() * 10; // std::numeric_limits<float>::max();
-
-    acoord_t right = pos_;   // 0
-    acoord_t down = pos_;    // 1
-    acoord_t left = pos_;    // 2
-    acoord_t up = pos_;      // 3
     acoord_t::collisiontest_simple_t collisiontest = [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode_ || mode_t::PHANTOM == mode_ ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     };
 
-    const bool dir_coll[4] = {
-            !right.step(direction_t::RIGHT, keyframei_, collisiontest),
-            !down.step(direction_t::DOWN, keyframei_, collisiontest),
-            !left.step(direction_t::LEFT, keyframei_, collisiontest),
-            !up.step(direction_t::UP, keyframei_, collisiontest) };
+    const direction_t cur_dir = dir_;
+    const direction_t inv_dir = inverse(cur_dir);
+    direction_t new_dir;
+    int choice = 0;
 
-    if( dir_coll[ ::number(left_dir) ] && dir_coll[ ::number(right_dir) ] ) {
-        // walls left and right
-        if( dir_coll[ ::number(cur_dir) ] ) {
-            // dead-end, can only return .. unusual (not in orig map)
-            new_dir = inv_dir;
-            choice = 10;
+    if( mode_t::SCARED == mode_ ) {
+        const direction_t rdir = get_random_dir();
+        if( rdir != inv_dir && pos_.test(rdir, keyframei_, collisiontest) ) {
+            new_dir = rdir;
+            choice = 1;
+        } else if( rdir != direction_t::UP && inv_dir != direction_t::UP && pos_.test(direction_t::UP, keyframei_, collisiontest) ) {
+            new_dir = direction_t::UP;
+            choice = 2;
+        } else if( rdir != direction_t::LEFT && inv_dir != direction_t::LEFT && pos_.test(direction_t::LEFT, keyframei_, collisiontest) ) {
+            new_dir = direction_t::LEFT;
+            choice = 3;
+        } else if( rdir != direction_t::DOWN && inv_dir != direction_t::DOWN && pos_.test(direction_t::DOWN, keyframei_, collisiontest) ) {
+            new_dir = direction_t::DOWN;
+            choice = 4;
+        } else if( rdir != direction_t::RIGHT && inv_dir != direction_t::RIGHT && pos_.test(direction_t::RIGHT, keyframei_, collisiontest) ) {
+            new_dir = direction_t::RIGHT;
+            choice = 5;
         } else {
-            // straight ahead and walls left and right
             new_dir = cur_dir;
-            choice = 20;
+            choice = 6;
         }
     } else {
-        // find shortest path
-        float dir_dist[4] = {
-                dir_coll[R] ? d_inf : right.sq_distance(target_),
-                dir_coll[D] ? d_inf : down.sq_distance(target_),
-                dir_coll[L] ? d_inf : left.sq_distance(target_),
-                dir_coll[U] ? d_inf : up.sq_distance(target_) };
+        /**
+         * Original Puckman direction encoding, see http://donhodges.com/pacman_pinky_explanation.htm
+         */
+        const constexpr int R = 0;
+        const constexpr int D = 1;
+        const constexpr int L = 2;
+        const constexpr int U = 3;
 
-        // penalty for reversal
-        dir_dist[ ::number(inv_dir) ] += 2*2;
+        const float d_inf = global_maze->width() * global_maze->height() * 10; // std::numeric_limits<float>::max();
 
-        if( log_moves ) {
-            log_printf(std::string(to_string(id)+": collisions r "+std::to_string(dir_coll[R])+", d "+std::to_string(dir_coll[D])+", l "+std::to_string(dir_coll[L])+", u "+std::to_string(dir_coll[U])+"\n").c_str());
-            log_printf(std::string(to_string(id)+": distances r "+std::to_string(dir_dist[R])+", d "+std::to_string(dir_dist[D])+", l "+std::to_string(dir_dist[L])+", u "+std::to_string(dir_dist[U])+"\n").c_str());
-        }
-        // Check for a clear short path, reversal has been punished
-        if( !dir_coll[R] && dir_dist[R] < dir_dist[U] && dir_dist[R] < dir_dist[D] && dir_dist[R] < dir_dist[L] ) {
-            new_dir = direction_t::RIGHT;
-            choice = 30;
-        } else if( !dir_coll[D] && dir_dist[D] < dir_dist[U] && dir_dist[D] < dir_dist[L] && dir_dist[D] < dir_dist[R] ) {
-            new_dir = direction_t::DOWN;
-            choice = 31;
-        } else if( !dir_coll[L] && dir_dist[L] < dir_dist[U] && dir_dist[L] < dir_dist[D] && dir_dist[L] < dir_dist[R] ) {
-            new_dir = direction_t::LEFT;
-            choice = 32;
-        } else if( !dir_coll[U] && dir_dist[U] < dir_dist[D] && dir_dist[U] < dir_dist[L] && dir_dist[U] < dir_dist[R] ) {
-            new_dir = direction_t::UP;
-            choice = 33;
-        } else {
-            if( !dir_coll[ ::number(cur_dir) ] ) {
-                // straight ahead .. no better choice
-                new_dir = cur_dir;
-                choice = 40;
-            } else if( !dir_coll[R] && dir_dist[R] <= dir_dist[U] && dir_dist[R] <= dir_dist[D] && dir_dist[R] <= dir_dist[L] ) {
-                new_dir = direction_t::RIGHT;
-                choice = 50;
-            } else if( !dir_coll[D] && dir_dist[D] <= dir_dist[U] && dir_dist[D] <= dir_dist[L] && dir_dist[D] <= dir_dist[R] ) {
-                new_dir = direction_t::DOWN;
-                choice = 51;
-            } else if( !dir_coll[L] && dir_dist[L] <= dir_dist[U] && dir_dist[L] <= dir_dist[D] && dir_dist[L] <= dir_dist[R] ) {
-                new_dir = direction_t::LEFT;
-                choice = 52;
-            } else if( !dir_coll[U] /* && dir_dist[U] <= dir_dist[D] && dir_dist[U] <= dir_dist[L] && dir_dist[U] <= dir_dist[R] */ ) {
-                new_dir = direction_t::UP;
-                choice = 53;
+        const direction_t left_dir = rot_left(cur_dir);
+        const direction_t right_dir = rot_right(cur_dir);
+
+        acoord_t right = pos_;   // 0
+        acoord_t down = pos_;    // 1
+        acoord_t left = pos_;    // 2
+        acoord_t up = pos_;      // 3
+
+        const bool dir_coll[4] = {
+                !right.step(direction_t::RIGHT, keyframei_, collisiontest),
+                !down.step(direction_t::DOWN, keyframei_, collisiontest),
+                !left.step(direction_t::LEFT, keyframei_, collisiontest),
+                !up.step(direction_t::UP, keyframei_, collisiontest) };
+
+        if( dir_coll[ ::number(left_dir) ] && dir_coll[ ::number(right_dir) ] ) {
+            // walls left and right
+            if( dir_coll[ ::number(cur_dir) ] ) {
+                // dead-end, can only return .. unusual (not in orig map)
+                new_dir = inv_dir;
+                choice = 10;
             } else {
+                // straight ahead and walls left and right
+                new_dir = cur_dir;
+                choice = 20;
+            }
+        } else {
+            // find shortest path
+            float dir_dist[4] = {
+                    dir_coll[R] ? d_inf : right.sq_distance(target_),
+                    dir_coll[D] ? d_inf : down.sq_distance(target_),
+                    dir_coll[L] ? d_inf : left.sq_distance(target_),
+                    dir_coll[U] ? d_inf : up.sq_distance(target_) };
+
+            // penalty for reversal
+            dir_dist[ ::number(inv_dir) ] += 2*2;
+
+            if( log_moves ) {
+                log_printf(std::string(to_string(id)+": collisions r "+std::to_string(dir_coll[R])+", d "+std::to_string(dir_coll[D])+", l "+std::to_string(dir_coll[L])+", u "+std::to_string(dir_coll[U])+"\n").c_str());
+                log_printf(std::string(to_string(id)+": distances r "+std::to_string(dir_dist[R])+", d "+std::to_string(dir_dist[D])+", l "+std::to_string(dir_dist[L])+", u "+std::to_string(dir_dist[U])+"\n").c_str());
+            }
+            // Check for a clear short path, reversal has been punished
+            if( !dir_coll[R] && dir_dist[R] < dir_dist[U] && dir_dist[R] < dir_dist[D] && dir_dist[R] < dir_dist[L] ) {
+                new_dir = direction_t::RIGHT;
+                choice = 30;
+            } else if( !dir_coll[D] && dir_dist[D] < dir_dist[U] && dir_dist[D] < dir_dist[L] && dir_dist[D] < dir_dist[R] ) {
+                new_dir = direction_t::DOWN;
+                choice = 31;
+            } else if( !dir_coll[L] && dir_dist[L] < dir_dist[U] && dir_dist[L] < dir_dist[D] && dir_dist[L] < dir_dist[R] ) {
                 new_dir = direction_t::LEFT;
-                choice = 60;
+                choice = 32;
+            } else if( !dir_coll[U] && dir_dist[U] < dir_dist[D] && dir_dist[U] < dir_dist[L] && dir_dist[U] < dir_dist[R] ) {
+                new_dir = direction_t::UP;
+                choice = 33;
+            } else {
+                if( !dir_coll[ ::number(cur_dir) ] ) {
+                    // straight ahead .. no better choice
+                    new_dir = cur_dir;
+                    choice = 40;
+                } else if( !dir_coll[R] && dir_dist[R] <= dir_dist[U] && dir_dist[R] <= dir_dist[D] && dir_dist[R] <= dir_dist[L] ) {
+                    new_dir = direction_t::RIGHT;
+                    choice = 50;
+                } else if( !dir_coll[D] && dir_dist[D] <= dir_dist[U] && dir_dist[D] <= dir_dist[L] && dir_dist[D] <= dir_dist[R] ) {
+                    new_dir = direction_t::DOWN;
+                    choice = 51;
+                } else if( !dir_coll[L] && dir_dist[L] <= dir_dist[U] && dir_dist[L] <= dir_dist[D] && dir_dist[L] <= dir_dist[R] ) {
+                    new_dir = direction_t::LEFT;
+                    choice = 52;
+                } else if( !dir_coll[U] /* && dir_dist[U] <= dir_dist[D] && dir_dist[U] <= dir_dist[L] && dir_dist[U] <= dir_dist[R] */ ) {
+                    new_dir = direction_t::UP;
+                    choice = 53;
+                } else {
+                    new_dir = direction_t::LEFT;
+                    choice = 60;
+                }
             }
         }
     }

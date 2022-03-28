@@ -190,6 +190,8 @@ class ghost_t {
 
         constexpr animtex_t& get_phantom_tex() noexcept { return atex_phantom; }
 
+        static direction_t get_random_dir() noexcept;
+
         void set_next_target() noexcept;
         void set_next_dir(const bool collision, const bool is_center) noexcept;
 
