@@ -217,12 +217,15 @@ static std::string get_usage(const std::string& exename) noexcept {
 // FIXME: Consider moving game state types and fields into its own class
 //
 enum class game_mode_t {
+    NEXT_LEVEL,
     LEVEL_START,
     GAME,
     PAUSE
 };
 static std::string to_string(game_mode_t m) noexcept {
     switch( m ) {
+        case game_mode_t::NEXT_LEVEL:
+            return "next_level";
         case game_mode_t::LEVEL_START:
             return "level_start";
         case game_mode_t::GAME:
@@ -243,14 +246,17 @@ static int game_mode_ms_left = -1;
 static game_mode_t game_mode = game_mode_t::PAUSE;
 static game_mode_t game_mode_last = game_mode_t::LEVEL_START;
 
-static void set_game_mode(const game_mode_t m) noexcept {
+static void set_game_mode(const game_mode_t m, const int caller) noexcept {
     const game_mode_t old_mode = game_mode;
+    const int old_level = current_level;
     switch( m ) {
-        case game_mode_t::LEVEL_START:
+        case game_mode_t::NEXT_LEVEL:
             ++current_level;
+            [[fallthrough]];
+        case game_mode_t::LEVEL_START:
             pacman->set_mode( pacman_t::mode_t::LEVEL_START );
             global_maze->reset();
-            game_mode = m;
+            game_mode = game_mode_t::LEVEL_START;
             if( audio_samples[ number( audio_clip_t::INTRO ) ]->is_valid() ) {
                 // use_audio == true
                 audio_samples[ number( audio_clip_t::INTRO ) ]->play();
@@ -270,7 +276,8 @@ static void set_game_mode(const game_mode_t m) noexcept {
             break;
     }
     game_mode_last = old_mode;
-    log_printf("game set_mode: %s -> %s [%d ms]\n", to_string(old_mode).c_str(), to_string(game_mode).c_str(), game_mode_ms_left);
+    log_printf("game set_mode(%d): %s -> %s [%d ms], level %d -> %d\n",
+            caller, to_string(old_mode).c_str(), to_string(game_mode).c_str(), game_mode_ms_left, old_level, current_level);
 }
 
 int main(int argc, char *argv[])
@@ -440,8 +447,11 @@ int main(int argc, char *argv[])
                            global_maze->pixel_height()*win_pixel_scale);
 
     global_tex = std::make_shared<global_tex_t>(rend);
+    std::shared_ptr<texture_t> pacman_left2_tex = std::make_shared<texture_t>(global_tex->all_images()->sdl_texture(), 0 + 1*13, 28 + 0, 13, 13, false /* owner*/);
+
     pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total);
     log_printf("%s\n", pacman->toString().c_str());
+
     pacman->set_log_moves(show_players_moves);
     if( !disable_all_ghosts ) {
         ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
@@ -469,7 +479,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<text_texture_t> ttex_score = nullptr;
     std::shared_ptr<text_texture_t> ttex_score_title = nullptr;
 
-    set_game_mode(game_mode_t::PAUSE);
+    set_game_mode(game_mode_t::PAUSE, 0);
 
     while (!close) {
         SDL_Event event;
@@ -505,13 +515,13 @@ int main(int argc, char *argv[])
                     switch (event.window.event) {
                         case SDL_WINDOWEVENT_SHOWN:
                             if( level_start ) {
-                                set_game_mode(game_mode_t::LEVEL_START);
+                                set_game_mode(game_mode_t::LEVEL_START, 10);
                             } else {
-                                set_game_mode(game_mode_t::GAME);
+                                set_game_mode(game_mode_t::GAME, 11);
                             }
                             break;
                         case SDL_WINDOWEVENT_HIDDEN:
-                            set_game_mode(game_mode_t::PAUSE);
+                            set_game_mode(game_mode_t::PAUSE, 12);
                             break;
                         case SDL_WINDOWEVENT_RESIZED:
                             on_window_resized(rend, event.window.data1, event.window.data2);
@@ -534,14 +544,14 @@ int main(int argc, char *argv[])
                             break;
                         case SDL_SCANCODE_P:
                             if( game_mode_t::PAUSE == game_mode ) {
-                                set_game_mode( game_mode_last );
+                                set_game_mode( game_mode_last, 13 );
                             } else {
-                                set_game_mode( game_mode_t::PAUSE );
+                                set_game_mode( game_mode_t::PAUSE, 14 );
                             }
                             break;
                         case SDL_SCANCODE_R:
-                            current_level = -1;
-                            set_game_mode(game_mode_t::LEVEL_START);
+                            current_level = 1;
+                            set_game_mode(game_mode_t::LEVEL_START, 15);
                             break;
                         case SDL_SCANCODE_W:
                         case SDL_SCANCODE_UP:
@@ -589,7 +599,7 @@ int main(int argc, char *argv[])
         switch( game_mode ) {
             case game_mode_t::LEVEL_START:
                 if( 0 == game_mode_ms_left ) {
-                    set_game_mode( game_mode_t::GAME );
+                    set_game_mode( game_mode_t::GAME, 20 );
                     level_start = false;
                     game_active = true;
                 } else {
@@ -601,7 +611,7 @@ int main(int argc, char *argv[])
                 break;
             case game_mode_t::GAME:
                 if( 0 == global_maze->count( tile_t::PELLET ) && 0 == global_maze->count( tile_t::PELLET_POWER ) ) {
-                    set_game_mode(game_mode_t::LEVEL_START);
+                    set_game_mode(game_mode_t::NEXT_LEVEL, 21);
                 }
             [[fallthrough]];
             default:
@@ -683,6 +693,7 @@ int main(int argc, char *argv[])
             }
         }
 
+        // top line
         if( nullptr != font_ttf ) {
             if( nullptr == ttex_score_title ) {
                 const std::string highscore_s("HIGH SCORE");
@@ -702,6 +713,34 @@ int main(int argc, char *argv[])
                     y = global_maze->x_to_pixel(1, win_pixel_scale);
                 });
                 last_score = pacman->score();
+            }
+        }
+
+        // bottom line: level
+        {
+            const float y = 34.0f;
+            float x = 24.0f;
+
+            for(int i=1; i <= get_current_level(); ++i, x-=2) {
+                const tile_t f = level_to_fruit(i);
+                std::shared_ptr<texture_t> f_tex = global_tex->texture(f);
+                if( nullptr != f_tex ) {
+                    const float dx = ( 16.0f - f_tex->width() ) / 2.0f / 16.0f;
+                    const float dy = ( 16.0f - f_tex->height() + 1.0f ) / 16.0f; // FIXME: funny adjustment?
+                    f_tex->draw(rend, x+dx, y+dy);
+                    // log_printf("XX1 %d: %.2f / %.2f + %.2f / %.2f = %.2f / %.2f\n", i, x, y, dx, dy, x+dx, y+dy);
+                }
+            }
+        }
+        // bottom line: lives left
+        if( nullptr != pacman_left2_tex ) {
+            const float dx = ( 16.0f - pacman_left2_tex->width() ) / 2.0f / 16.0f;
+            const float dy = ( 16.0f - pacman_left2_tex->height() + 1.0f ) / 16.0f; // FIXME: funny adjustment?
+            const float y = 34.0f;
+            float x = 2.0f;
+            for(int i=0; i < 2; ++i, x+=2) {
+                pacman_left2_tex->draw(rend, x+dx, y+dy);
+                // log_printf("XX2 %d: %.2f / %.2f + %.2f / %.2f = %.2f / %.2f\n", i, x, y, dx, dy, x+dx, y+dy);
             }
         }
  
@@ -743,8 +782,10 @@ int main(int argc, char *argv[])
         audio_samples.clear();
         audio_close();
     }
-    pacman->destroy();
     ghosts.clear();
+    pacman->destroy();
+    pacman_left2_tex->destroy();
+    global_tex->destroy();
     pacman_maze_tex->destroy();
 
     SDL_DestroyRenderer(rend);
