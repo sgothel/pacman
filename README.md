@@ -99,9 +99,14 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - Next move algo
     - Grouped wave switch of scatter, chase and frightened
     - Exit home using local and global pellet timer
-- Level specification
+- Level specification (per level)
   - Timings
+    - scatter and chase duration per phase
+    - frightening/powered duration
   - Speed
+    - pacman normal on empty tile or eating
+    - pacman powered on empty tile or eating
+    - ghost speed normal, frightening or in tunnel
   - Score
 - Sound
   - Using wav chunks, mixed from seperated channels

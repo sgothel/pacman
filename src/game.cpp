@@ -104,37 +104,43 @@ static ghost_wave_vec_t ghost_waves_2 = { { 7000, 20000 }, { 7000, 20000 }, { 50
 static ghost_wave_vec_t ghost_waves_5 = { { 5000, 20000 }, { 5000, 20000 }, { 5000, 1037000 }, {   17, -1 } };
 
 static std::vector<game_level_spec_t> level_spec_array = {
-    //                                                                                            Fright Milliseconds
-    //                                                                                      Fright Ghost Speed      |
-    //                                                                       Powered Pac-Man Dots Speed      |      |
-    //                                                                     Powered Pac-Man Speed      |      |      |
-    //                                          Ghost Tunnel Speed                             |      |      |      |
-    //                                          Ghost Speed      |                             |      |      |      |
-    //                            Pac-Man Dots Speed      |      |                             |      |      |      |
-    //                          Pac-Man Speed      |      |      |                             |      |      |      |
-    //                     Bonus Points     |      |      |      |                             |      |      |      |
-    //                                |     |      |      |      |                             |      |      |      |
-    /*  1 */ { tile_t::CHERRY,      100, 0.80f, 0.71f, 0.75f, 0.40f,  20, 0.80f, 10, 0.85f, 0.90f, 0.79f, 0.50f, 6000, 5, ghost_waves_1},
-    /*  2 */ { tile_t::STRAWBERRY,  300, 0.90f, 0.79f, 0.85f, 0.45f,  30, 0.90f, 15, 0.95f, 0.95f, 0.83f, 0.55f, 5000, 5, ghost_waves_2},
-    /*  3 */ { tile_t::PEACH,       500, 0.90f, 0.79f, 0.85f, 0.45f,  40, 0.90f, 20, 0.95f, 0.95f, 0.83f, 0.55f, 4000, 5, ghost_waves_2},
-    /*  4 */ { tile_t::PEACH,       500, 0.90f, 0.79f, 0.85f, 0.45f,  40, 0.90f, 20, 0.95f, 0.95f, 0.83f, 0.55f, 3000, 5, ghost_waves_2},
-    /*  5 */ { tile_t::APPLE,       700, 1.00f, 0.87f, 0.95f, 0.50f,  40, 1.00f, 20, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5, ghost_waves_5},
-    /*  6 */ { tile_t::APPLE,       700, 1.00f, 0.87f, 0.95f, 0.50f,  50, 1.00f, 25, 1.05f, 1.00f, 0.87f, 0.60f, 5000, 5, ghost_waves_5},
-    /*  7 */ { tile_t::MELON,      1000, 1.00f, 0.87f, 0.95f, 0.50f,  50, 1.00f, 25, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5, ghost_waves_5},
-    /*  8 */ { tile_t::MELON,      1000, 1.00f, 0.87f, 0.95f, 0.50f,  50, 1.00f, 25, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5, ghost_waves_5},
-    /*  9 */ { tile_t::GALAXIAN,   2000, 1.00f, 0.87f, 0.95f, 0.50f,  60, 1.00f, 30, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 10 */ { tile_t::GALAXIAN,   2000, 1.00f, 0.87f, 0.95f, 0.50f,  60, 1.00f, 30, 1.05f, 1.00f, 0.87f, 0.60f, 5000, 5, ghost_waves_5},
-    /* 11 */ { tile_t::BELL,       3000, 1.00f, 0.87f, 0.95f, 0.50f,  60, 1.00f, 30, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5, ghost_waves_5},
-    /* 12 */ { tile_t::BELL,       3000, 1.00f, 0.87f, 0.95f, 0.50f,  80, 1.00f, 40, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 13 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f,  80, 1.00f, 40, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 14 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f,  80, 1.00f, 40, 1.05f, 1.00f, 0.87f, 0.60f, 3000, 5, ghost_waves_5},
-    /* 15 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 16 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 17 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 18 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 19 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 120, 1.00f, 60, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 20 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 120, 1.00f, 60, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5},
-    /* 21 */ { tile_t::KEY,        5000, 0.90f, 0.79f, 0.95f, 0.50f, 120, 1.00f, 60, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3, ghost_waves_5}
+    //                                                                                                  Elroy_1,   Elroy_2
+    //                                                                                                        |          |
+    //                                                                            Fright Milliseconds         |          |
+    //                                                                                              |         |          |
+    //        Ghost                                                               Fright Speed      |         |          |
+    //        Ghost                                                       Tunnel Speed       |      |         |          |
+    //        Ghost                                                Normal Speed      |       |      |         |          |
+    //                                                                        |      |       |      |         |          |
+    //      Pac-Man                                 Powered Dots Speed        |      |       |      |         |          |
+    //      Pac-Man                               Powered Speed      |        |      |       |      |         |          |
+    //                                                        |      |        |      |       |      |         |          |
+    //      Pac-Man                  Normal Dots Speed        |      |        |      |       |      |         |          |
+    //      Pac-Man                Normal Speed      |        |      |        |      |       |      |         |          |
+    //                                        |      |        |      |        |      |       |      |         |          |
+    //                     Bonus Points       |      |        |      |        |      |       |      |         |          |
+    //                                |       |      |        |      |        |      |       |      |         |          |
+    /*  1 */ { tile_t::CHERRY,      100,   0.80f, 0.71f,   0.90f, 0.79f,   0.75f, 0.40f,  0.50f, 6000, 5,    20, 0.80f, 10, 0.85f, ghost_waves_1},
+    /*  2 */ { tile_t::STRAWBERRY,  300,   0.90f, 0.79f,   0.95f, 0.83f,   0.85f, 0.45f,  0.55f, 5000, 5,    30, 0.90f, 15, 0.95f, ghost_waves_2},
+    /*  3 */ { tile_t::PEACH,       500,   0.90f, 0.79f,   0.95f, 0.83f,   0.85f, 0.45f,  0.55f, 4000, 5,    40, 0.90f, 20, 0.95f, ghost_waves_2},
+    /*  4 */ { tile_t::PEACH,       500,   0.90f, 0.79f,   0.95f, 0.83f,   0.85f, 0.45f,  0.55f, 3000, 5,    40, 0.90f, 20, 0.95f, ghost_waves_2},
+    /*  5 */ { tile_t::APPLE,       700,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 2000, 5,    40, 1.00f, 20, 1.05f, ghost_waves_5},
+    /*  6 */ { tile_t::APPLE,       700,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 5000, 5,    50, 1.00f, 25, 1.05f, ghost_waves_5},
+    /*  7 */ { tile_t::MELON,      1000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 2000, 5,    50, 1.00f, 25, 1.05f, ghost_waves_5},
+    /*  8 */ { tile_t::MELON,      1000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 2000, 5,    50, 1.00f, 25, 1.05f, ghost_waves_5},
+    /*  9 */ { tile_t::GALAXIAN,   2000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,    60, 1.00f, 30, 1.05f, ghost_waves_5},
+    /* 10 */ { tile_t::GALAXIAN,   2000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 5000, 5,    60, 1.00f, 30, 1.05f, ghost_waves_5},
+    /* 11 */ { tile_t::BELL,       3000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 2000, 5,    60, 1.00f, 30, 1.05f, ghost_waves_5},
+    /* 12 */ { tile_t::BELL,       3000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,    80, 1.00f, 40, 1.05f, ghost_waves_5},
+    /* 13 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,    80, 1.00f, 40, 1.05f, ghost_waves_5},
+    /* 14 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 3000, 5,    80, 1.00f, 40, 1.05f, ghost_waves_5},
+    /* 15 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,   100, 1.00f, 50, 1.05f, ghost_waves_5},
+    /* 16 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,   100, 1.00f, 50, 1.05f, ghost_waves_5},
+    /* 17 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,   100, 1.00f, 50, 1.05f, ghost_waves_5},
+    /* 18 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,   100, 1.00f, 50, 1.05f, ghost_waves_5},
+    /* 19 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,   120, 1.00f, 60, 1.05f, ghost_waves_5},
+    /* 20 */ { tile_t::KEY,        5000,   1.00f, 0.87f,   1.00f, 0.87f,   0.95f, 0.50f,  0.60f, 1000, 3,   120, 1.00f, 60, 1.05f, ghost_waves_5},
+    /* 21 */ { tile_t::KEY,        5000,   0.90f, 0.79f,   0.90f, 0.79f,   0.95f, 0.50f,  0.60f, 1000, 3,   120, 1.00f, 60, 1.05f, ghost_waves_5}
 };
 
 static constexpr int level_to_idx(const int level) noexcept {

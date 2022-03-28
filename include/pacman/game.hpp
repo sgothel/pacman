@@ -75,17 +75,17 @@ struct game_level_spec_t {
     int bonus_points;
     float pacman_speed;
     float pacman_speed_dots;
+    float pacman_powered_speed;
+    float pacman_powered_speed_dots;
     float ghost_speed;
     float ghost_speed_tunnel;
+    float ghost_fright_speed;
+    int fright_time_ms;
+    int fright_flash_count;
     int elroy1_dots_left;
     float elroy1_speed;
     int elroy2_dots_left;
     float elroy2_speed;
-    float pacman_powered_speed;
-    float pacman_powered_speed_dots;
-    float ghost_fright_speed;
-    int fright_time_ms;
-    int fright_flash_count;
     ghost_wave_vec_t ghost_waves;
 };
 
