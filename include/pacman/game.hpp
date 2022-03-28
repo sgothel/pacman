@@ -183,6 +183,7 @@ class ghost_t {
         static int global_scatter_mode_count; // for SCATTER, CHASE or SCARED
 
         const int ms_per_atex = 500;
+        const int ms_per_fright_flash = 334;
 
         const float fields_per_sec_total;
         float current_speed_pct;
@@ -202,6 +203,7 @@ class ghost_t {
 
         animtex_t atex_normal;
         animtex_t atex_scared;
+        animtex_t atex_scared_flash;
         animtex_t atex_phantom;
         animtex_t * atex;
 

@@ -67,8 +67,11 @@ animtex_t& ghost_t::get_tex() noexcept {
     }
     switch( mode_ ) {
         case mode_t::SCARED:
-            return atex_scared;
-
+            if( mode_ms_left <= ms_per_fright_flash * game_level_spec().fright_flash_count ) {
+                return atex_scared_flash;
+            } else {
+                return atex_scared;
+            }
         case mode_t::PHANTOM:
             return atex_phantom;
 
@@ -92,6 +95,7 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   pellet_counter_( 0 ),
   atex_normal( "N", rend, ms_per_atex, global_tex->all_images(), 0, id_to_yoff(id), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex_scared( "S", rend, ms_per_atex, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
+  atex_scared_flash( "S+", rend, ms_per_fright_flash/2, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 }, { 11*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex( &get_tex() ),
   pos_( global_maze->ghost_home_pos() ),
