@@ -44,13 +44,42 @@ enum class score_t : int {
     APPLE = 700,
     MELON = 1000,
     GALAXIAN = 2000,
-    BELL = 300,
+    BELL = 3000,
     KEY = 5000
 };
 constexpr int number(const score_t item) noexcept {
     return static_cast<int>(item);
 }
 score_t tile_to_score(const tile_t tile) noexcept;
+
+//
+// level_spec_t
+//
+
+/**
+ * Level Specification from [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
+ * Appendix A: Reference Tables.
+ */
+struct game_level_spec_t {
+    tile_t symbol;
+    int bonus_points;
+    float pacman_speed;
+    float pacman_speed_dots;
+    float ghost_speed;
+    float ghost_speed_tunnel;
+    int elroy1_dots_left;
+    float elroy1_speed;
+    int elroy2_dots_left;
+    float elroy2_speed;
+    float pacman_powered_speed;
+    float pacman_powered_speed_dots;
+    float ghost_fright_speed;
+    int fright_time_ms;
+    int fright_flash_count;
+};
+
+const game_level_spec_t& game_level_spec(const int level) noexcept;
+const game_level_spec_t& game_level_spec() noexcept;
 
 tile_t level_to_fruit(const int level) noexcept;
 
@@ -147,13 +176,6 @@ class ghost_t {
             PHANTOM
         };
 
-        /** mode durations in ms */
-        enum class mode_duration_t : int {
-            SCARED = 10000
-        };
-        static constexpr int number(const mode_duration_t item) noexcept {
-            return static_cast<int>(item);
-        }
     private:
         static mode_t global_mode; // SCATTER, CHASE or SCARED
         static mode_t global_mode_last; // SCATTER, CHASE or SCARED
@@ -262,7 +284,6 @@ class pacman_t {
         /** mode durations in ms */
         enum class mode_duration_t : int {
             HOMESTAY = 2000,
-            INPOWER = ghost_t::number(ghost_t::mode_duration_t::SCARED),
             DEADANIM = 2000
         };
         static constexpr int number(const mode_duration_t item) noexcept {

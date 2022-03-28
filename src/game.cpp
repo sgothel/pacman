@@ -95,22 +95,60 @@ score_t tile_to_score(const tile_t tile) noexcept {
     }
 }
 
+//
+// level_spec_t
+//
+
+static game_level_spec_t level_spec_array[] = {
+    //                                                                                            Fright Milliseconds
+    //                                                                                      Fright Ghost Speed      |
+    //                                                                       Powered Pac-Man Dots Speed      |      |
+    //                                                                     Powered Pac-Man Speed      |      |      |
+    //                                          Ghost Tunnel Speed                             |      |      |      |
+    //                                          Ghost Speed      |                             |      |      |      |
+    //                            Pac-Man Dots Speed      |      |                             |      |      |      |
+    //                          Pac-Man Speed      |      |      |                             |      |      |      |
+    //                     Bonus Points     |      |      |      |                             |      |      |      |
+    //                                |     |      |      |      |                             |      |      |      |
+    /*  1 */ { tile_t::CHERRY,      100, 0.80f, 0.71f, 0.75f, 0.40f,  20, 0.80f, 10, 0.85f, 0.90f, 0.79f, 0.50f, 6000, 5},
+    /*  2 */ { tile_t::STRAWBERRY,  300, 0.90f, 0.79f, 0.85f, 0.45f,  30, 0.90f, 15, 0.95f, 0.95f, 0.83f, 0.55f, 5000, 5},
+    /*  3 */ { tile_t::PEACH,       500, 0.90f, 0.79f, 0.85f, 0.45f,  40, 0.90f, 20, 0.95f, 0.95f, 0.83f, 0.55f, 4000, 5},
+    /*  4 */ { tile_t::PEACH,       500, 0.90f, 0.79f, 0.85f, 0.45f,  40, 0.90f, 20, 0.95f, 0.95f, 0.83f, 0.55f, 3000, 5},
+    /*  5 */ { tile_t::APPLE,       700, 1.00f, 0.87f, 0.95f, 0.50f,  40, 1.00f, 20, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5},
+    /*  6 */ { tile_t::APPLE,       700, 1.00f, 0.87f, 0.95f, 0.50f,  50, 1.00f, 25, 1.05f, 1.00f, 0.87f, 0.60f, 5000, 5},
+    /*  7 */ { tile_t::MELON,      1000, 1.00f, 0.87f, 0.95f, 0.50f,  50, 1.00f, 25, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5},
+    /*  8 */ { tile_t::MELON,      1000, 1.00f, 0.87f, 0.95f, 0.50f,  50, 1.00f, 25, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5},
+    /*  9 */ { tile_t::GALAXIAN,   2000, 1.00f, 0.87f, 0.95f, 0.50f,  60, 1.00f, 30, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 10 */ { tile_t::GALAXIAN,   2000, 1.00f, 0.87f, 0.95f, 0.50f,  60, 1.00f, 30, 1.05f, 1.00f, 0.87f, 0.60f, 5000, 5},
+    /* 11 */ { tile_t::BELL,       3000, 1.00f, 0.87f, 0.95f, 0.50f,  60, 1.00f, 30, 1.05f, 1.00f, 0.87f, 0.60f, 2000, 5},
+    /* 12 */ { tile_t::BELL,       3000, 1.00f, 0.87f, 0.95f, 0.50f,  80, 1.00f, 40, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 13 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f,  80, 1.00f, 40, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 14 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f,  80, 1.00f, 40, 1.05f, 1.00f, 0.87f, 0.60f, 3000, 5},
+    /* 15 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 16 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 17 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 18 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 100, 1.00f, 50, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 19 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 120, 1.00f, 60, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 20 */ { tile_t::KEY,        5000, 1.00f, 0.87f, 0.95f, 0.50f, 120, 1.00f, 60, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3},
+    /* 21 */ { tile_t::KEY,        5000, 0.90f, 0.79f, 0.95f, 0.50f, 120, 1.00f, 60, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3}
+};
+
+static constexpr const bool LEVEL_SPEC_COUNT = 21;
+
+static constexpr int level_to_idx(const int level) noexcept {
+    return 1 <= level && level <= LEVEL_SPEC_COUNT ? level - 1 : LEVEL_SPEC_COUNT-1;
+}
+
+const game_level_spec_t& game_level_spec(const int level) noexcept {
+    return level_spec_array[ level_to_idx( level ) ];
+}
+
+const game_level_spec_t& game_level_spec() noexcept {
+    return level_spec_array[ level_to_idx( get_current_level() ) ];
+}
+
 tile_t level_to_fruit(const int level) noexcept {
-    switch( level ) {
-        case  1: return tile_t::CHERRY;
-        case  2: return tile_t::STRAWBERRY;
-        case  3: [[fallthrough]];
-        case  4: return tile_t::PEACH;
-        case  5: [[fallthrough]];
-        case  6: return tile_t::APPLE;
-        case  7: [[fallthrough]];
-        case  8: return tile_t::MELON;
-        case  9: [[fallthrough]];
-        case 10: return tile_t::GALAXIAN;
-        case 11: [[fallthrough]];
-        case 12: return tile_t::BELL;
-        default: return tile_t::KEY;
-    }
+    return game_level_spec(level).symbol;
 }
 
 //

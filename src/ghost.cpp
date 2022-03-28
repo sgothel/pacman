@@ -422,7 +422,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
             break;
         case mode_t::SCARED:
             global_mode = m;
-            global_mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCARED );
+            global_mode_ms_left = 0 <= mode_ms ? mode_ms : game_level_spec().fright_time_ms;
             for(ghost_ref g : ghosts) {
                 g->set_mode(m, g->in_house() ? -1 : mode_ms);
             }
@@ -501,13 +501,13 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                 pos_ = global_maze->ghost_home_pos();
             }
             pos_.set_centered(keyframei_);
-            set_speed(0.75f);
+            set_speed(game_level_spec().ghost_speed);
             break;
         }
         case mode_t::LEAVE_HOME:
             mode_ = m1;
             pellet_counter_active_ = false;
-            set_speed(0.75f);
+            set_speed(game_level_spec().ghost_speed);
             break;
         case mode_t::CHASE:
             mode_ = m1;
@@ -516,7 +516,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
-            set_speed(0.75f);
+            set_speed(game_level_spec().ghost_speed);
             break;
         case mode_t::SCATTER:
             mode_ = m1;
@@ -525,7 +525,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
-            set_speed(0.75f);
+            set_speed(game_level_spec().ghost_speed);
             break;
         case mode_t::SCARED: {
             if( mode_t::HOME == old_mode ) {
@@ -537,16 +537,16 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                     mode_ = m1;
                     mode_ms_left = mode_ms;
                     dir_ = direction_t::LEFT;
-                    set_speed(0.50f);
+                    set_speed(game_level_spec().ghost_fright_speed);
                 } else {
                     // NOP: From outside: pacman -> set_global_mode()
                     // Wait for own tick to reach start pos
                 }
             } else {
                 mode_ = m1;
-                mode_ms_left = number( mode_duration_t::SCARED );
+                mode_ms_left = game_level_spec().fright_time_ms;
                 dir_ = inverse(dir_);
-                set_speed(0.50f);
+                set_speed(game_level_spec().ghost_fright_speed);
             }
             break;
         }

@@ -122,18 +122,18 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             reset_stats(); // always, even if speed is unchanged
             atex = &get_tex();
             ghost_t::set_global_mode(mg, mode_ms_left);
-            set_speed(0.80f);
+            set_speed(game_level_spec().pacman_speed);
             break;
         case mode_t::NORMAL:
             mode = m1;
             mode_ms_left = -1;
-            set_speed(0.80f);
+            set_speed(game_level_spec().pacman_speed);
             break;
         case mode_t::POWERED:
             mode = m1;
-            mode_ms_left = number( mode_duration_t::INPOWER );
+            mode_ms_left = game_level_spec().fright_time_ms;
             ghost_t::set_global_mode( ghost_t::mode_t::SCARED, mode_ms_left );
-            set_speed(0.90f);
+            set_speed(game_level_spec().pacman_powered_speed);
             break;
         case mode_t::DEAD:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
@@ -149,7 +149,9 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             break;
     }
     if( log_modes() ) {
-        log_printf("pacman set_mode: %s -> %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode).c_str(), mode_ms_left, pos_.toShortString().c_str());
+        log_printf("pacman set_mode: %s -> %s -> %s [%d ms], speed %5.2f, pos %s\n",
+                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode).c_str(), mode_ms_left,
+                current_speed_pct, pos_.toShortString().c_str());
     }
 }
 
@@ -277,18 +279,25 @@ bool pacman_t::tick() noexcept {
                      global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                      if( tile_t::PELLET == tile ) {
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                         set_speed(0.71f);
+                         if( mode_t::POWERED == mode ) {
+                             set_speed(game_level_spec().pacman_powered_speed_dots);
+                         } else {
+                             set_speed(game_level_spec().pacman_speed_dots);
+                         }
                          next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                          ghost_t::notify_pellet_eaten();
                      } else if( tile_t::PELLET_POWER == tile ) {
                          set_mode( mode_t::POWERED );
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                         set_speed(0.90f);
                          next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                      }
                  } else if( tile_t::EMPTY == tile ) {
                      if( next_empty_field_frame_cntr.count_down() ) {
-                         set_speed(0.80f);
+                         if( mode_t::POWERED == mode ) {
+                             set_speed(game_level_spec().pacman_powered_speed);
+                         } else {
+                             set_speed(game_level_spec().pacman_speed);
+                         }
                          audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                      }
                  }
