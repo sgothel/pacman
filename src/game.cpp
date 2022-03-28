@@ -638,14 +638,13 @@ int main(int argc, char *argv[])
                 pacman->set_dir(current_dir);
             }
             global_tex->tick();
-            for(ghost_ref g : ghosts) {
-                g->tick();
-            }
+            ghost_t::global_tick();
             pacman->tick();
         }
         SDL_RenderClear(rend);
 
         pacman_maze_tex->draw(rend, 0, 0);
+
         global_maze->draw( [&rend](int x, int y, tile_t tile) {
             global_tex->draw_tile(tile, rend, x, y);
         });
@@ -688,11 +687,13 @@ int main(int argc, char *argv[])
             }
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }
+
         pacman->draw(rend);
-        for(ghost_ref ghost : ghosts) {
-            ghost->draw(rend);
+
+        ghost_t::global_draw(rend);
 
         if( show_targets ) {
+            for(ghost_ref ghost : ghosts) {
                 uint8_t r, g, b, a;
                 SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
                 SDL_SetRenderDrawColor(rend, 255, 255, 255, 255);

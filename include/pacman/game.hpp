@@ -135,10 +135,10 @@ class ghost_t {
         }
 
         enum class mode_t {
-            /** Transitions to HOME right away */
-            LEVEL_START,
             /** Turned off ghosts while pacman's death animation */
             AWAY,
+            /** Transitions to HOME right away */
+            LEVEL_START,
             HOME,
             LEAVE_HOME,
             CHASE,
@@ -149,14 +149,17 @@ class ghost_t {
 
         /** mode durations in ms */
         enum class mode_duration_t : int {
-            CHASING = 20000,
-            SCATTERING = 7000,
             SCARED = 10000
         };
         static constexpr int number(const mode_duration_t item) noexcept {
             return static_cast<int>(item);
         }
     private:
+        static mode_t global_mode; // SCATTER, CHASE or SCARED
+        static mode_t global_mode_last; // SCATTER, CHASE or SCARED
+        static int global_mode_ms_left; // for SCATTER, CHASE or SCARED
+        static int global_scatter_mode_count; // for SCATTER, CHASE or SCARED
+
         const int ms_per_atex = 500;
 
         const float fields_per_sec_total;
@@ -167,6 +170,7 @@ class ghost_t {
         personality_t id;
         int live_counter_during_pacman_live;
         mode_t mode_;
+        mode_t mode_last;
         int mode_ms_left;
         direction_t dir_;
         bool pellet_counter_active_;
@@ -193,6 +197,9 @@ class ghost_t {
         void set_next_target() noexcept;
         void set_next_dir(const bool collision, const bool is_center) noexcept;
 
+        void tick() noexcept;
+        void draw(SDL_Renderer* rend) noexcept;
+
     public:
         ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_) noexcept;
 
@@ -207,30 +214,29 @@ class ghost_t {
         constexpr mode_t mode() const noexcept { return mode_; }
         constexpr bool at_home() const noexcept { return mode_t::HOME == mode_; }
         constexpr bool in_house() const noexcept { return mode_t::HOME == mode_ || mode_t::LEAVE_HOME == mode_; }
-        void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
+        constexpr bool is_scattering_or_chasing() const noexcept { return mode_t::SCATTER == mode_ || mode_t::CHASE == mode_; }
+
+        constexpr direction_t direction() const noexcept { return dir_; }
+        constexpr const acoord_t& position() const noexcept { return pos_; }
+        constexpr const acoord_t& target() const noexcept { return target_; }
 
         void set_speed(const float pct) noexcept;
+
+        /** For global SCATTER, CHASE or SCARED mode switch, etc. */
+        static void set_global_mode(const mode_t m, const int mode_ms=-1) noexcept;
+
+        void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
+
+        /** For global SCATTER, CHASE or SCARED mode switch, etc. */
+        static void global_tick() noexcept;
+
+        static void global_draw(SDL_Renderer* rend) noexcept;
 
         static std::string pellet_counter_string() noexcept;
         static void notify_pellet_eaten() noexcept;
         int pellet_counter() const noexcept;
         int pellet_counter_limit() const noexcept;
         bool can_leave_home() noexcept;
-
-        constexpr direction_t direction() const noexcept { return dir_; }
-        constexpr const acoord_t& position() const noexcept { return pos_; }
-        constexpr const acoord_t& target() const noexcept { return target_; }
-
-        /**
-         * A game engine tick needs to:
-         * - adjust speed (acceleration?)
-         * - adjust position, taking direction, speed and collision into account.
-         *
-         * @return true if object is still alive, otherwise false
-         */
-        bool tick() noexcept;
-
-        void draw(SDL_Renderer* rend) noexcept;
 
         std::string toString() const noexcept;
 };

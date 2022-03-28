@@ -38,6 +38,11 @@ static constexpr const bool DEBUG_PELLET_COUNTER = false;
 // ghost_t
 //
 
+ghost_t::mode_t ghost_t::global_mode = mode_t::SCATTER;
+ghost_t::mode_t ghost_t::global_mode_last = mode_t::SCATTER;
+int ghost_t::global_mode_ms_left = 0; // for SCATTER, CHASE or SCARED
+int ghost_t::global_scatter_mode_count = 0;
+
 bool ghost_t::global_pellet_counter_active = false;
 int ghost_t::global_pellet_counter = 0;
 
@@ -57,6 +62,9 @@ int ghost_t::id_to_yoff(ghost_t::personality_t id) noexcept {
 }
 
 animtex_t& ghost_t::get_tex() noexcept {
+    if( in_house() && mode_t::SCARED == global_mode ) {
+        return atex_scared;
+    }
     switch( mode_ ) {
         case mode_t::SCARED:
             return atex_scared;
@@ -77,6 +85,7 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   id( id_ ),
   live_counter_during_pacman_live( 0 ),
   mode_( mode_t::AWAY ),
+  mode_last( mode_t::AWAY ),
   mode_ms_left ( 0 ),
   dir_( direction_t::LEFT ),
   pellet_counter_active_( false ),
@@ -108,94 +117,6 @@ void ghost_t::set_speed(const float pct) noexcept {
     sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
     if( log_moves() ) {
         log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
-    }
-}
-
-void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
-    const mode_t old_mode = mode_;
-    mode_t m1 = m;
-    switch( m ) {
-        case mode_t::LEVEL_START:
-            pellet_counter_active_ = true;
-            pellet_counter_ = 0;
-            global_pellet_counter_active = false;
-            global_pellet_counter = 0;
-            m1 = mode_t::HOME;
-            [[fallthrough]];
-        case mode_t::HOME: {
-            mode_ = m1;
-            mode_ms_left = 0 <= mode_ms ? mode_ms : 0;
-            const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
-            if( pacman_initiated ) {
-                live_counter_during_pacman_live = 0;
-                if( mode_t::HOME == m ) {
-                    // pacman died -> use global counter
-                    pellet_counter_active_ = false;
-                    global_pellet_counter_active = true;
-                    global_pellet_counter = 0;
-                }
-            }
-            if( ghost_t::personality_t::BLINKY == id && pacman_initiated ) {
-                // positioned outside of the box at start
-                pos_ = global_maze->ghost_start_pos();
-            } else {
-                pos_ = global_maze->ghost_home_pos();
-            }
-            pos_.set_centered(keyframei_);
-            set_speed(0.75f);
-            break;
-        }
-        case mode_t::LEAVE_HOME:
-            mode_ = m1;
-            mode_ms_left = -1;
-            pellet_counter_active_ = false;
-            break;
-        case mode_t::CHASE:
-            mode_ = m1;
-            mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::CHASING );
-            if( mode_t::LEAVE_HOME == old_mode ) {
-                dir_ = direction_t::LEFT;
-            } else if( mode_t::SCARED != old_mode ) {
-                dir_ = inverse(dir_);
-            }
-            set_speed(0.75f);
-            break;
-        case mode_t::SCATTER:
-            mode_ = m1;
-            mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCATTERING );
-            if( mode_t::LEAVE_HOME == old_mode ) {
-                dir_ = direction_t::LEFT;
-            } else if( mode_t::SCARED != old_mode ) {
-                dir_ = inverse(dir_);
-                set_speed(0.75f);
-            }
-            break;
-        case mode_t::SCARED:
-            if( mode_t::HOME == old_mode || mode_t::LEAVE_HOME == old_mode ) {
-                // NOP
-            } else {
-                mode_ = m1;
-                mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCARED );
-                dir_ = inverse(dir_);
-                set_speed(0.50f);
-            }
-            break;
-        case mode_t::PHANTOM:
-            mode_ = m1;
-            mode_ms_left = -1;
-            ++live_counter_during_pacman_live;
-            set_speed(1.00f);
-            break;
-        default:
-            mode_ = m1;
-            mode_ms_left = -1;
-            break;
-    }
-    set_next_target();
-    if( log_moves ) {
-        log_printf("%s set_mode: %s -> %s -> %s [%d ms], pos %s -> %s\n", to_string(id).c_str(),
-                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms_left,
-                pos_.toShortString().c_str(), target_.toShortString().c_str());
     }
 }
 
@@ -299,8 +220,7 @@ void ghost_t::set_next_target() noexcept {
             [[fallthrough]];
             // dummy, since an RNG is being used
         default:
-            target_ = global_maze->ghost_start_pos();
-            target_.set_centered(keyframei_);
+            target_ = pos_; // dummy self target
             break;
     }
 }
@@ -443,9 +363,215 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
     }
 }
 
-bool ghost_t::tick() noexcept {
+void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
+    if( m != global_mode ) { // only earmark last other mode
+        global_mode_last = global_mode;
+    }
+    switch( m ) {
+        case mode_t::AWAY:
+            for(ghost_ref g : ghosts) {
+                g->set_mode( m, mode_ms );
+            }
+            break;
+        case mode_t::LEVEL_START:
+            global_pellet_counter_active = false;
+            global_pellet_counter = 0;
+            global_scatter_mode_count = 0;
+            [[fallthrough]];
+        case mode_t::HOME: {
+            const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
+            if( pacman_initiated && mode_t::HOME == m ) {
+                // pacman died -> use global counter
+                global_pellet_counter_active = true;
+                global_pellet_counter = 0;
+            }
+            global_mode = mode_t::SCATTER;
+            global_mode_ms_left = 7000;
+            for(ghost_ref g : ghosts) {
+                g->set_mode( m, mode_ms );
+            }
+            break;
+        }
+        case mode_t::CHASE:
+            global_mode = m;
+            switch( global_scatter_mode_count ) {
+                case 0: global_mode_ms_left = 20000; break;
+                case 1: global_mode_ms_left = 20000; break;
+                case 2: global_mode_ms_left = 20000; break;
+                default: global_mode_ms_left = -1; /** indefinite **/ break;
+            }
+            for(ghost_ref g : ghosts) {
+                if( g->is_scattering_or_chasing() ) {
+                    g->set_mode( m );
+                }
+            }
+            break;
+        case mode_t::SCATTER:
+            global_mode = m;
+            switch( global_scatter_mode_count ) {
+                case 0: global_mode_ms_left = 7000; break;
+                case 1: global_mode_ms_left = 7000; break;
+                default: global_mode_ms_left = 5000; break;
+            }
+            for(ghost_ref g : ghosts) {
+                if( g->is_scattering_or_chasing() ) {
+                    g->set_mode( m );
+                }
+            }
+            ++global_scatter_mode_count;
+            break;
+        case mode_t::SCARED:
+            global_mode = m;
+            global_mode_ms_left = 0 <= mode_ms ? mode_ms : number( mode_duration_t::SCARED );
+            for(ghost_ref g : ghosts) {
+                g->set_mode(m, g->in_house() ? -1 : mode_ms);
+            }
+            break;
+        default:
+            log_printf("Error: set_global_mode: %s [%d ms]; Current global_mode %s [%d -> %d ms], previous %s\n",
+                    to_string(m).c_str(), mode_ms, to_string(global_mode).c_str(), mode_ms, global_mode_ms_left, to_string(global_mode_last).c_str());
+            return;
+    }
+    if( log_modes() ) {
+        log_printf("ghosts set_global_mode: %s -> %s -> %s [%d -> %d ms]\n",
+                to_string(global_mode_last).c_str(), to_string(m).c_str(), to_string(global_mode).c_str(), mode_ms, global_mode_ms_left);
+    }
+}
+
+void ghost_t::global_tick() noexcept {
+    if( 0 < global_mode_ms_left ) {
+        global_mode_ms_left = std::max( 0, global_mode_ms_left - get_ms_per_frame() );
+    }
+
+    if( mode_t::CHASE == global_mode ) {
+        if( 0 == global_mode_ms_left ) {
+            set_global_mode( mode_t::SCATTER );
+        }
+    } else if( mode_t::SCATTER == global_mode ) {
+        if( 0 == global_mode_ms_left ) {
+            set_global_mode( mode_t::CHASE );
+        }
+    } else if( mode_t::SCARED == global_mode ) {
+        if( 0 == global_mode_ms_left ) {
+            set_global_mode( global_mode_last );
+        }
+    } else {
+        log_printf("Error: global_tick: global_mode %s [%d ms], previous %s\n",
+                to_string(global_mode).c_str(), global_mode_ms_left, to_string(global_mode_last).c_str());
+        return;
+    }
+    for(ghost_ref g : ghosts) {
+        g->tick();
+    }
+}
+
+void ghost_t::global_draw(SDL_Renderer* rend) noexcept {
+    for(ghost_ref g : ghosts) {
+        g->draw(rend);
+    }
+}
+
+void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
+    if( m != mode_last ) { // only earmark last other mode
+        mode_last = mode_;
+    }
+    const mode_t old_mode = mode_;
+    mode_t m1 = m;
+    switch( m ) {
+        case mode_t::LEVEL_START:
+            pellet_counter_active_ = true;
+            pellet_counter_ = 0;
+            m1 = mode_t::HOME;
+            [[fallthrough]];
+        case mode_t::HOME: {
+            mode_ = m1;
+            mode_ms_left = 0 <= mode_ms ? mode_ms : 0;
+            const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
+            if( pacman_initiated ) {
+                live_counter_during_pacman_live = 0;
+                if( mode_t::HOME == m ) {
+                    // pacman died -> use global counter
+                    pellet_counter_active_ = false;
+                }
+            }
+            if( ghost_t::personality_t::BLINKY == id && pacman_initiated ) {
+                // positioned outside of the box at start
+                pos_ = global_maze->ghost_start_pos();
+            } else {
+                pos_ = global_maze->ghost_home_pos();
+            }
+            pos_.set_centered(keyframei_);
+            set_speed(0.75f);
+            break;
+        }
+        case mode_t::LEAVE_HOME:
+            mode_ = m1;
+            pellet_counter_active_ = false;
+            set_speed(0.75f);
+            break;
+        case mode_t::CHASE:
+            mode_ = m1;
+            if( mode_t::LEAVE_HOME == old_mode ) {
+                dir_ = direction_t::LEFT;
+            } else if( mode_t::SCARED != old_mode ) {
+                dir_ = inverse(dir_);
+            }
+            set_speed(0.75f);
+            break;
+        case mode_t::SCATTER:
+            mode_ = m1;
+            if( mode_t::LEAVE_HOME == old_mode ) {
+                dir_ = direction_t::LEFT;
+            } else if( mode_t::SCARED != old_mode ) {
+                dir_ = inverse(dir_);
+            }
+            set_speed(0.75f);
+            break;
+        case mode_t::SCARED: {
+            if( mode_t::HOME == old_mode ) {
+                // NOP
+                // preserve mode_ms_left timer for HOME
+            } else if( mode_t::LEAVE_HOME == old_mode ) {
+                if( 0 <= mode_ms ) {
+                    // From own tick, reached start pos and using remaining global_mode_ms_left
+                    mode_ = m1;
+                    mode_ms_left = mode_ms;
+                    dir_ = direction_t::LEFT;
+                    set_speed(0.50f);
+                } else {
+                    // NOP: From outside: pacman -> set_global_mode()
+                    // Wait for own tick to reach start pos
+                }
+            } else {
+                mode_ = m1;
+                mode_ms_left = number( mode_duration_t::SCARED );
+                dir_ = inverse(dir_);
+                set_speed(0.50f);
+            }
+            break;
+        }
+        case mode_t::PHANTOM:
+            mode_ = m1;
+            mode_ms_left = -1;
+            ++live_counter_during_pacman_live;
+            set_speed(1.00f);
+            break;
+        default:
+            mode_ = m1;
+            mode_ms_left = -1;
+            break;
+    }
+    set_next_target();
+    if( log_modes() ) {
+        log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id).c_str(),
+                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms, mode_ms_left,
+                current_speed_pct, pos_.toShortString().c_str(), target_.toShortString().c_str());
+    }
+}
+
+void ghost_t::tick() noexcept {
     if( sync_next_frame_cntr.count_down() ) {
-        return true; // skip tick, just repaint
+        return; // skip tick, just repaint
     }
     atex = &get_tex();
     atex->tick();
@@ -457,35 +583,39 @@ bool ghost_t::tick() noexcept {
     }
 
     if( mode_t::AWAY == mode_ ) {
-        return true; // NOP
+        return; // NOP
     } else if( mode_t::HOME == mode_ ) {
         if( 0 == mode_ms_left && can_leave_home() ) {
             set_mode( mode_t::LEAVE_HOME );
         } else {
-            return true; // wait
+            return; // wait
         }
     } else if( mode_t::LEAVE_HOME == mode_ ) {
         if( pos_.intersects(target_) ) {
-            set_mode( mode_t::SCATTER );
+            if( mode_t::PHANTOM == mode_last && mode_t::SCARED == global_mode ) {
+                // avoid re-materialized ghost to restart SCARED again
+                set_mode( global_mode_last );
+            } else {
+                // global_mode_ms_left in case for SCARED time left
+                set_mode( global_mode, global_mode_ms_left );
+            }
         } // else move for exit
     } else if( mode_t::CHASE == mode_ ) {
         if( !pos_.intersects_f( global_maze->ghost_home_box() ) ) {
             set_next_target(); // update ...
         }
-        if( 0 == mode_ms_left ) {
-            set_mode( mode_t::SCATTER );
-        }
+        // NOP -> global_mode
     } else if( mode_t::SCATTER == mode_ ) {
-        if( 0 == mode_ms_left ) {
-            set_mode( mode_t::CHASE );
-        }
+        // NOP -> global_mode
     } else if( mode_t::SCARED == mode_ ) {
         if( 0 == mode_ms_left ) {
-            set_mode( mode_t::SCATTER );
+            set_mode( global_mode );
+        } else {
+            set_next_target(); // update dummy
         }
     } else if( mode_t::PHANTOM == mode_ ) {
         if( pos_.intersects(target_) || 0 == mode_ms_left ) {
-            set_mode( mode_t::HOME );
+            set_mode( mode_t::LEAVE_HOME );
         }
     }
 
@@ -502,8 +632,6 @@ bool ghost_t::tick() noexcept {
     }
 
     set_next_dir(collision_maze, pos_.is_center(keyframei_));
-
-    return true;
 }
 
 void ghost_t::draw(SDL_Renderer* rend) noexcept {
@@ -573,11 +701,11 @@ int ghost_t::pellet_counter() const noexcept {
 
 int ghost_t::pellet_counter_limit() const noexcept {
     if( pellet_counter_active_ ) {
-        if( 2 <= get_current_level() ) {
+        if( 3 <= get_current_level() ) {
             // level >= 3 at start of every level
             return 0;
         }
-        if( 1 == get_current_level() ) {
+        if( 2 == get_current_level() ) {
             // level == 2
             switch( id ) {
                 case ghost_t::personality_t::BLINKY:
@@ -674,6 +802,8 @@ std::string to_string(ghost_t::mode_t m) noexcept {
     switch( m ) {
         case ghost_t::mode_t::AWAY:
             return "away";
+        case ghost_t::mode_t::LEVEL_START:
+            return "level_start";
         case ghost_t::mode_t::HOME:
             return "home";
         case ghost_t::mode_t::LEAVE_HOME:

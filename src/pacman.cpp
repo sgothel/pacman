@@ -103,24 +103,25 @@ void pacman_t::destroy() noexcept {
 void pacman_t::set_mode(const mode_t m) noexcept {
     const mode_t old_mode = mode;
     mode_t m1 = m;
-    ghost_t::mode_t gm = ghost_t::mode_t::HOME;
+    ghost_t::mode_t mg = ghost_t::mode_t::AWAY;
     switch( m ) {
         case mode_t::LEVEL_START:
             m1 = mode_t::HOME;
-            gm = ghost_t::mode_t::LEVEL_START;
+            mg = ghost_t::mode_t::LEVEL_START;
             [[fallthrough]];
         case mode_t::HOME:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
             mode = m1;
             mode_ms_left = number( mode_duration_t::HOMESTAY );
+            if( ghost_t::mode_t::AWAY == mg ) {
+                mg = ghost_t::mode_t::HOME;
+            }
             pos_ = global_maze->pacman_start_pos();
             pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
             set_dir( direction_t::LEFT );
             reset_stats(); // always, even if speed is unchanged
             atex = &get_tex();
-            for(ghost_ref g : ghosts) {
-                g->set_mode(gm, mode_ms_left);
-            }
+            ghost_t::set_global_mode(mg, mode_ms_left);
             set_speed(0.80f);
             break;
         case mode_t::NORMAL:
@@ -131,9 +132,7 @@ void pacman_t::set_mode(const mode_t m) noexcept {
         case mode_t::POWERED:
             mode = m1;
             mode_ms_left = number( mode_duration_t::INPOWER );
-            for(ghost_ref g : ghosts) {
-                g->set_mode(ghost_t::mode_t::SCARED);
-            }
+            ghost_t::set_global_mode( ghost_t::mode_t::SCARED, mode_ms_left );
             set_speed(0.90f);
             break;
         case mode_t::DEAD:
@@ -141,9 +140,7 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             mode = m1;
             mode_ms_left = number( mode_duration_t::DEADANIM );
             atex_dead.reset();
-            for(ghost_ref g : ghosts) {
-                g->set_mode(ghost_t::mode_t::AWAY);
-            }
+            ghost_t::set_global_mode(ghost_t::mode_t::AWAY);
             audio_samples[ ::number( audio_clip_t::DEATH ) ]->play();
             break;
         default:

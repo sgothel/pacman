@@ -92,6 +92,7 @@ extern bool use_original_pacman_behavior();
 
 extern bool show_debug_gfx();
 
+extern bool log_fps();
 extern bool log_moves();
 extern bool log_modes();
 
