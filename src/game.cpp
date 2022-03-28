@@ -133,10 +133,10 @@ static game_level_spec_t level_spec_array[] = {
     /* 21 */ { tile_t::KEY,        5000, 0.90f, 0.79f, 0.95f, 0.50f, 120, 1.00f, 60, 1.05f, 1.00f, 0.87f, 0.60f, 1000, 3}
 };
 
-static constexpr const bool LEVEL_SPEC_COUNT = 21;
+static constexpr const int LEVEL_SPEC_COUNT = 21;
 
 static constexpr int level_to_idx(const int level) noexcept {
-    return 1 <= level && level <= LEVEL_SPEC_COUNT ? level - 1 : LEVEL_SPEC_COUNT-1;
+    return 1 <= level && level <= LEVEL_SPEC_COUNT ? level-1 : LEVEL_SPEC_COUNT-1;
 }
 
 const game_level_spec_t& game_level_spec(const int level) noexcept {
@@ -782,7 +782,7 @@ int main(int argc, char *argv[])
                     const float dx = ( 16.0f - f_tex->width() ) / 2.0f / 16.0f;
                     const float dy = ( 16.0f - f_tex->height() + 1.0f ) / 16.0f; // FIXME: funny adjustment?
                     f_tex->draw(rend, x+dx, y+dy);
-                    // log_printf("XX1 %d: %.2f / %.2f + %.2f / %.2f = %.2f / %.2f\n", i, x, y, dx, dy, x+dx, y+dy);
+                    // log_printf("XX1 level %d: %s, %.2f / %.2f + %.2f / %.2f = %.2f / %.2f\n", i, to_string(f).c_str(), x, y, dx, dy, x+dx, y+dy);
                 }
             }
         }
