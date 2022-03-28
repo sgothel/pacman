@@ -45,21 +45,23 @@ The binary shall be build to `bin/pacman`.
 ## Usage
 
 Following commandline arguments are supported
-- `-show_fps` to periodically show the frames per seconds (fps) value on the console
 - `-no_vsync` to force off hardware enabled vsync, which in turn enables manual fps synchronization
 - `-fps <int>` to enforce a specific fps value, which will also set `-no_vsync` naturally
 - `-speed <int>` to set the 100% player speed in fields per seconds
 - `-wwidth <int> to set the initial window width
 - `-wheight <int> to set the initial window height
+- `-show_fps` to show pacman's speed and to periodically show the frames per seconds (fps) value on the console
+- `-show_modes` to show all players' mode changes
 - `-show_moves` to show all players' move criteria like distance and collisions incl. speed changes on the console
-- `-no_ghosts` to disable all ghosts
 - `-show_targets` to show the ghost's target position as a ray on the video screen
-- `-show_debug_gfx` to show all debug gfx, including `-show_debug_gfx`
+- `-show_debug_gfx` to show all debug gfx
+- `-show_all` enable `-show_modes`, `-show_moves`, `-show_targets` and `-show_debug_gfx`
+- `-no_ghosts` to disable all ghosts
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
-- `-use_audio` to turn on audio effects, i.e. playing the audio samples.
+- `-audio` to turn on audio effects, i.e. playing the audio samples.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_moves] [-no_ghosts] [-show_targets] [-show_debug_gfx] [-bugfix] [-use_audio]
+bin/pacman [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-audio]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Bugfix Mode

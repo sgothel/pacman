@@ -151,7 +151,9 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             mode_ms_left = -1;
             break;
     }
-    log_printf("pacman set_mode: %s -> %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode).c_str(), mode_ms_left, pos_.toShortString().c_str());
+    if( log_modes() ) {
+        log_printf("pacman set_mode: %s -> %s -> %s [%d ms], %s\n", to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode).c_str(), mode_ms_left, pos_.toShortString().c_str());
+    }
 }
 
 void pacman_t::set_speed(const float pct) noexcept {
@@ -163,7 +165,7 @@ void pacman_t::set_speed(const float pct) noexcept {
     keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
     pos_.set_aligned_dir(keyframei_);
     reset_stats();
-    if( log_moves ) {
+    if( log_moves() ) {
         log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %s, %s\n", old, current_speed_pct, sync_next_frame_cntr.toString().c_str(), keyframei_.toString().c_str());
     }
 }
@@ -185,7 +187,9 @@ void pacman_t::print_stats() noexcept {
 }
 
 void pacman_t::reset_stats() noexcept {
-    print_stats();
+    if( log_moves() || log_fps() ) {
+        print_stats();
+    }
     perf_fields_walked_t0 = getCurrentMilliseconds();
     perf_frame_count_walked = 0;
     pos_.reset_stats();
@@ -204,7 +208,7 @@ bool pacman_t::set_dir(const direction_t new_dir) noexcept {
         const direction_t old_dir = current_dir;
         current_dir = new_dir;
         reset_stats();
-        if( log_moves ) {
+        if( log_moves() ) {
             log_printf("pacman set_dir: %s -> %s, %s c%d e%d\n",
                     to_string(old_dir).c_str(), to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_));
         }
@@ -318,7 +322,7 @@ void pacman_t::draw(SDL_Renderer* rend) noexcept {
     ++perf_frame_count_walked;
     atex->draw(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
 
-    if( show_all_debug_gfx() || DEBUG_GFX_BOUNDS ) {
+    if( show_debug_gfx() || DEBUG_GFX_BOUNDS ) {
         uint8_t r, g, b, a;
         SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
         SDL_SetRenderDrawColor(rend, 255, 255, 0, 255);

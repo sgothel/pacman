@@ -90,6 +90,9 @@ extern std::vector<audio_sample_ref> audio_samples;
  */
 extern bool use_original_pacman_behavior();
 
-extern bool show_all_debug_gfx();
+extern bool show_debug_gfx();
+
+extern bool log_moves();
+extern bool log_modes();
 
 #endif /* PACMAN_GLOBALS_HPP_ */

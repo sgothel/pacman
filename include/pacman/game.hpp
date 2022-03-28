@@ -182,8 +182,6 @@ class ghost_t {
         acoord_t pos_;
         acoord_t target_;
 
-        bool log_moves = false;
-
         static int id_to_yoff(ghost_t::personality_t id) noexcept;
 
         animtex_t& get_tex() noexcept;
@@ -203,8 +201,6 @@ class ghost_t {
         }
 
         void destroy() noexcept;
-
-        void set_log_moves(const bool v) noexcept { log_moves = v; }
 
         constexpr const keyframei_t& keyframei() const noexcept { return keyframei_; }
 
@@ -291,8 +287,6 @@ class pacman_t {
 
         acoord_t pos_;
 
-        bool log_moves = false;
-
         uint64_t perf_fields_walked_t0 = 0;
         uint64_t perf_frame_count_walked = 0;
 
@@ -309,8 +303,6 @@ class pacman_t {
         }
 
         void destroy() noexcept;
-
-        void set_log_moves(const bool v) noexcept { log_moves = v; }
 
         void set_mode(const mode_t m) noexcept;
         void set_speed(const float pct) noexcept;

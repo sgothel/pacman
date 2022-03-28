@@ -56,8 +56,15 @@ std::vector<audio_sample_ref> audio_samples;
 static bool original_pacman_behavior = true;
 bool use_original_pacman_behavior() { return original_pacman_behavior; }
 
-static bool enable_all_debug_gfx = false;
-bool show_all_debug_gfx() { return enable_all_debug_gfx; }
+static bool enable_debug_gfx = false;
+bool show_debug_gfx() { return enable_debug_gfx; }
+
+static bool enable_log_fps = false;
+static bool enable_log_moves = false;
+static bool enable_log_modes = false;
+bool log_fps() { return enable_log_fps; }
+bool log_moves() { return enable_log_moves; }
+bool log_modes() { return enable_log_modes; }
 
 //
 // globals for this module
@@ -210,7 +217,9 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 
 static std::string get_usage(const std::string& exename) noexcept {
     // TODO: Keep in sync with README.md
-    return "Usage: "+exename+" [-show_fps] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_moves] [-no_ghosts] [-show_targets] [-show_debug_gfx] [-bugfix] [-audio]";
+    return "Usage: "+exename+" [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
+              "[-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] "+
+              "[-no_ghosts] [-bugfix] [-audio]";
 }
 
 //
@@ -282,19 +291,31 @@ static void set_game_mode(const game_mode_t m, const int caller) noexcept {
 
 int main(int argc, char *argv[])
 {
-    bool show_fps = false;
     bool enable_vsync = true;
     int forced_fps = -1;
     float fields_per_sec_total=10;
     int win_width = 640, win_height = 720;
-    bool show_players_moves = false;
     bool disable_all_ghosts = false;
     bool show_targets = false;
     bool use_audio = false;
     {
         for(int i=1; i<argc; ++i) {
             if( 0 == strcmp("-show_fps", argv[i]) ) {
-                show_fps = true;
+                enable_log_fps = true;
+            } else if( 0 == strcmp("-show_modes", argv[i]) ) {
+                enable_log_modes = true;
+            } else if( 0 == strcmp("-show_moves", argv[i]) ) {
+                enable_log_moves = true;
+            } else if( 0 == strcmp("-show_targets", argv[i]) ) {
+                show_targets = true;
+            } else if( 0 == strcmp("-show_debug_gfx", argv[i]) ) {
+                enable_debug_gfx = true;
+            } else if( 0 == strcmp("-show_all", argv[i]) ) {
+                enable_log_fps = true;
+                enable_log_moves = true;
+                enable_log_modes = true;
+                show_targets = true;
+                enable_debug_gfx = true;
             } else if( 0 == strcmp("-no_vsync", argv[i]) ) {
                 enable_vsync = false;
             } else if( 0 == strcmp("-fps", argv[i]) && i+1<argc) {
@@ -310,15 +331,8 @@ int main(int argc, char *argv[])
             } else if( 0 == strcmp("-wheight", argv[i]) && i+1<argc) {
                 win_height = atoi(argv[i+1]);
                 ++i;
-            } else if( 0 == strcmp("-show_moves", argv[i]) ) {
-                show_players_moves = true;
             } else if( 0 == strcmp("-no_ghosts", argv[i]) ) {
                 disable_all_ghosts = true;
-            } else if( 0 == strcmp("-show_targets", argv[i]) ) {
-                show_targets = true;
-            } else if( 0 == strcmp("-show_debug_gfx", argv[i]) ) {
-                show_targets = true;
-                enable_all_debug_gfx = true;
             } else if( 0 == strcmp("-bugfix", argv[i]) ) {
                 original_pacman_behavior = false;
             } else if( 0 == strcmp("-audio", argv[i]) ) {
@@ -326,13 +340,15 @@ int main(int argc, char *argv[])
             }
         }
         log_printf("%s\n", get_usage(argv[0]).c_str());
-        log_printf("- show_fps %d\n", show_fps);
+        log_printf("- show_fps %d\n", log_fps());
+        log_printf("- show_modes %d\n", log_modes());
+        log_printf("- show_moves %d\n", log_moves());
+        log_printf("- show_targets %d\n", show_targets);
+        log_printf("- show_debug_gfx %d\n", show_debug_gfx());
         log_printf("- enable_vsync %d\n", enable_vsync);
         log_printf("- forced_fps %d\n", forced_fps);
         log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
         log_printf("- win size %d x %d\n", win_width, win_height);
-        log_printf("- show_moves %d\n", show_players_moves);
-        log_printf("- show_targets %d\n", show_targets);
         log_printf("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
         log_printf("- use_audio %d\n", use_audio);
     }
@@ -452,7 +468,6 @@ int main(int argc, char *argv[])
     pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total);
     log_printf("%s\n", pacman->toString().c_str());
 
-    pacman->set_log_moves(show_players_moves);
     if( !disable_all_ghosts ) {
         ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
         ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec_total) );
@@ -461,7 +476,6 @@ int main(int argc, char *argv[])
     }
     for(ghost_ref g : ghosts) {
         log_printf("%s\n", g->toString().c_str());
-        g->set_log_moves(show_players_moves);
     }
 
     bool close = false;
@@ -635,7 +649,8 @@ int main(int argc, char *argv[])
         global_maze->draw( [&rend](int x, int y, tile_t tile) {
             global_tex->draw_tile(tile, rend, x, y);
         });
-        if( show_all_debug_gfx() ) {
+
+        if( show_debug_gfx() ) {
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
             const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
@@ -677,7 +692,7 @@ int main(int argc, char *argv[])
         for(ghost_ref ghost : ghosts) {
             ghost->draw(rend);
 
-            if( show_all_debug_gfx() || show_targets ) {
+        if( show_targets ) {
                 uint8_t r, g, b, a;
                 SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
                 SDL_SetRenderDrawColor(rend, 255, 255, 255, 255);
@@ -766,7 +781,7 @@ int main(int argc, char *argv[])
             }
         }
         t1 = getCurrentMilliseconds();
-        if( show_fps && fps_range_ms <= t1 - t0 ) {
+        if( log_fps() && fps_range_ms <= t1 - t0 ) {
             const float fps = get_fps(t0, t1, frame_count);
             std::string fps_str(64, '\0');
             const int written = std::snprintf(&fps_str[0], fps_str.size(), "fps %6.2f", fps);

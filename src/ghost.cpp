@@ -106,7 +106,7 @@ void ghost_t::set_speed(const float pct) noexcept {
     keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
     pos_.set_aligned_dir(keyframei_);
     sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
-    if( log_moves ) {
+    if( log_moves() ) {
         log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
     }
 }
@@ -395,7 +395,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
             // penalty for reversal
             dir_dist[ ::number(inv_dir) ] += 2*2;
 
-            if( log_moves ) {
+            if( log_moves() ) {
                 log_printf(std::string(to_string(id)+": collisions r "+std::to_string(dir_coll[R])+", d "+std::to_string(dir_coll[D])+", l "+std::to_string(dir_coll[L])+", u "+std::to_string(dir_coll[U])+"\n").c_str());
                 log_printf(std::string(to_string(id)+": distances r "+std::to_string(dir_dist[R])+", d "+std::to_string(dir_dist[D])+", l "+std::to_string(dir_dist[L])+", u "+std::to_string(dir_dist[U])+"\n").c_str());
             }
@@ -437,7 +437,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         }
     }
     dir_ = new_dir;
-    if( log_moves ) {
+    if( log_moves() ) {
         log_printf("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s c%d e%d -> %s\n", to_string(id).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
                 choice, to_string(mode_).c_str(), mode_ms_left, pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), target_.toShortString().c_str());
     }
@@ -494,7 +494,7 @@ bool ghost_t::tick() noexcept {
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
 
-    if( log_moves || DEBUG_GFX_BOUNDS ) {
+    if( log_moves() || DEBUG_GFX_BOUNDS ) {
         log_printf("%s tick: %s, %s [%d ms], pos %s c%d e%d crash %d -> %s, textures %s\n",
                 to_string(id).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
                 pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), collision_maze,
@@ -510,8 +510,8 @@ void ghost_t::draw(SDL_Renderer* rend) noexcept {
     if( mode_t::AWAY != mode_ ) {
         atex->draw(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
     }
-    if( show_all_debug_gfx() ) {
-        if( show_all_debug_gfx() || DEBUG_GFX_BOUNDS ) {
+    if( show_debug_gfx() ) {
+        if( show_debug_gfx() || DEBUG_GFX_BOUNDS ) {
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
             SDL_SetRenderDrawColor(rend, 255, 0, 0, 255);
