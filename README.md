@@ -83,6 +83,44 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pinky's up-traget to be 4 ahead as intended
 - ...
 
+## Implementation Status 
+
+### Done
+- Maze
+  - Read maze specification from text file
+- Sprites
+- Speed per tile accurate key-frame animation
+  - Weighted tile position from floating position
+  - Renderer fps derived *step width*, i.e. sub-tiles
+  - Sync speed by dropping tick, every n-frames
+- Ghost *AI*
+    - Scared RNG target
+    - Scatter and chase targets
+    - Next move algo
+    - Grouped wave switch of scatter, chase and frightened
+    - Exit home using local and global pellet timer
+- Level specification
+  - Timings
+  - Speed
+  - Score
+- Sound
+  - Using wav chunks, mixed from seperated channels
+
+### To Do
+- Ghost *AI*
+  - *Elroy 1+2* mode
+  - Tunnel speed
+  - *Red-zones* w/o turning up
+- Fruits / Bonus
+- Pacman lives
+- Sound
+  - Use lossy formats
+  - Complete samples
+- Extension
+  - Second play moves a ghost
+- Maze
+  - Render maze itself from maze-spec file
+
 ## Media Data
 
 The pixel data in `media/playfield_pacman.png` and `media/tiles_all.png`
