@@ -247,6 +247,9 @@ bool keyframei_t::is_center(const float v) const noexcept {
 
 float keyframei_t::align_value(const float v) const noexcept {
     const float fields_per_frame_ = fields_per_frame();
+    if( std::abs( fields_per_frame_ - 1.0f ) <= std::numeric_limits<float>::epsilon() ) {
+        return v;
+    }
     const float v0_trunc = std::trunc(v);
     const float v0_m = v - v0_trunc;
     const int n = round_to_int(v0_m / fields_per_frame_);
