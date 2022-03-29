@@ -748,9 +748,16 @@ int main(int argc, char *argv[])
                 }
             }
             {
-                // Two blue check-boxes at 0/0 and 1/4
-                draw_box(rend, false, win_pixel_offset, 0, 0, 0, 1, 1, 0, 0, 255, 255);
-                draw_box(rend, false, win_pixel_offset, 0, 1, 4, 1, 1, 0, 0, 255, 255);
+                // Filled check-boxes at 0/0 and each scatter target tile
+                acoord_t blinky_top_right = global_maze->top_right_scatter();
+                acoord_t pinky_top_left = global_maze->top_left_scatter();
+                acoord_t inky_bottom_right = global_maze->bottom_right_scatter();
+                acoord_t clyde_bottom_left = global_maze->bottom_left_scatter();
+                draw_box(rend, true, win_pixel_offset, 0, 0,                       0,                       1, 1, 0xff, 0xff, 0x00, 255); // pacman color
+                draw_box(rend, true, win_pixel_offset, 0, blinky_top_right.x_i(),  blinky_top_right.y_i(),  1, 1, 0xff, 0x00, 0x00, 255); // blinky color
+                draw_box(rend, true, win_pixel_offset, 0, pinky_top_left.x_i(),    pinky_top_left.y_i(),    1, 1, 0xff, 0xb7, 0xff, 255); // pinky color
+                draw_box(rend, true, win_pixel_offset, 0, inky_bottom_right.x_i(), inky_bottom_right.y_i(), 1, 1, 0x00, 0xff, 0xff, 255); // inky color
+                draw_box(rend, true, win_pixel_offset, 0, clyde_bottom_left.x_i(), clyde_bottom_left.y_i(), 1, 1, 0xff, 0xb7, 0x51, 255); // clyde color
             }
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }

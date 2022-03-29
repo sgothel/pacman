@@ -558,10 +558,10 @@ bool maze_t::digest_ibox_line(const std::string& name, box_t& dest, const std::s
 
 maze_t::maze_t(const std::string& fname) noexcept
 : filename(fname),
-  top_left_pos(-1, -1),
-  bottom_left_pos(-1, -1),
-  bottom_right_pos(-1, -1),
-  top_right_pos(-1, -1),
+  top_left_scatter_(-1, -1),
+  bottom_left_scatter_(-1, -1),
+  bottom_right_scatter_(-1, -1),
+  top_right_scatter_(-1, -1),
   tunnel1(-1, -1, -1, -1),
   tunnel2(-1, -1, -1, -1),
   red_zone1(-1, -1, -1, -1),
@@ -589,10 +589,10 @@ maze_t::maze_t(const std::string& fname) noexcept
                 if( DEBUG ) {
                     log_printf("maze: read dimension: %s\n", toString().c_str());
                 }
-            } else if( digest_iposition_line("top_left_pos", top_left_pos, line) ) {
-            } else if( digest_iposition_line("bottom_left_pos", bottom_left_pos, line) ) {
-            } else if( digest_iposition_line("bottom_right_pos", bottom_right_pos, line) ) {
-            } else if( digest_iposition_line("top_right_pos", top_right_pos, line) ) {
+            } else if( digest_iposition_line("top_left_scatter", top_left_scatter_, line) ) {
+            } else if( digest_iposition_line("bottom_left_scatter", bottom_left_scatter_, line) ) {
+            } else if( digest_iposition_line("bottom_right_scatter", bottom_right_scatter_, line) ) {
+            } else if( digest_iposition_line("top_right_scatter", top_right_scatter_, line) ) {
             } else if( digest_ibox_line("tunnel1", tunnel1, line) ) {
             } else if( digest_ibox_line("tunnel2", tunnel2, line) ) {
             } else if( digest_ibox_line("red_zone1", red_zone1, line) ) {

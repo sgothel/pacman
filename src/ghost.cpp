@@ -188,7 +188,7 @@ void ghost_t::set_next_target() noexcept {
                     if( d_p > 8*8 ) {
                         target_ = pacman->position();
                     } else {
-                        target_ = global_maze->bottom_left_corner();
+                        target_ = global_maze->bottom_left_scatter();
                         target_.set_centered(keyframei_);
                     }
                     break;
@@ -202,18 +202,18 @@ void ghost_t::set_next_target() noexcept {
         case mode_t::SCATTER:
             switch( id ) {
                 case ghost_t::personality_t::BLINKY:
-                    target_ = global_maze->top_right_corner();
+                    target_ = global_maze->top_right_scatter();
                     break;
                 case ghost_t::personality_t::PINKY:
-                    target_ = global_maze->top_left_corner();
+                    target_ = global_maze->top_left_scatter();
                     break;
                 case ghost_t::personality_t::INKY:
-                    target_ = global_maze->bottom_right_corner();
+                    target_ = global_maze->bottom_right_scatter();
                     break;
                 case ghost_t::personality_t::CLYDE:
                     [[fallthrough]];
                 default:
-                    target_ = global_maze->bottom_left_corner();
+                    target_ = global_maze->bottom_left_scatter();
                     break;
             }
             target_.set_centered(keyframei_);

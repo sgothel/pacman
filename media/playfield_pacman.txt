@@ -1,8 +1,8 @@
  28   36  224 288 // dimension tile and visual: [net field dim: 28 x 31] x 8 -> [net visual dim: 224 x 248]
-  1    4          // top-left corner
-  1   32          // bottom-left corner
- 26   32          // bottom-right corner
- 26    4          // top-right corner
+  2    0          // top-left scatter target
+  0   35          // bottom-left scatter target
+ 27   35          // bottom-right scatter target
+ 25    0          // top-right scatter target
   0   17    5   1 // tunnel-1 [x, y, width, height]
  23   17    5   1 // tunnel-2 [x, y, width, height]
  11   14    6   1 // red-zone-1 [x, y, width, height]

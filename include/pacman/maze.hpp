@@ -301,10 +301,10 @@ class maze_t {
     private:
         static constexpr const bool DEBUG = false;
         std::string filename;
-        acoord_t top_left_pos;
-        acoord_t bottom_left_pos;
-        acoord_t bottom_right_pos;
-        acoord_t top_right_pos;
+        acoord_t top_left_scatter_;
+        acoord_t bottom_left_scatter_;
+        acoord_t bottom_right_scatter_;
+        acoord_t top_right_scatter_;
         box_t tunnel1;
         box_t tunnel2;
         box_t red_zone1;
@@ -329,10 +329,10 @@ class maze_t {
 
         constexpr int width() const noexcept { return active.width(); }
         constexpr int height() const noexcept { return active.height(); }
-        constexpr const acoord_t& top_left_corner() const noexcept { return top_left_pos; }
-        constexpr const acoord_t& bottom_left_corner() const noexcept { return bottom_left_pos; }
-        constexpr const acoord_t& bottom_right_corner() const noexcept { return bottom_right_pos; }
-        constexpr const acoord_t& top_right_corner() const noexcept { return top_right_pos; }
+        constexpr const acoord_t& top_left_scatter() const noexcept { return top_left_scatter_; }
+        constexpr const acoord_t& bottom_left_scatter() const noexcept { return bottom_left_scatter_; }
+        constexpr const acoord_t& bottom_right_scatter() const noexcept { return bottom_right_scatter_; }
+        constexpr const acoord_t& top_right_scatter() const noexcept { return top_right_scatter_; }
         constexpr const box_t&    tunnel1_box() const noexcept { return tunnel1; }
         constexpr const box_t&    tunnel2_box() const noexcept { return tunnel2; }
         constexpr const box_t&    red_zone1_box() const noexcept { return red_zone1; }
