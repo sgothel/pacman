@@ -38,7 +38,7 @@ static constexpr const bool DEBUG_GFX_BOUNDS = false;
 //
 
 animtex_t& pacman_t::get_tex() noexcept {
-    switch( mode ) {
+    switch( mode_ ) {
         case pacman_t::mode_t::HOME:
             return atex_home;
         case pacman_t::mode_t::NORMAL:
@@ -72,12 +72,15 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   next_empty_field_frame_cntr(0, false /* auto_reload */),
-  mode( mode_t::LEVEL_START ),
+  mode_( mode_t::LEVEL_START ),
+  mode_last( mode_t::LEVEL_START ),
   mode_ms_left ( -1 ),
   lives( 3 ),
   ghosts_eaten_powered( 0 ),
   current_dir( direction_t::LEFT ),
   score_( 0 ),
+  freeze_score( -1 ),
+  freeze_box_(-1, -1, -1, -1),
   atex_left( "L", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 0*13, 0 }, { 1*13, 0 } }),
   atex_right("R", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 2*13, 0 }, { 3*13, 0 } }),
   atex_up(   "U", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 4*13, 0 }, { 5*13, 0 } }),
@@ -101,18 +104,25 @@ void pacman_t::destroy() noexcept {
     atex_home.destroy();
 }
 
-void pacman_t::set_mode(const mode_t m) noexcept {
-    const mode_t old_mode = mode;
+void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
+    if( m != mode_last && mode_t::FREEZE != m ) { // only earmark last other mode != mode_t::FREEZE
+        mode_last = mode_;
+    }
+    const mode_t old_mode = mode_;
     mode_t m1 = m;
     ghost_t::mode_t mg = ghost_t::mode_t::AWAY;
     switch( m ) {
+        case mode_t::FREEZE:
+            mode_ = m1;
+            mode_ms_left = mode_ms;
+            break;
         case mode_t::LEVEL_START:
             m1 = mode_t::HOME;
             mg = ghost_t::mode_t::LEVEL_START;
             [[fallthrough]];
         case mode_t::HOME:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-            mode = m1;
+            mode_ = m1;
             mode_ms_left = number( mode_duration_t::HOMESTAY );
             if( ghost_t::mode_t::AWAY == mg ) {
                 mg = ghost_t::mode_t::HOME;
@@ -126,12 +136,12 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             set_speed(game_level_spec().pacman_speed);
             break;
         case mode_t::NORMAL:
-            mode = m1;
+            mode_ = m1;
             mode_ms_left = -1;
             set_speed(game_level_spec().pacman_speed);
             break;
         case mode_t::POWERED:
-            mode = m1;
+            mode_ = m1;
             mode_ms_left = game_level_spec().fright_time_ms;
             ghost_t::set_global_mode( ghost_t::mode_t::SCARED, mode_ms_left );
             set_speed(game_level_spec().pacman_powered_speed);
@@ -139,20 +149,20 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             break;
         case mode_t::DEAD:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-            mode = m1;
+            mode_ = m1;
             mode_ms_left = number( mode_duration_t::DEADANIM );
             atex_dead.reset();
             ghost_t::set_global_mode(ghost_t::mode_t::AWAY);
             audio_samples[ ::number( audio_clip_t::DEATH ) ]->play();
             break;
         default:
-            mode = m1;
+            mode_ = m1;
             mode_ms_left = -1;
             break;
     }
     if( log_modes() ) {
         log_printf("pacman set_mode: %s -> %s -> %s [%d ms], speed %5.2f, pos %s\n",
-                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode).c_str(), mode_ms_left,
+                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms_left,
                 current_speed_pct, pos_.toShortString().c_str());
     }
 }
@@ -220,11 +230,12 @@ bool pacman_t::set_dir(const direction_t new_dir) noexcept {
 }
 
 bool pacman_t::tick() noexcept {
+    atex = &get_tex();
+    atex->tick();
+
     if( sync_next_frame_cntr.count_down() ) {
         return true; // skip tick, just repaint
     }
-    atex = &get_tex();
-    atex->tick();
 
     bool collision_maze = false;
     bool collision_enemies = false;
@@ -233,108 +244,135 @@ bool pacman_t::tick() noexcept {
         mode_ms_left = std::max( 0, mode_ms_left - get_ms_per_frame() );
     }
 
-    if( mode_t::HOME == mode ) {
+    if( mode_t::FREEZE == mode_ ) {
+        if( 0 == mode_ms_left ) {
+            freeze_score = -1;
+            freeze_box_.set(-1, -1, -1, -1);
+            mode_ = mode_last;
+        }
+        return true;
+    } else if( mode_t::HOME == mode_ ) {
         if( 0 == mode_ms_left ) {
             set_mode( mode_t::NORMAL );
-        } else {
-            return true; // wait
         }
-    } else if( mode_t::DEAD == mode ) {
+        return true;
+    } else if( mode_t::DEAD == mode_ ) {
         if( 0 == mode_ms_left ) {
             set_mode( mode_t::HOME );
         }
-    } else {
-        // NORMAL and POWERED
+        return true;
+    }
+    // NORMAL and POWERED
 
-        if( mode_t::POWERED == mode ) {
-            if( 0 == mode_ms_left ) {
-                set_mode( mode_t::NORMAL );
+    if( mode_t::POWERED == mode_ ) {
+        if( 0 == mode_ms_left ) {
+            set_mode( mode_t::NORMAL );
+        }
+    }
+
+    /**
+     * Pacman's position depends on:
+     * - its direction
+     * - speed (change_per_tick)
+     * - environment
+     */
+    {
+        collision_maze = !pos_.step(current_dir, keyframei_, [](tile_t tile) -> bool {
+            return tile_t::WALL == tile || tile_t::GATE == tile ;
+        });
+        const int x_i = pos_.x_i();
+        const int y_i = pos_.y_i();
+        const tile_t tile = global_maze->tile(x_i, y_i);
+        const bool entered_tile = pos_.entered_tile(keyframei_);
+        if( log_moves() || DEBUG_GFX_BOUNDS ) {
+            log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
+                    to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), entered_tile,
+                    to_string(tile).c_str(),
+                    collision_maze, collision_enemies, atex->toString().c_str());
+        }
+        if( collision_maze ) {
+            audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+            reset_stats();
+        } else { // if( entered_tile ) {
+            if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
+                score_ += ::number( tile_to_score(tile) );
+                global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
+                if( tile_t::PELLET == tile ) {
+                    audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                    if( mode_t::POWERED == mode_ ) {
+                        set_speed(game_level_spec().pacman_powered_speed_dots);
+                    } else {
+                        set_speed(game_level_spec().pacman_speed_dots);
+                    }
+                    next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
+                    ghost_t::notify_pellet_eaten();
+                } else if( tile_t::PELLET_POWER == tile ) {
+                    set_mode( mode_t::POWERED );
+                    audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
+                    next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
+                }
+            } else if( tile_t::EMPTY == tile ) {
+                if( next_empty_field_frame_cntr.count_down() ) {
+                    if( mode_t::POWERED == mode_ ) {
+                        set_speed(game_level_spec().pacman_powered_speed);
+                    } else {
+                        set_speed(game_level_spec().pacman_speed);
+                    }
+                    audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+                }
             }
         }
+    }
+    // Collision test with ghosts
+    int i=0;
+    for(ghost_ref g : ghosts) {
+        if( pos_.intersects(g->position()) ) {
+            const ghost_t::mode_t g_mode = g->mode();
+            if( ghost_t::mode_t::CHASE <= g_mode && g_mode <= ghost_t::mode_t::SCATTER ) {
+                collision_enemies = true;
+            } else if( ghost_t::mode_t::SCARED == g_mode ) {
+                switch( ghosts_eaten_powered ) {
+                    case 0: freeze_score = ::number( score_t::GHOST_1 ); break;
+                    case 1: freeze_score = ::number( score_t::GHOST_2 ); break;
+                    case 2: freeze_score = ::number( score_t::GHOST_3 ); break;
+                    default: freeze_score = ::number( score_t::GHOST_4 ); break;
+                }
+                score_ += freeze_score;
+                ++ghosts_eaten_powered;
+                g->set_mode( ghost_t::mode_t::PHANTOM );
+                audio_samples[ ::number( audio_clip_t::EAT_GHOST ) ]->play();
+                freeze_box_.set(pos_.x_i()-1, pos_.y_i()-1, 2, 2);
+                set_mode(mode_t::FREEZE, 900);
+                if( false ) {
+                    log_printf("pacman eats: ghost# %d, score %d, ghost %s\n", ghosts_eaten_powered, freeze_score, g->toString().c_str());
+                }
+            }
+        }
+        ++i;
+    }
 
-        /**
-         * Pacman's position depends on:
-         * - its direction
-         * - speed (change_per_tick)
-         * - environment
-         */
-         {
-             collision_maze = !pos_.step(current_dir, keyframei_, [](tile_t tile) -> bool {
-                 return tile_t::WALL == tile || tile_t::GATE == tile ;
-             });
-             const int x_i = pos_.x_i();
-             const int y_i = pos_.y_i();
-             const tile_t tile = global_maze->tile(x_i, y_i);
-             const bool entered_tile = pos_.entered_tile(keyframei_);
-             if( log_moves() || DEBUG_GFX_BOUNDS ) {
-                 log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
-                         to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), entered_tile,
-                         to_string(tile).c_str(),
-                         collision_maze, collision_enemies, atex->toString().c_str());
-             }
-             if( collision_maze ) {
-                 audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                 reset_stats();
-             } else { // if( entered_tile ) {
-                 if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
-                     score_ += ::number( tile_to_score(tile) );
-                     global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
-                     if( tile_t::PELLET == tile ) {
-                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                         if( mode_t::POWERED == mode ) {
-                             set_speed(game_level_spec().pacman_powered_speed_dots);
-                         } else {
-                             set_speed(game_level_spec().pacman_speed_dots);
-                         }
-                         next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
-                         ghost_t::notify_pellet_eaten();
-                     } else if( tile_t::PELLET_POWER == tile ) {
-                         set_mode( mode_t::POWERED );
-                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
-                         next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
-                     }
-                 } else if( tile_t::EMPTY == tile ) {
-                     if( next_empty_field_frame_cntr.count_down() ) {
-                         if( mode_t::POWERED == mode ) {
-                             set_speed(game_level_spec().pacman_powered_speed);
-                         } else {
-                             set_speed(game_level_spec().pacman_speed);
-                         }
-                         audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
-                     }
-                 }
-             }
-         }
-         // Collision test with ghosts
-         for(ghost_ref g : ghosts) {
-             if( pos_.intersects(g->position()) ) {
-                 const ghost_t::mode_t g_mode = g->mode();
-                 if( ghost_t::mode_t::CHASE <= g_mode && g_mode <= ghost_t::mode_t::SCATTER ) {
-                     collision_enemies = true;
-                 } else if( ghost_t::mode_t::SCARED == g_mode ) {
-                     switch( ghosts_eaten_powered ) {
-                         case 0: score_ += ::number( score_t::GHOST_1 ); break;
-                         case 1: score_ += ::number( score_t::GHOST_2 ); break;
-                         case 2: score_ += ::number( score_t::GHOST_3 ); break;
-                         default: score_ += ::number( score_t::GHOST_4 ); break;
-                     }
-                     ++ghosts_eaten_powered;
-                     g->set_mode( ghost_t::mode_t::PHANTOM );
-                     audio_samples[ ::number( audio_clip_t::EAT_GHOST ) ]->play();
-                 }
-             }
-         }
-
-         if( collision_enemies ) {
-             set_mode( mode_t::DEAD );
-         }
+    if( collision_enemies ) {
+        set_mode( mode_t::DEAD );
     }
     return !collision_enemies;
 }
 
 void pacman_t::draw(SDL_Renderer* rend) noexcept {
     ++perf_frame_count_walked;
-    atex->draw2(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
+
+    if( mode_t::FREEZE == mode_ ) {
+        if( 0 <= freeze_score ) {
+            if( nullptr != font_ttf() ) {
+                std::string score_s = std::to_string( freeze_score );
+                draw_text_scaled(rend, font_ttf(), score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
+                    x = round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - tex.width()  / 2;
+                    y = round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale() ) - tex.height() / 2;
+                });
+            }
+        }
+    } else {
+        atex->draw2(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
+    }
 
     if( show_debug_gfx() || DEBUG_GFX_BOUNDS ) {
         uint8_t r, g, b, a;
@@ -351,12 +389,14 @@ void pacman_t::draw(SDL_Renderer* rend) noexcept {
 }
 
 std::string pacman_t::toString() const noexcept {
-    return "pacman["+to_string(mode)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(current_dir)+", "+pos_.toString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
+    return "pacman["+to_string(mode_)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(current_dir)+", "+pos_.toString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
 }
 
 
 std::string to_string(pacman_t::mode_t m) {
     switch( m ) {
+        case pacman_t::mode_t::FREEZE:
+            return "freeze";
         case pacman_t::mode_t::HOME:
             return "home";
         case pacman_t::mode_t::NORMAL:

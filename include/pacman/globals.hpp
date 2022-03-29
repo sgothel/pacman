@@ -75,6 +75,8 @@ constexpr int number(const audio_clip_t item) noexcept {
 typedef std::shared_ptr<audio_sample_t> audio_sample_ref;
 extern std::vector<audio_sample_ref> audio_samples;
 
+TTF_Font* font_ttf() noexcept;
+
 /**
  * By default the original pacman behavior is being implemented:
  * - weighted (round) tile position for collision tests

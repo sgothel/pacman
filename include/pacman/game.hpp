@@ -288,6 +288,7 @@ std::string to_string(ghost_t::mode_t m) noexcept;
 class pacman_t {
     public:
         enum class mode_t {
+            FREEZE,
             /** Transitions to HOME right away */
             LEVEL_START,
             HOME,
@@ -313,12 +314,15 @@ class pacman_t {
         countdown_t sync_next_frame_cntr;
         countdown_t next_empty_field_frame_cntr;
 
-        mode_t mode;
+        mode_t mode_;
+        mode_t mode_last;
         int mode_ms_left;
         int lives;
         int ghosts_eaten_powered;
         direction_t current_dir;
         uint64_t score_;
+        int freeze_score;
+        box_t freeze_box_;
 
         animtex_t atex_left;
         animtex_t atex_right;
@@ -347,7 +351,14 @@ class pacman_t {
 
         void destroy() noexcept;
 
-        void set_mode(const mode_t m) noexcept;
+        constexpr mode_t mode() const noexcept { return mode_; }
+
+        constexpr direction_t direction() const noexcept { return current_dir; }
+        constexpr const acoord_t& position() const noexcept { return pos_; }
+        constexpr uint64_t score() const noexcept { return score_; }
+        const box_t& freeze_box() const noexcept { return freeze_box_; }
+
+        void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
         void set_speed(const float pct) noexcept;
         const keyframei_t& get_keyframei() const noexcept { return keyframei_; }
 
@@ -355,12 +366,6 @@ class pacman_t {
          * Set direction
          */
         bool set_dir(const direction_t new_dir) noexcept;
-
-        constexpr direction_t direction() const noexcept { return current_dir; }
-
-        constexpr const acoord_t& position() const noexcept { return pos_; }
-
-        constexpr uint64_t score() const noexcept { return score_; }
 
         /**
          * A game engine tick needs to:

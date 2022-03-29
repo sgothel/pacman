@@ -546,7 +546,7 @@ bool maze_t::digest_ibox_line(const std::string& name, box_t& dest, const std::s
     if( -1 == dest.x() || -1 == dest.y() ) {
         int x_pos = 0, y_pos = 0, w = 0, h = 0;
         sscanf(line.c_str(), "%d %d %d %d", &x_pos, &y_pos, &w, &h);
-        dest.set_dim(x_pos, y_pos, w, h);
+        dest.set(x_pos, y_pos, w, h);
         if( DEBUG ) {
             log_printf("maze: read %s box: %s\n", name.c_str(), dest.toString().c_str());
         }

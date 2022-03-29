@@ -55,6 +55,9 @@ pacman_ref pacman;
 
 std::vector<audio_sample_ref> audio_samples;
 
+static TTF_Font* font_ttf_ = nullptr;
+TTF_Font* font_ttf() noexcept { return font_ttf_; }
+
 static bool original_pacman_behavior = true;
 bool use_original_pacman_behavior() noexcept { return original_pacman_behavior; }
 
@@ -243,8 +246,6 @@ std::string global_tex_t::toString() const {
 // main
 //
 
-TTF_Font* font_ttf = nullptr;
-
 static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const int win_height_l) noexcept {
     int win_pixel_height=0;
     SDL_GetRendererOutputSize(rend, &win_pixel_width_, &win_pixel_height);
@@ -253,19 +254,19 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
     float sy = win_pixel_height / global_maze->pixel_height();
     win_pixel_scale_ = static_cast<int>( std::round( std::fmin<float>(sx, sy) ) );
 
-    if( nullptr != font_ttf ) {
-        TTF_CloseFont(font_ttf);
-        font_ttf = nullptr;
+    if( nullptr != font_ttf() ) {
+        TTF_CloseFont(font_ttf());
+        font_ttf_ = nullptr;
     }
     int font_height;
     {
         const std::string fontfilename = "fonts/freefont/FreeSansBold.ttf";
         font_height = global_maze->ppt_y() * win_pixel_scale();
-        font_ttf = TTF_OpenFont(fontfilename.c_str(), font_height);
+        font_ttf_ = TTF_OpenFont(fontfilename.c_str(), font_height);
     }
     log_printf("Window Resized: %d x %d pixel ( %d x %d logical ) @ %d hz\n",
             win_pixel_width(), win_pixel_height, win_width_l, win_height_l, get_frames_per_sec());
-    log_printf("Pixel scale: %f x %f -> %d, font[ok %d, height %d]\n", sx, sy, win_pixel_scale(), nullptr!=font_ttf, font_height);
+    log_printf("Pixel scale: %f x %f -> %d, font[ok %d, height %d]\n", sx, sy, win_pixel_scale(), nullptr!=font_ttf(), font_height);
 }
 
 static std::string get_usage(const std::string& exename) noexcept {
@@ -771,10 +772,10 @@ int main(int argc, char *argv[])
         }
 
         // top line
-        if( nullptr != font_ttf ) {
+        if( nullptr != font_ttf() ) {
             if( nullptr == ttex_score_title ) {
                 const std::string highscore_s("HIGH SCORE");
-                ttex_score_title = draw_text_scaled(rend, font_ttf, highscore_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
+                ttex_score_title = draw_text_scaled(rend, font_ttf(), highscore_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
                     x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
                     y = global_maze->x_to_pixel(0, win_pixel_scale());
                 });
@@ -785,7 +786,7 @@ int main(int argc, char *argv[])
                 ttex_score->redraw(rend);
             } else {
                 std::string score_s = std::to_string( pacman->score() );
-                ttex_score = draw_text_scaled(rend, font_ttf, score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
+                ttex_score = draw_text_scaled(rend, font_ttf(), score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
                     x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
                     y = global_maze->x_to_pixel(1, win_pixel_scale());
                 });
@@ -869,7 +870,7 @@ int main(int argc, char *argv[])
  
     SDL_DestroyWindow(win);
 
-    TTF_CloseFont(font_ttf);
+    TTF_CloseFont(font_ttf());
 
     SDL_Quit();
  

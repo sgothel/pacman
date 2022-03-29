@@ -468,26 +468,28 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
 }
 
 void ghost_t::global_tick() noexcept {
-    if( 0 < global_mode_ms_left ) {
-        global_mode_ms_left = std::max( 0, global_mode_ms_left - get_ms_per_frame() );
-    }
+    if( pacman_t::mode_t::FREEZE != pacman->mode() ) {
+        if( 0 < global_mode_ms_left ) {
+            global_mode_ms_left = std::max( 0, global_mode_ms_left - get_ms_per_frame() );
+        }
 
-    if( mode_t::CHASE == global_mode ) {
-        if( 0 == global_mode_ms_left ) {
-            set_global_mode( mode_t::SCATTER );
+        if( mode_t::CHASE == global_mode ) {
+            if( 0 == global_mode_ms_left ) {
+                set_global_mode( mode_t::SCATTER );
+            }
+        } else if( mode_t::SCATTER == global_mode ) {
+            if( 0 == global_mode_ms_left ) {
+                set_global_mode( mode_t::CHASE );
+            }
+        } else if( mode_t::SCARED == global_mode ) {
+            if( 0 == global_mode_ms_left ) {
+                set_global_mode( global_mode_last );
+            }
+        } else {
+            log_printf("Error: global_tick: global_mode %s [%d ms], previous %s\n",
+                    to_string(global_mode).c_str(), global_mode_ms_left, to_string(global_mode_last).c_str());
+            return;
         }
-    } else if( mode_t::SCATTER == global_mode ) {
-        if( 0 == global_mode_ms_left ) {
-            set_global_mode( mode_t::CHASE );
-        }
-    } else if( mode_t::SCARED == global_mode ) {
-        if( 0 == global_mode_ms_left ) {
-            set_global_mode( global_mode_last );
-        }
-    } else {
-        log_printf("Error: global_tick: global_mode %s [%d ms], previous %s\n",
-                to_string(global_mode).c_str(), global_mode_ms_left, to_string(global_mode_last).c_str());
-        return;
     }
     for(ghost_ref g : ghosts) {
         g->tick();
@@ -621,11 +623,16 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
 }
 
 void ghost_t::tick() noexcept {
+    atex = &get_tex();
+    atex->tick();
+
     if( sync_next_frame_cntr.count_down() ) {
         return; // skip tick, just repaint
     }
-    atex = &get_tex();
-    atex->tick();
+
+    if( pacman_t::mode_t::FREEZE == pacman->mode() ) {
+        return; // NOP
+    }
 
     bool collision_maze = false;
 
@@ -690,6 +697,9 @@ void ghost_t::tick() noexcept {
 
 void ghost_t::draw(SDL_Renderer* rend) noexcept {
     if( mode_t::AWAY == mode_ ) {
+        return;
+    }
+    if( pos_.intersects_i( pacman->freeze_box() ) ) {
         return;
     }
 
