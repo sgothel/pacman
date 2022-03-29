@@ -296,7 +296,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         const float d_half = ( global_maze->width() * global_maze->height() ) / 2;
 
         // not_up on red_zones acts as collision, also assume it as a wall when deciding whether we have a decision point or not!
-        const bool not_up = pos_.intersects_f( global_maze->red_zone1_box() ) || pos_.intersects_f( global_maze->red_zone2_box() );
+        const bool not_up = !in_house() && ( pos_.intersects_i( global_maze->red_zone1_box() ) || pos_.intersects_i( global_maze->red_zone2_box() ) );
 
         const direction_t left_dir = rot_left(cur_dir);
         const direction_t right_dir = rot_right(cur_dir);
@@ -336,7 +336,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
 
             if( log_moves() ) {
                 log_printf(std::string(to_string(id)+": p "+pos_.toIntString()+", u "+up.toIntString()+", l "+left.toIntString()+", d "+down.toIntString()+", r "+right.toIntString()+"\n").c_str());
-                log_printf(std::string(to_string(id)+": collisions u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
+                log_printf(std::string(to_string(id)+": collisions not_up "+std::to_string(not_up)+", u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
                 log_printf(std::string(to_string(id)+": distances u "+std::to_string(dir_dist[U])+", l "+std::to_string(dir_dist[L])+", d "+std::to_string(dir_dist[D])+", r "+std::to_string(dir_dist[R])+"\n").c_str());
             }
 
