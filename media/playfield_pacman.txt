@@ -1,12 +1,16 @@
-28 36 224 288 // dimension tile and visual: [net field dim: 28 x 31] x 8 -> [net visual dim: 224 x 248]
- 1  4 // top-left corner
- 1 32 // bottom-left corner
-26 32 // bottom-right corner
-26  4 // top-right corner
-14.0 26.0 // pacman start position
-10 15 8 5 // ghost home box incl. walls and gate [x, y, widht, height]
-13 17 // ghost home center position
-14 14 // ghost start position
+ 28   36  224 288 // dimension tile and visual: [net field dim: 28 x 31] x 8 -> [net visual dim: 224 x 248]
+  1    4          // top-left corner
+  1   32          // bottom-left corner
+ 26   32          // bottom-right corner
+ 26    4          // top-right corner
+  0   17    5   1 // tunnel-1 [x, y, width, height]
+ 23   17    5   1 // tunnel-2 [x, y, width, height]
+ 11   14    6   1 // red-zone-1 [x, y, width, height]
+ 11   26    6   1 // red-zone-1 [x, y, width, height]
+ 14.0 26.0        // pacman start position
+ 10   15    8   5 // ghost home exterior incl. walls and gate [x, y, width, height]
+ 11   16    6   3 // ghost home interior excl. walls and gate [x, y, width, height]
+ 13   14    2   1 // ghost start box [x, y, widht, height]
 playfield_pacman.png
 ____________________________
 ____________________________

@@ -98,8 +98,8 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   atex_scared_flash( "S+", rend, ms_per_fright_flash/2, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 }, { 11*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex( &get_tex() ),
-  pos_( global_maze->ghost_home_pos() ),
-  target_( global_maze->ghost_home_pos() )
+  pos_( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() ),
+  target_( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() )
 {
 }
 
@@ -128,16 +128,20 @@ void ghost_t::set_next_target() noexcept {
     switch( mode_ ) {
         case mode_t::HOME:
             if( ghost_t::personality_t::BLINKY == id ) {
-                target_ = pacman->position();
+                target_ = acoord_t( global_maze->ghost_start_box().x(), global_maze->ghost_start_box().y() );
                 break;
+            } else if( ghost_t::personality_t::PINKY == id ) {
+                target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
+            } else if( ghost_t::personality_t::INKY == id ) {
+                target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
             } else {
-                target_ = global_maze->ghost_home_pos();
-                target_.set_centered(keyframei_);
-                break;
+                target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
             }
+            target_.set_centered(keyframei_);
+            break;
 
         case mode_t::LEAVE_HOME:
-            target_ = global_maze->ghost_start_pos();
+            target_ = acoord_t( global_maze->ghost_start_box().x(), global_maze->ghost_start_box().y() );
             target_.set_centered(keyframei_);
             break;
 
@@ -216,7 +220,7 @@ void ghost_t::set_next_target() noexcept {
             break;
 
         case mode_t::PHANTOM:
-            target_ = global_maze->ghost_home_pos();
+            target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
             target_.set_centered(keyframei_);
             break;
 
@@ -502,6 +506,28 @@ void ghost_t::global_draw(SDL_Renderer* rend) noexcept {
     }
 }
 
+void ghost_t::set_mode_speed() noexcept {
+    switch( mode_ ) {
+        case mode_t::HOME:
+            [[fallthrough]];
+        case mode_t::LEAVE_HOME:
+            [[fallthrough]];
+        case mode_t::CHASE:
+            [[fallthrough]];
+        case mode_t::SCATTER:
+            set_speed(game_level_spec().ghost_speed);
+            break;
+        case mode_t::SCARED:
+            set_speed(game_level_spec().ghost_fright_speed);
+            break;
+        case mode_t::PHANTOM:
+            set_speed(1.00f);
+            break;
+        default:
+            break;
+    }
+}
+
 void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     if( m != mode_last ) { // only earmark last other mode
         mode_last = mode_;
@@ -525,20 +551,23 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                     pellet_counter_active_ = false;
                 }
             }
-            if( ghost_t::personality_t::BLINKY == id && pacman_initiated ) {
+            if( ghost_t::personality_t::BLINKY == id ) {
                 // positioned outside of the box at start
-                pos_ = global_maze->ghost_start_pos();
+                pos_ = acoord_t( global_maze->ghost_start_box().center_x()-0.0f, global_maze->ghost_start_box().center_y()-0.0f );
+            } else if( ghost_t::personality_t::PINKY == id ) {
+                pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()-0.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
+            } else if( ghost_t::personality_t::INKY == id ) {
+                pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()-2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
             } else {
-                pos_ = global_maze->ghost_home_pos();
+                pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()+2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
             }
-            pos_.set_centered(keyframei_);
-            set_speed(game_level_spec().ghost_speed);
+            set_next_target(); // set target immediately
             break;
         }
         case mode_t::LEAVE_HOME:
             mode_ = m1;
             pellet_counter_active_ = false;
-            set_speed(game_level_spec().ghost_speed);
+            set_next_target(); // set target immediately
             break;
         case mode_t::CHASE:
             mode_ = m1;
@@ -547,7 +576,6 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
-            set_speed(game_level_spec().ghost_speed);
             break;
         case mode_t::SCATTER:
             mode_ = m1;
@@ -556,7 +584,6 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
-            set_speed(game_level_spec().ghost_speed);
             break;
         case mode_t::SCARED: {
             if( mode_t::HOME == old_mode ) {
@@ -568,7 +595,6 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                     mode_ = m1;
                     mode_ms_left = mode_ms;
                     dir_ = direction_t::LEFT;
-                    set_speed(game_level_spec().ghost_fright_speed);
                 } else {
                     // NOP: From outside: pacman -> set_global_mode()
                     // Wait for own tick to reach start pos
@@ -577,7 +603,6 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                 mode_ = m1;
                 mode_ms_left = game_level_spec().fright_time_ms;
                 dir_ = inverse(dir_);
-                set_speed(game_level_spec().ghost_fright_speed);
             }
             break;
         }
@@ -585,13 +610,14 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             mode_ = m1;
             mode_ms_left = -1;
             ++live_counter_during_pacman_live;
-            set_speed(1.00f);
+            set_next_target(); // set target immediately
             break;
         default:
             mode_ = m1;
             mode_ms_left = -1;
             break;
     }
+    set_mode_speed();
     set_next_target();
     if( log_modes() ) {
         log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id).c_str(),
@@ -632,9 +658,7 @@ void ghost_t::tick() noexcept {
             }
         } // else move for exit
     } else if( mode_t::CHASE == mode_ ) {
-        if( !pos_.intersects_f( global_maze->ghost_home_box() ) ) {
-            set_next_target(); // update ...
-        }
+        set_next_target(); // update ...
         // NOP -> global_mode
     } else if( mode_t::SCATTER == mode_ ) {
         // NOP -> global_mode
@@ -645,7 +669,7 @@ void ghost_t::tick() noexcept {
             set_next_target(); // update dummy
         }
     } else if( mode_t::PHANTOM == mode_ ) {
-        if( pos_.intersects(target_) || 0 == mode_ms_left ) {
+        if( pos_.intersects(target_) ) {
             set_mode( mode_t::LEAVE_HOME );
         }
     }
@@ -655,6 +679,11 @@ void ghost_t::tick() noexcept {
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
 
+    if( pos_.intersects_f( global_maze->tunnel1_box() ) || pos_.intersects_f( global_maze->tunnel2_box() ) ) {
+        set_speed(game_level_spec().ghost_speed_tunnel);
+    } else {
+        set_mode_speed();
+    }
     if( log_moves() || DEBUG_GFX_BOUNDS ) {
         log_printf("%s tick: %s, %s [%d ms], pos %s c%d e%d crash %d -> %s, textures %s\n",
                 to_string(id).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
@@ -666,19 +695,22 @@ void ghost_t::tick() noexcept {
 }
 
 void ghost_t::draw(SDL_Renderer* rend) noexcept {
-    if( mode_t::AWAY != mode_ ) {
-        atex->draw(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
+    if( mode_t::AWAY == mode_ ) {
+        return;
     }
+
+    atex->draw2(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
+
     if( show_debug_gfx() ) {
         if( show_debug_gfx() || DEBUG_GFX_BOUNDS ) {
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
+            const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
             SDL_SetRenderDrawColor(rend, 255, 0, 0, 255);
-            const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
             // pos is on player center position
-            SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale ) - ( atex->width()  * win_pixel_scale ) / 2,
-                                .y=                   round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale ) - ( atex->height() * win_pixel_scale ) / 2,
-                                .w=atex->width()*win_pixel_scale, .h=atex->height()*win_pixel_scale };
+            SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - ( atex->width()  * win_pixel_scale() ) / 2,
+                                .y=                   round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale() ) - ( atex->height() * win_pixel_scale() ) / 2,
+                                .w=atex->width()*win_pixel_scale(), .h=atex->height()*win_pixel_scale() };
             SDL_RenderDrawRect(rend, &bounds);
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }

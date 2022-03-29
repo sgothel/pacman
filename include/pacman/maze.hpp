@@ -300,10 +300,14 @@ class maze_t {
         acoord_t bottom_left_pos;
         acoord_t bottom_right_pos;
         acoord_t top_right_pos;
+        box_t tunnel1;
+        box_t tunnel2;
+        box_t red_zone1;
+        box_t red_zone2;
         acoord_t pacman_start_pos_;
-        box_t ghost_home;
-        acoord_t ghost_home_pos_;
-        acoord_t ghost_start_pos_;
+        box_t ghost_home_ext;
+        box_t ghost_home_int;
+        box_t ghost_start;
         int ppt_x_, ppt_y_;
         std::string texture_file;
         field_t active;
@@ -324,10 +328,14 @@ class maze_t {
         constexpr const acoord_t& bottom_left_corner() const noexcept { return bottom_left_pos; }
         constexpr const acoord_t& bottom_right_corner() const noexcept { return bottom_right_pos; }
         constexpr const acoord_t& top_right_corner() const noexcept { return top_right_pos; }
+        constexpr const box_t&    tunnel1_box() const noexcept { return tunnel1; }
+        constexpr const box_t&    tunnel2_box() const noexcept { return tunnel2; }
+        constexpr const box_t&    red_zone1_box() const noexcept { return red_zone1; }
+        constexpr const box_t&    red_zone2_box() const noexcept { return red_zone2; }
         constexpr const acoord_t& pacman_start_pos() const noexcept { return pacman_start_pos_; }
-        constexpr const box_t&  ghost_home_box() const noexcept { return ghost_home; }
-        constexpr const acoord_t& ghost_home_pos() const noexcept { return ghost_home_pos_; }
-        constexpr const acoord_t& ghost_start_pos() const noexcept { return ghost_start_pos_; }
+        constexpr const box_t&    ghost_home_ext_box() const noexcept { return ghost_home_ext; }
+        constexpr const box_t&    ghost_home_int_box() const noexcept { return ghost_home_int; }
+        constexpr const box_t&    ghost_start_box() const noexcept { return ghost_start; }
 
         constexpr int ppt_x() const noexcept { return ppt_x_; }
         constexpr int ppt_y() const noexcept { return ppt_y_; }

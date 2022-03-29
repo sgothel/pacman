@@ -86,7 +86,7 @@ void texture_t::destroy() noexcept {
 void texture_t::draw_scaled_dimpos(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept {
     if( nullptr != tex_ ) {
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
-        const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
+        const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
         SDL_Rect dest = { .x=win_pixel_offset + x_pos,
                           .y=y_pos,
                           .w=width_, .h=height_ };
@@ -96,9 +96,9 @@ void texture_t::draw_scaled_dimpos(SDL_Renderer* rend, const int x_pos, const in
 void texture_t::draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept {
     if( nullptr != tex_ ) {
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
-        const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale) ),
-                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale),
+        const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
+        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale()) ),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale()),
                           .w=width_, .h=height_ };
         SDL_RenderCopy(rend, tex_, &src, &dest);
     }
@@ -106,42 +106,42 @@ void texture_t::draw_scaled_dim(SDL_Renderer* rend, const int x_pos, const int y
 void texture_t::draw(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept {
     if( nullptr != tex_ ) {
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
-        const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale) ),
-                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale),
-                          .w=width_*win_pixel_scale, .h=height_*win_pixel_scale };
+        const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
+        SDL_Rect dest = { .x=win_pixel_offset + ( global_maze->x_to_pixel(x_pos, win_pixel_scale()) ),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale()),
+                          .w=width_*win_pixel_scale(), .h=height_*win_pixel_scale() };
         SDL_RenderCopy(rend, tex_, &src, &dest);
     }
 }
 void texture_t::draw2_i(SDL_Renderer* rend, const int x_pos, const int y_pos) noexcept {
     if( nullptr != tex_ ) {
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
-        const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
-        const int dxy = ( ( global_maze->ppt_y() * win_pixel_scale ) / 3 );
-        SDL_Rect dest = { .x=win_pixel_offset + ( ( x_pos * global_maze->ppt_y() * win_pixel_scale ) - dxy ),
-                          .y= ( ( y_pos * global_maze->ppt_y() * win_pixel_scale ) - dxy ),
-                          .w=width_*win_pixel_scale, .h=height_*win_pixel_scale };
+        const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
+        const int dxy = ( ( global_maze->ppt_y() * win_pixel_scale() ) / 3 );
+        SDL_Rect dest = { .x=win_pixel_offset + ( ( x_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
+                          .y= ( ( y_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
+                          .w=width_*win_pixel_scale(), .h=height_*win_pixel_scale() };
         SDL_RenderCopy(rend, tex_, &src, &dest);
     }
 }
 void texture_t::draw(SDL_Renderer* rend, const float x_pos, const float y_pos) noexcept {
     if( nullptr != tex_ ) {
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
-        const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
-        SDL_Rect dest = { .x=win_pixel_offset + global_maze->x_to_pixel(x_pos, win_pixel_scale),
-                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale),
-                          .w=width_*win_pixel_scale, .h=height_*win_pixel_scale };
+        const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
+        SDL_Rect dest = { .x=win_pixel_offset + global_maze->x_to_pixel(x_pos, win_pixel_scale()),
+                          .y=global_maze->y_to_pixel(y_pos, win_pixel_scale()),
+                          .w=width_*win_pixel_scale(), .h=height_*win_pixel_scale() };
         SDL_RenderCopy(rend, tex_, &src, &dest);
     }
 }
 void texture_t::draw2_f(SDL_Renderer* rend, const float x_pos, const float y_pos) noexcept {
     if( nullptr != tex_ ) {
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
-        const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
-        const int dxy = ( ( global_maze->ppt_y() * win_pixel_scale ) / 3 );
-        SDL_Rect dest = { .x=win_pixel_offset + ( round_to_int( x_pos * global_maze->ppt_y() * win_pixel_scale ) - dxy ),
-                          .y= ( round_to_int( y_pos * global_maze->ppt_y() * win_pixel_scale ) - dxy ),
-                          .w=width_*win_pixel_scale, .h=height_*win_pixel_scale };
+        const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
+        const int dxy = ( ( global_maze->ppt_y() * win_pixel_scale() ) / 3 );
+        SDL_Rect dest = { .x=win_pixel_offset + ( round_to_int( x_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
+                          .y= ( round_to_int( y_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
+                          .w=width_*win_pixel_scale(), .h=height_*win_pixel_scale() };
         SDL_RenderCopy(rend, tex_, &src, &dest);
     }
 }
@@ -288,6 +288,13 @@ void animtex_t::tick() noexcept {
 void animtex_t::draw(SDL_Renderer* rend, const float x, const float y) noexcept {
     std::shared_ptr<texture_t> tex = texture();
     if( nullptr != tex ) {
+        tex->draw(rend, x, y);
+    }
+}
+
+void animtex_t::draw2(SDL_Renderer* rend, const float x, const float y) noexcept {
+    std::shared_ptr<texture_t> tex = texture();
+    if( nullptr != tex ) {
         tex->draw2_f(rend, x, y);
     }
 }
@@ -331,5 +338,19 @@ std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* f
     } else {
         log_printf("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
         return nullptr;
+    }
+}
+
+void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height, uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept {
+    SDL_SetRenderDrawColor(rend, r, g, b, a);
+    SDL_Rect bounds = {
+            .x=x_pixel_offset + global_maze->x_to_pixel(x, win_pixel_scale()),
+            .y=y_pixel_offset + global_maze->y_to_pixel(y, win_pixel_scale()),
+            .w=global_maze->x_to_pixel(width, win_pixel_scale()),
+            .h=global_maze->y_to_pixel(height, win_pixel_scale())};
+    if( filled ) {
+        SDL_RenderFillRect(rend, &bounds);
+    } else {
+        SDL_RenderDrawRect(rend, &bounds);
     }
 }

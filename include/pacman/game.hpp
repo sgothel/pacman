@@ -233,6 +233,7 @@ class ghost_t {
         void set_next_target() noexcept;
         void set_next_dir(const bool collision, const bool is_center) noexcept;
 
+        void set_mode_speed() noexcept;
         void tick() noexcept;
         void draw(SDL_Renderer* rend) noexcept;
 
@@ -315,6 +316,7 @@ class pacman_t {
         mode_t mode;
         int mode_ms_left;
         int lives;
+        int ghosts_eaten_powered;
         direction_t current_dir;
         uint64_t score_;
 

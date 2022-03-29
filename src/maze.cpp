@@ -553,10 +553,14 @@ maze_t::maze_t(const std::string& fname) noexcept
   bottom_left_pos(-1, -1),
   bottom_right_pos(-1, -1),
   top_right_pos(-1, -1),
+  tunnel1(-1, -1, -1, -1),
+  tunnel2(-1, -1, -1, -1),
+  red_zone1(-1, -1, -1, -1),
+  red_zone2(-1, -1, -1, -1),
   pacman_start_pos_(-1, -1),
-  ghost_home(-1, -1, -1, -1),
-  ghost_home_pos_(-1, -1),
-  ghost_start_pos_(-1, -1),
+  ghost_home_ext(-1, -1, -1, -1),
+  ghost_home_int(-1, -1, -1, -1),
+  ghost_start(-1, -1, -1, -1),
   ppt_x_( -1 ),
   ppt_y_( -1 )
 {
@@ -580,10 +584,14 @@ maze_t::maze_t(const std::string& fname) noexcept
             } else if( digest_iposition_line("bottom_left_pos", bottom_left_pos, line) ) {
             } else if( digest_iposition_line("bottom_right_pos", bottom_right_pos, line) ) {
             } else if( digest_iposition_line("top_right_pos", top_right_pos, line) ) {
+            } else if( digest_ibox_line("tunnel1", tunnel1, line) ) {
+            } else if( digest_ibox_line("tunnel2", tunnel2, line) ) {
+            } else if( digest_ibox_line("red_zone1", red_zone1, line) ) {
+            } else if( digest_ibox_line("red_zone2", red_zone2, line) ) {
             } else if( digest_fposition_line("pacman", pacman_start_pos_, line) ) {
-            } else if( digest_ibox_line("ghost_home", ghost_home, line) ) {
-            } else if( digest_iposition_line("ghost_home", ghost_home_pos_, line) ) {
-            } else if( digest_iposition_line("ghost_start", ghost_start_pos_, line) ) {
+            } else if( digest_ibox_line("ghost_home_ext", ghost_home_ext, line) ) {
+            } else if( digest_ibox_line("ghost_home_int", ghost_home_int, line) ) {
+            } else if( digest_ibox_line("ghost_start", ghost_start, line) ) {
             } else if( 0 == texture_file.length() ) {
                 texture_file = line;
             } else if( field_line_iter < original.height() ) {
@@ -628,8 +636,9 @@ maze_t::maze_t(const std::string& fname) noexcept
     }
     original.clear();
     pacman_start_pos_.set_pos(0, 0);
-    ghost_home_pos_.set_pos(0, 0);
-    ghost_start_pos_.set_pos(0, 0);
+    ghost_home_ext.set(0, 0, 0, 0);
+    ghost_home_int.set(0, 0, 0, 0);
+    ghost_start.set(0, 0, 0, 0);
     ppt_x_ = 0;
     ppt_y_ = 0;
 }
@@ -650,8 +659,8 @@ std::string maze_t::toString() const noexcept {
     std::string errstr = is_ok() ? "ok" : "error";
     return filename+"["+errstr+", "+active.toString()+
                     ", pacman "+pacman_start_pos_.toShortString()+
-                    ", ghost[box "+ghost_home.toString()+", home "+ghost_home_pos_.toShortString()+
-                    ", start "+ghost_start_pos_.toShortString()+
+                    ", ghost[ext "+ghost_home_ext.toString()+", int "+ghost_home_int.toString()+
+                    ", start "+ghost_start.toString()+
                     "], tex "+texture_file+
                     ", ppt "+std::to_string(ppt_x_)+"x"+std::to_string(ppt_y_)+
                     "]";

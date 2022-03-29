@@ -168,6 +168,7 @@ class animtex_t {
         void tick() noexcept;
 
         void draw(SDL_Renderer* rend, const float x, const float y) noexcept;
+        void draw2(SDL_Renderer* rend, const float x, const float y) noexcept;
 
         std::string toString() const noexcept;
 };
@@ -208,5 +209,7 @@ struct text_texture_t {
 std::shared_ptr<text_texture_t> draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept;
 
 std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, std::function<void(const texture_t& texture, int &x_, int&y_)> scaled_coord) noexcept;
+
+void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height, uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept;
 
 #endif /* PACMAN_GRAPHICS_HPP_ */

@@ -273,6 +273,9 @@ class box_t {
         constexpr int y() const noexcept { return y_; }
         constexpr int width() const noexcept { return w_; }
         constexpr int height() const noexcept { return h_; }
+        constexpr float center_x() const noexcept { return x_ + (float)w_/2.0f; }
+        constexpr float center_y() const noexcept { return y_ + (float)h_/2.0f; }
+        constexpr void set(const int x, const int y, const int w, const int h) noexcept { x_ = x; y_ = y; w_ = w; h_ = h; }
 
         std::string toString() const noexcept;
 };

@@ -36,14 +36,14 @@
 // globals
 //
 
-extern int win_pixel_width;
-extern int win_pixel_scale;
+int win_pixel_width() noexcept;
+int win_pixel_scale() noexcept;
 
-extern int get_frames_per_sec();
-inline int get_ms_per_frame() { return (int)std::round(1000.0 / (float)get_frames_per_sec()); }
+int get_frames_per_sec() noexcept;
+inline int get_ms_per_frame() noexcept { return (int)std::round(1000.0 / (float)get_frames_per_sec()); }
 
 /** Returns current game level, range [1..255] */
-extern int get_current_level();
+int get_current_level() noexcept;
 
 extern std::unique_ptr<maze_t> global_maze;
 
@@ -88,12 +88,12 @@ extern std::vector<audio_sample_ref> audio_samples;
  *
  * TODO: Keep in sync with README.md
  */
-extern bool use_original_pacman_behavior();
+bool use_original_pacman_behavior() noexcept;
 
-extern bool show_debug_gfx();
+bool show_debug_gfx() noexcept;
 
-extern bool log_fps();
-extern bool log_moves();
-extern bool log_modes();
+bool log_fps() noexcept;
+bool log_moves() noexcept;
+bool log_modes() noexcept;
 
 #endif /* PACMAN_GLOBALS_HPP_ */

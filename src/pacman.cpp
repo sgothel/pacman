@@ -75,6 +75,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   mode( mode_t::LEVEL_START ),
   mode_ms_left ( -1 ),
   lives( 3 ),
+  ghosts_eaten_powered( 0 ),
   current_dir( direction_t::LEFT ),
   score_( 0 ),
   atex_left( "L", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 0*13, 0 }, { 1*13, 0 } }),
@@ -134,6 +135,7 @@ void pacman_t::set_mode(const mode_t m) noexcept {
             mode_ms_left = game_level_spec().fright_time_ms;
             ghost_t::set_global_mode( ghost_t::mode_t::SCARED, mode_ms_left );
             set_speed(game_level_spec().pacman_powered_speed);
+            ghosts_eaten_powered = 0;
             break;
         case mode_t::DEAD:
             audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
@@ -264,7 +266,7 @@ bool pacman_t::tick() noexcept {
              const int y_i = pos_.y_i();
              const tile_t tile = global_maze->tile(x_i, y_i);
              const bool entered_tile = pos_.entered_tile(keyframei_);
-             if( DEBUG_GFX_BOUNDS ) {
+             if( log_moves() || DEBUG_GFX_BOUNDS ) {
                  log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
                          to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), entered_tile,
                          to_string(tile).c_str(),
@@ -310,7 +312,13 @@ bool pacman_t::tick() noexcept {
                  if( ghost_t::mode_t::CHASE <= g_mode && g_mode <= ghost_t::mode_t::SCATTER ) {
                      collision_enemies = true;
                  } else if( ghost_t::mode_t::SCARED == g_mode ) {
-                     score_ += ::number( score_t::GHOST_1 ); // FIXME
+                     switch( ghosts_eaten_powered ) {
+                         case 0: score_ += ::number( score_t::GHOST_1 ); break;
+                         case 1: score_ += ::number( score_t::GHOST_2 ); break;
+                         case 2: score_ += ::number( score_t::GHOST_3 ); break;
+                         default: score_ += ::number( score_t::GHOST_4 ); break;
+                     }
+                     ++ghosts_eaten_powered;
                      g->set_mode( ghost_t::mode_t::PHANTOM );
                      audio_samples[ ::number( audio_clip_t::EAT_GHOST ) ]->play();
                  }
@@ -326,17 +334,17 @@ bool pacman_t::tick() noexcept {
 
 void pacman_t::draw(SDL_Renderer* rend) noexcept {
     ++perf_frame_count_walked;
-    atex->draw(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
+    atex->draw2(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
 
     if( show_debug_gfx() || DEBUG_GFX_BOUNDS ) {
         uint8_t r, g, b, a;
         SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
         SDL_SetRenderDrawColor(rend, 255, 255, 0, 255);
-        const int win_pixel_offset = ( win_pixel_width - global_maze->pixel_width()*win_pixel_scale ) / 2;
+        const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
         // pos is on player center position
-        SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale ) - ( atex->width()  * win_pixel_scale ) / 2,
-                            .y=                   round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale ) - ( atex->height() * win_pixel_scale ) / 2,
-                            .w=atex->width()*win_pixel_scale, .h=atex->height()*win_pixel_scale };
+        SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - ( atex->width()  * win_pixel_scale() ) / 2,
+                            .y=                   round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale() ) - ( atex->height() * win_pixel_scale() ) / 2,
+                            .w=atex->width()*win_pixel_scale(), .h=atex->height()*win_pixel_scale() };
         SDL_RenderDrawRect(rend, &bounds);
         SDL_SetRenderDrawColor(rend, r, g, b, a);
     }
