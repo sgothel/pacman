@@ -325,7 +325,7 @@ bool pacman_t::tick() noexcept {
     }
     // Collision test with ghosts
     int i=0;
-    for(ghost_ref g : ghosts) {
+    for(ghost_ref g : ghosts()) {
         if( pos_.intersects(g->position()) ) {
             const ghost_t::mode_t g_mode = g->mode();
             if( ghost_t::mode_t::CHASE <= g_mode && g_mode <= ghost_t::mode_t::SCATTER ) {

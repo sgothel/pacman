@@ -54,7 +54,9 @@ typedef std::shared_ptr<ghost_t> ghost_ref;
  * ghosts are in proper ghost_t enum order for array access,
  * i.e. BLINKY, PINKY, INKY and CLYDE.
  */
-extern std::vector<ghost_ref> ghosts;
+std::vector<ghost_ref>& ghosts() noexcept;
+
+ghost_ref ghost(const ghost_t::personality_t id) noexcept;
 
 typedef std::shared_ptr<pacman_t> pacman_ref;
 extern pacman_ref pacman;

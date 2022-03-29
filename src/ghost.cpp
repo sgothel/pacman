@@ -171,7 +171,7 @@ void ghost_t::set_next_target() noexcept {
                      * The tile that this new, extended vector ends on will be Inky's actual target.
                      */
                     acoord_t p = pacman->position();
-                    acoord_t b = ghosts[ number( ghost_t::personality_t::BLINKY ) ]->position();
+                    acoord_t b = ghost( ghost_t::personality_t::BLINKY )->position();
                     p.incr_fwd(keyframei_, 2);
                     float p_[] = { p.x_f(), p.y_f() };
                     float b_[] = { b.x_f(), b.y_f() };
@@ -407,7 +407,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
     }
     switch( m ) {
         case mode_t::AWAY:
-            for(ghost_ref g : ghosts) {
+            for(ghost_ref g : ghosts()) {
                 g->set_mode( m, mode_ms );
             }
             break;
@@ -425,7 +425,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
             }
             global_mode = mode_t::SCATTER;
             global_mode_ms_left = 7000;
-            for(ghost_ref g : ghosts) {
+            for(ghost_ref g : ghosts()) {
                 g->set_mode( m, mode_ms );
             }
             break;
@@ -433,7 +433,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::CHASE:
             global_mode = m;
             global_mode_ms_left = get_ghost_wave(global_scatter_mode_count).chase_ms;
-            for(ghost_ref g : ghosts) {
+            for(ghost_ref g : ghosts()) {
                 if( g->is_scattering_or_chasing() ) {
                     g->set_mode( m );
                 }
@@ -442,7 +442,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::SCATTER:
             global_mode = m;
             global_mode_ms_left = get_ghost_wave(global_scatter_mode_count).scatter_ms;
-            for(ghost_ref g : ghosts) {
+            for(ghost_ref g : ghosts()) {
                 if( g->is_scattering_or_chasing() ) {
                     g->set_mode( m );
                 }
@@ -452,7 +452,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::SCARED:
             global_mode = m;
             global_mode_ms_left = 0 <= mode_ms ? mode_ms : game_level_spec().fright_time_ms;
-            for(ghost_ref g : ghosts) {
+            for(ghost_ref g : ghosts()) {
                 g->set_mode(m, g->in_house() ? -1 : mode_ms);
             }
             break;
@@ -491,13 +491,13 @@ void ghost_t::global_tick() noexcept {
             return;
         }
     }
-    for(ghost_ref g : ghosts) {
+    for(ghost_ref g : ghosts()) {
         g->tick();
     }
 }
 
 void ghost_t::global_draw(SDL_Renderer* rend) noexcept {
-    for(ghost_ref g : ghosts) {
+    for(ghost_ref g : ghosts()) {
         g->draw(rend);
     }
 }
@@ -549,7 +549,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             }
             if( ghost_t::personality_t::BLINKY == id ) {
                 // positioned outside of the box at start
-                pos_ = acoord_t( global_maze->ghost_start_box().center_x()-0.0f, global_maze->ghost_start_box().center_y()-0.0f );
+                pos_ = acoord_t( global_maze->ghost_start_box().center_x()-0.0f, global_maze->ghost_start_box().y()-0.0f );
             } else if( ghost_t::personality_t::PINKY == id ) {
                 pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()-0.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
             } else if( ghost_t::personality_t::INKY == id ) {
@@ -557,12 +557,16 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             } else {
                 pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()+2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
             }
+            dir_ = direction_t::LEFT;
+            pos_.set_aligned_dir(keyframei_);
             set_next_target(); // set target immediately
             break;
         }
         case mode_t::LEAVE_HOME:
             mode_ = m1;
             pellet_counter_active_ = false;
+            dir_ = direction_t::LEFT;
+            pos_.set_aligned_dir(keyframei_);
             set_next_target(); // set target immediately
             break;
         case mode_t::CHASE:
@@ -726,7 +730,7 @@ void ghost_t::draw(SDL_Renderer* rend) noexcept {
 //
 std::string ghost_t::pellet_counter_string() noexcept {
     std::string str = "global_pellet[on "+std::to_string(global_pellet_counter_active)+", ctr "+std::to_string(global_pellet_counter)+"], pellet[";
-    for(ghost_ref g : ghosts) {
+    for(ghost_ref g : ghosts()) {
         str += to_string(g->id)+"[on "+std::to_string(g->pellet_counter_active_)+", ctr "+std::to_string(g->pellet_counter_)+"], ";
     }
     str += "]";
@@ -737,17 +741,17 @@ void ghost_t::notify_pellet_eaten() noexcept {
     if( global_pellet_counter_active ) {
         ++global_pellet_counter;
     } else {
-        ghost_ref blinky = ghosts[ number(personality_t::BLINKY)];
-        ghost_ref pinky = ghosts[ number(personality_t::PINKY)];
-        ghost_ref inky = ghosts[ number(personality_t::INKY)];
-        ghost_ref clyde = ghosts[ number(personality_t::CLYDE)];
+        ghost_ref blinky = ghost( personality_t::BLINKY );
+        ghost_ref pinky = ghost( personality_t::PINKY );
+        ghost_ref inky = ghost( personality_t::INKY );
+        ghost_ref clyde = ghost( personality_t::CLYDE );
 
         // Blinky is always out
-        if( pinky->at_home() && pinky->pellet_counter_active_ ) {
+        if( nullptr != pinky && pinky->at_home() && pinky->pellet_counter_active_ ) {
             pinky->pellet_counter_++;
-        } else if( inky->at_home() && inky->pellet_counter_active_ ) {
+        } else if( nullptr != inky && inky->at_home() && inky->pellet_counter_active_ ) {
             inky->pellet_counter_++;
-        } else if( clyde->at_home() && clyde->pellet_counter_active_ ) {
+        } else if( nullptr != clyde && clyde->at_home() && clyde->pellet_counter_active_ ) {
             clyde->pellet_counter_++;
         }
     }
@@ -832,7 +836,7 @@ bool ghost_t::can_leave_home() noexcept {
                 // re-enable local counter
                 global_pellet_counter_active = false;
                 global_pellet_counter = 0;
-                for(ghost_ref g : ghosts) {
+                for(ghost_ref g : ghosts()) {
                     g->pellet_counter_active_ = true;
                 }
             }

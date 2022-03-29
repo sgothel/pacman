@@ -50,9 +50,19 @@ int get_current_level() noexcept { return current_level; }
 
 std::unique_ptr<maze_t> global_maze;
 std::shared_ptr<global_tex_t> global_tex;
-std::vector<ghost_ref> ghosts;
+static std::vector<ghost_ref> ghosts_;
 pacman_ref pacman;
 
+std::vector<ghost_ref>& ghosts() noexcept { return ghosts_; }
+
+ghost_ref ghost(const ghost_t::personality_t id) noexcept {
+    const int idx = ghost_t::number(id);
+    if( 0 <= idx && (size_t)idx < ghosts_.size() ) {
+        return ghosts_[ ghost_t::number(id)];
+    } else {
+        return nullptr;
+    }
+}
 std::vector<audio_sample_ref> audio_samples;
 
 static TTF_Font* font_ttf_ = nullptr;
@@ -529,12 +539,12 @@ int main(int argc, char *argv[])
     log_printf("%s\n", pacman->toString().c_str());
 
     if( !disable_all_ghosts ) {
-        ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
-        ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec_total) );
-        ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec_total) );
-        ghosts.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec_total) );
+        ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
+        ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec_total) );
+        ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec_total) );
+        ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec_total) );
     }
-    for(ghost_ref g : ghosts) {
+    for(ghost_ref g : ghosts()) {
         log_printf("%s\n", g->toString().c_str());
     }
 
@@ -758,7 +768,7 @@ int main(int argc, char *argv[])
         if( show_targets ) {
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
-            for(ghost_ref ghost : ghosts) {
+            for(ghost_ref ghost : ghosts()) {
                 SDL_SetRenderDrawColor(rend, 255, 255, 255, 255);
                 const acoord_t& p1 = ghost->position();
                 const acoord_t& p2 = ghost->target();
@@ -860,7 +870,7 @@ int main(int argc, char *argv[])
         audio_samples.clear();
         audio_close();
     }
-    ghosts.clear();
+    ghosts_.clear();
     pacman->destroy();
     pacman_left2_tex->destroy();
     global_tex->destroy();
