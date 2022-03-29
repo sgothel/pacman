@@ -25,6 +25,9 @@
 #define PACMAN_UTILS_HPP_
 
 #include <string>
+#include <memory>
+#include <random>
+
 #include <cstdint>
 #include <cstdarg>
 #include <cmath>
@@ -255,6 +258,7 @@ class keyframei_t {
 //
 // box_t
 //
+
 class box_t {
     private:
         int x_;
@@ -277,6 +281,10 @@ class box_t {
 
         std::string toString() const noexcept;
 };
+
+//
+// countdown_t
+//
 
 /**
  * A non thread safe latch-type counter to count down.
@@ -329,5 +337,154 @@ class countdown_t {
 
         std::string toString() const noexcept;
 };
+
+//
+// random_engine_t
+//
+
+/**
+ * Desired mode of random_engine_t operations.
+ */
+enum class random_engine_mode_t {
+    /** Pseudo RNG C++ std::minstd_rand0 */
+    STD_PRNG_0,
+    /** Hardware RNG C++ std::random_device */
+    STD_RNG,
+    /** Pseudo RNG iterating seed as following `seed = ( seed * 5 + 1 ) & 0x1fff`. */
+    PUCKMAN
+};
+
+/**
+ * Evenly distributes random number engine in the range [min .. max]
+ * with `result_type` using `std::uint_fast32_t`.
+ *
+ * Implementation complies with `C++ named requirements: UniformRandomBitGenerator`.
+ */
+template <random_engine_mode_t Mode_type = random_engine_mode_t::STD_PRNG_0>
+class random_engine_t {
+public:
+    constexpr static const random_engine_mode_t mode_type = Mode_type;
+
+    // C++ named requirements: UniformRandomBitGenerator`
+
+    typedef std::uint_fast32_t result_type;
+
+private:
+    // if using predictable PRNG from C++
+    std::unique_ptr<std::minstd_rand0> rng_0;
+
+    // if using hardware RNG
+    std::unique_ptr<std::random_device> rng_hw;
+
+    // if using predictable PUCKMAN from C++
+    typedef std::mt19937 rand_puck_t;
+    std::unique_ptr<rand_puck_t> rng_pm;
+
+    // if using puckman PRNG
+    result_type seed_;
+
+public:
+    /**
+     * Returns minimum limit inclusive
+     * @see C++ named requirements: UniformRandomBitGenerator`
+     */
+    static constexpr result_type min() noexcept {
+        if constexpr ( random_engine_mode_t::STD_PRNG_0 == mode_type ) {
+            return std::minstd_rand0::min();
+        } else if constexpr ( random_engine_mode_t::STD_RNG == mode_type ) {
+            return std::random_device::min();
+        } else /* if constexpr ( random_engine_mode_t::PUCKMAN == mode_type ) */ {
+            return rand_puck_t::min();
+        }
+    }
+
+    /**
+     * Returns maximum limit inclusive
+     * @see C++ named requirements: UniformRandomBitGenerator`
+     */
+    static constexpr result_type max() noexcept {
+        if constexpr ( random_engine_mode_t::STD_PRNG_0 == mode_type ) {
+            return std::minstd_rand0::max();
+        } else if constexpr ( random_engine_mode_t::STD_RNG == mode_type ) {
+            return (result_type)std::random_device::max();
+        } else /* if constexpr ( random_engine_mode_t::PUCKMAN == mode_type ) */ {
+            return rand_puck_t::max();
+        }
+    }
+
+    /**
+     * Returns true if chosen random_engine_mode_t Mode_type indicates a
+     * (hardware) non-predictable RNG.
+     *
+     * Otherwise returns false, i.e. when using a predictable pseudo RNG.
+     */
+    static constexpr bool is_rng() noexcept {
+        if constexpr ( random_engine_mode_t::STD_RNG == mode_type ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Constructs the random number engine
+     *
+     * @see is_rng()
+     */
+    random_engine_t()
+    : rng_0(nullptr), rng_hw(nullptr), seed_(0) {
+        if constexpr ( random_engine_mode_t::STD_PRNG_0 == mode_type ) {
+            rng_0 = std::make_unique<std::minstd_rand0>();
+        } else if constexpr ( random_engine_mode_t::STD_RNG == mode_type ) {
+            rng_hw = std::make_unique<std::random_device>();
+        } else /* if constexpr ( random_engine_mode_t::PUCKMAN == mode_type ) */ {
+            rng_pm = std::make_unique<rand_puck_t>();
+        }
+    }
+
+    /**
+     * Generates a pseudo-random value.
+     *
+     * Depending on passed random_engine_mode_t Mode_type,
+     * the implementation will use a predictable PRNG (default) or a hardware dependent RNG.
+     *
+     * @see is_rng()
+     * @see seed()
+     */
+    result_type operator()() noexcept {
+        if constexpr ( random_engine_mode_t::STD_PRNG_0 == mode_type ) {
+            return (*rng_0)();
+        } else if constexpr ( random_engine_mode_t::STD_RNG == mode_type ) {
+            return (*rng_hw)();
+        } else /* if constexpr ( random_engine_mode_t::PUCKMAN == mode_type ) */ {
+            seed_ = ( ( seed_ * 5 ) + 1 ) & 0x1fffU;
+            // NOTE: Since we can't have a puckman rom distributed
+            // to use the seed as a memory address,
+            // we have to use the seed to pick a PRNG value.
+            // std::mt19937 works best, especially when using std::uniform_int_distribution
+            // Well, one could pick the last bits of each rom byte though .. :)
+            rng_pm->seed( seed_ );
+            return (*rng_pm)();
+        }
+    }
+
+    /**
+     * Reinitializes the internal state of the random-number engine using new seed value.
+     *
+     * If is_rng() is true, i.e. using a non-predictable RNG, this method is a NOP.
+     *
+     * @see is_rng()
+     */
+    void seed(result_type value) noexcept {
+        if constexpr ( random_engine_mode_t::STD_PRNG_0 == mode_type ) {
+            rng_0->seed(value);
+        } else if constexpr ( random_engine_mode_t::STD_RNG == mode_type ) {
+            // NOP ???
+        } else /* if constexpr ( random_engine_mode_t::PUCKMAN == mode_type ) */ {
+            seed_ = value;
+        }
+    }
+};
+
 
 #endif /* PACMAN_UTILS_HPP_ */
