@@ -67,6 +67,13 @@ acoord_t::acoord_t(const int x, const int y) noexcept
   last_collided(false)
 {}
 
+acoord_t::acoord_t(const float x, const float y) noexcept
+: x_pos_i(round_to_int(x)), y_pos_i(round_to_int(y)),
+  x_pos_f(x), y_pos_f(y),
+  last_dir_(direction_t::LEFT),
+  last_collided(false)
+{}
+
 void acoord_t::set_pos(const int x, const int y) noexcept {
     x_pos_i = x;
     y_pos_i = y;
@@ -157,6 +164,12 @@ float acoord_t::sq_distance(const float x, const float y) const noexcept {
     const float x_d = x - x_pos_f;
     const float y_d = y - y_pos_f;
     return x_d * x_d + y_d * y_d;
+}
+
+float acoord_t::distance_manhatten(const float x, const float y) const noexcept {
+    const float x_d = x - x_pos_f;
+    const float y_d = y - y_pos_f;
+    return x_d + y_d;
 }
 
 void acoord_t::incr_fwd(const direction_t dir, const keyframei_t& keyframei, const int tile_count) noexcept {
@@ -441,6 +454,10 @@ std::string acoord_t::toString() const noexcept {
 
 std::string acoord_t::toShortString() const noexcept {
     return "["+std::to_string(x_pos_f)+"/"+std::to_string(y_pos_f)+" "+std::to_string(x_pos_i)+"/"+std::to_string(y_pos_i)+"]";
+}
+
+std::string acoord_t::toIntString() const noexcept {
+    return std::to_string(x_pos_i)+"/"+std::to_string(y_pos_i);
 }
 
 //

@@ -107,6 +107,8 @@ class acoord_t {
     public:
         acoord_t(const int x, const int y) noexcept;
 
+        acoord_t(const float x, const float y) noexcept;
+
         void reset_stats() noexcept { stats_.reset(); }
 
         void set_pos(const int x, const int y) noexcept;
@@ -173,16 +175,28 @@ class acoord_t {
          */
         bool intersects_f(const box_t& other) const noexcept;
 
+        /** Returns Euclidian distance */
         float distance(const float x, const float y) const noexcept;
 
+        /** Returns Euclidian distance */
         float distance(const acoord_t& other) const noexcept {
             return distance(other.x_pos_f, other.y_pos_f);
         }
 
+        /** Returns squared Euclidian distance */
         float sq_distance(const float x, const float y) const noexcept;
 
+        /** Returns squared Euclidian distance */
         float sq_distance(const acoord_t& other) const noexcept {
             return sq_distance(other.x_pos_f, other.y_pos_f);
+        }
+
+        /** Returns Manhatten distance */
+        float distance_manhatten(const float x, const float y) const noexcept;
+
+        /** Returns Manhatten distance */
+        float distance_manhatten(const acoord_t& other) const noexcept {
+            return distance_manhatten(other.x_pos_f, other.y_pos_f);
         }
 
         void incr_fwd(const direction_t dir, const keyframei_t& keyframei, const int tile_count) noexcept;
@@ -244,6 +258,7 @@ class acoord_t {
 
         std::string toString() const noexcept;
         std::string toShortString() const noexcept;
+        std::string toIntString() const noexcept;
 };
 
 //
