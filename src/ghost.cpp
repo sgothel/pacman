@@ -233,11 +233,27 @@ void ghost_t::set_next_target() noexcept {
     }
 }
 
-direction_t ghost_t::get_random_dir() noexcept {
-    static std::default_random_engine rng;
+random_engine_t<random_engine_mode_t::STD_RNG> ghost_t::rng_hw;
+random_engine_t<random_engine_mode_t::STD_PRNG_0> ghost_t::rng_prng;
+random_engine_t<random_engine_mode_t::PUCKMAN> ghost_t::rng_pm;
+std::uniform_int_distribution<int> ghost_t::rng_dist(::number(direction_t::RIGHT), ::number(direction_t::UP));
 
-    std::uniform_int_distribution<int> dist(::number(direction_t::RIGHT), ::number(direction_t::UP));
-    return static_cast<direction_t>( dist(rng) );
+direction_t ghost_t::get_random_dir() noexcept {
+    if( true ) {
+        return static_cast<direction_t>( rng_dist(rng_pm) );
+    } else if( false ) {
+        // return static_cast<direction_t>( rng_prng() % ( 3 + 1 ) );
+        return static_cast<direction_t>( rng_dist(rng_prng) );
+    } else {
+        return static_cast<direction_t>( rng_dist(rng_hw) );
+    }
+}
+
+void ghost_t::reset_random() noexcept {
+    rng_pm.seed(0);
+    rng_prng.seed(0);
+    // rng_hw.seed(0);
+    rng_dist.reset();
 }
 
 void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept {
@@ -415,6 +431,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
             global_pellet_counter_active = false;
             global_pellet_counter = 0;
             global_scatter_mode_count = 0;
+            reset_random();
             [[fallthrough]];
         case mode_t::HOME: {
             const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
@@ -422,6 +439,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
                 // pacman died -> use global counter
                 global_pellet_counter_active = true;
                 global_pellet_counter = 0;
+                reset_random();
             }
             global_mode = mode_t::SCATTER;
             global_mode_ms_left = 7000;

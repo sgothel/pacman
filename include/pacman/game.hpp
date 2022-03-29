@@ -24,6 +24,7 @@
 #ifndef PACMAN_GAME_HPP_
 #define PACMAN_GAME_HPP_
 
+#include <pacman/utils.hpp>
 #include <pacman/maze.hpp>
 
 //
@@ -189,6 +190,11 @@ class ghost_t {
         };
 
     private:
+        static random_engine_t<random_engine_mode_t::STD_RNG> rng_hw;
+        static random_engine_t<random_engine_mode_t::STD_PRNG_0> rng_prng;
+        static random_engine_t<random_engine_mode_t::PUCKMAN> rng_pm;
+        static std::uniform_int_distribution<int> rng_dist;
+
         static mode_t global_mode; // SCATTER, CHASE or SCARED
         static mode_t global_mode_last; // SCATTER, CHASE or SCARED
         static int global_mode_ms_left; // for SCATTER, CHASE or SCARED
@@ -228,7 +234,22 @@ class ghost_t {
 
         constexpr animtex_t& get_phantom_tex() noexcept { return atex_phantom; }
 
+        /**
+         * Return a `random` direction_t from the used random engine.
+         *
+         * Depending on global settings, this could be
+         * - a puckman inspired predictable PRNG
+         * - the std default predictable PRNG
+         * - a hardware unpredictable RNG, unable to reset_random()
+         */
         static direction_t get_random_dir() noexcept;
+
+        /**
+         * The random engine should be called when pacman dies, a level starts and when a level ends.
+         *
+         * This method is a NOP for a hardware unpredictable RNG.
+         */
+        static void reset_random() noexcept;
 
         void set_next_target() noexcept;
         void set_next_dir(const bool collision, const bool is_center) noexcept;

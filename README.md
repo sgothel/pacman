@@ -99,6 +99,7 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - Next move algo
     - Grouped wave switch of scatter, chase and frightened
     - Exit home using local and global pellet timer
+    - PRNG with an identical seed value every new level and life for predictable results
 - Level specification (per level)
   - Timings
     - scatter and chase duration per phase
@@ -108,6 +109,8 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - pacman powered on empty tile or eating
     - ghost speed normal, frightening or in tunnel
   - Score
+- Score
+    - show eaten ghosts score onscreen
 - Sound
   - Using wav chunks, mixed from seperated channels
 
@@ -116,7 +119,8 @@ If false, a more accurate implementation, the pacman bugfix, is used:
   - *Elroy 1+2* mode
   - Tunnel speed
   - *Red-zones* w/o turning up
-- Fruits / Bonus
+- Score
+    - Fruits / Bonus
 - Pacman lives
 - Sound
   - Use lossy formats
