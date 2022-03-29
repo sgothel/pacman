@@ -326,10 +326,10 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         } else {
             // find shortest path
             float dir_dist[4] = {
-                    dir_coll[R] ? d_inf : right.sq_distance(target_),
-                    dir_coll[D] ? d_inf : down.sq_distance(target_),
-                    dir_coll[L] ? d_inf : left.sq_distance(target_),
-                    dir_coll[U] ? d_inf : up.sq_distance(target_) };
+                    dir_coll[R] ? d_inf : right.sq_distance_i(target_),
+                    dir_coll[D] ? d_inf : down.sq_distance_i(target_),
+                    dir_coll[L] ? d_inf : left.sq_distance_i(target_),
+                    dir_coll[U] ? d_inf : up.sq_distance_i(target_) };
 
             // penalty for inverse direction
             dir_dist[ ::number(inv_dir) ] += d_half;

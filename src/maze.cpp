@@ -169,9 +169,21 @@ float acoord_t::distance(const float x, const float y) const noexcept {
     return std::sqrt(x_d * x_d + y_d * y_d);
 }
 
+int acoord_t::distance_i(const int x, const int y) const noexcept {
+    const int x_d = x - x_pos_i;
+    const int y_d = y - y_pos_i;
+    return (int)std::round( std::sqrt(x_d * x_d + y_d * y_d) );
+}
+
 float acoord_t::sq_distance(const float x, const float y) const noexcept {
     const float x_d = x - x_pos_f;
     const float y_d = y - y_pos_f;
+    return x_d * x_d + y_d * y_d;
+}
+
+int acoord_t::sq_distance_i(const int x, const int y) const noexcept {
+    const int x_d = x - x_pos_i;
+    const int y_d = y - y_pos_i;
     return x_d * x_d + y_d * y_d;
 }
 

@@ -188,12 +188,28 @@ class acoord_t {
             return distance(other.x_pos_f, other.y_pos_f);
         }
 
+        /** Returns Euclidian distance */
+        int distance_i(const int x, const int y) const noexcept;
+
+        /** Returns Euclidian distance */
+        int distance_i(const acoord_t& other) const noexcept {
+            return distance_i(other.x_pos_i, other.y_pos_i);
+        }
+
         /** Returns squared Euclidian distance */
         float sq_distance(const float x, const float y) const noexcept;
 
         /** Returns squared Euclidian distance */
         float sq_distance(const acoord_t& other) const noexcept {
             return sq_distance(other.x_pos_f, other.y_pos_f);
+        }
+
+        /** Returns squared Euclidian distance */
+        int sq_distance_i(const int x, const int y) const noexcept;
+
+        /** Returns squared Euclidian distance */
+        int sq_distance_i(const acoord_t& other) const noexcept {
+            return sq_distance_i(other.x_pos_i, other.y_pos_i);
         }
 
         /** Returns Manhatten distance */
