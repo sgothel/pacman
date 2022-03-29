@@ -724,10 +724,10 @@ int main(int argc, char *argv[])
                 const box_t& red_zone2 = global_maze->red_zone2_box();
                 const box_t& tunnel1 = global_maze->tunnel1_box();
                 const box_t& tunnel2 = global_maze->tunnel2_box();
-                draw_box(rend, true, win_pixel_offset, 0, red_zone1.x(), red_zone1.y(), red_zone1.width(), red_zone1.height(), 255, 0, 0, 100);
-                draw_box(rend, true, win_pixel_offset, 0, red_zone2.x(), red_zone2.y(), red_zone2.width(), red_zone2.height(), 255, 0, 0, 100);
-                draw_box(rend, true, win_pixel_offset, 0, tunnel1.x(), tunnel1.y(), tunnel1.width(), tunnel1.height(), 128, 128, 255, 100);
-                draw_box(rend, true, win_pixel_offset, 0, tunnel2.x(), tunnel2.y(), tunnel2.width(), tunnel2.height(), 128, 128, 255, 100);
+                draw_box(rend, true, win_pixel_offset, 0, red_zone1.x(), red_zone1.y(), red_zone1.width(), red_zone1.height(), 255, 96, 96, 100);
+                draw_box(rend, true, win_pixel_offset, 0, red_zone2.x(), red_zone2.y(), red_zone2.width(), red_zone2.height(), 255, 96, 96, 100);
+                draw_box(rend, true, win_pixel_offset, 0, tunnel1.x(), tunnel1.y(), tunnel1.width(), tunnel1.height(),  96, 96, 255, 100);
+                draw_box(rend, true, win_pixel_offset, 0, tunnel2.x(), tunnel2.y(), tunnel2.width(), tunnel2.height(),  96, 96, 255, 100);
             }
             {
                 // Grey Grid
