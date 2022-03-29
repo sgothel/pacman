@@ -150,8 +150,17 @@ bool acoord_t::intersects(const acoord_t& other) const noexcept {
 }
 
 bool acoord_t::intersects_f(const box_t& other) const noexcept {
-    return !( x_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.x() || other.x() + other.width() < x_pos_f ||
-              y_pos_f + 1.0f - std::numeric_limits<float>::epsilon() < other.y() || other.y() + other.height() < y_pos_f );
+    return !( x_pos_f   + 1.0f           - std::numeric_limits<float>::epsilon() < other.x() ||
+              other.x() + other.width()  - std::numeric_limits<float>::epsilon() < x_pos_f ||
+              y_pos_f   + 1.0f           - std::numeric_limits<float>::epsilon() < other.y() ||
+              other.y() + other.height() - std::numeric_limits<float>::epsilon() < y_pos_f );
+}
+
+bool acoord_t::intersects_i(const box_t& other) const noexcept {
+    return !( x_pos_i   + 1.0f           - std::numeric_limits<float>::epsilon() < other.x() ||
+              other.x() + other.width()  - std::numeric_limits<float>::epsilon() < x_pos_i ||
+              y_pos_i   + 1.0f           - std::numeric_limits<float>::epsilon() < other.y() ||
+              other.y() + other.height() - std::numeric_limits<float>::epsilon() < y_pos_i );
 }
 
 float acoord_t::distance(const float x, const float y) const noexcept {

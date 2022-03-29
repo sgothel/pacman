@@ -175,6 +175,11 @@ class acoord_t {
          */
         bool intersects_f(const box_t& other) const noexcept;
 
+        /**
+         * Tile position test for intersection.
+         */
+        bool intersects_i(const box_t& other) const noexcept;
+
         /** Returns Euclidian distance */
         float distance(const float x, const float y) const noexcept;
 

@@ -663,7 +663,7 @@ void ghost_t::tick() noexcept {
             set_next_target(); // update dummy
         }
     } else if( mode_t::PHANTOM == mode_ ) {
-        if( pos_.intersects(target_) ) {
+        if( pos_.intersects_i( global_maze->ghost_home_int_box() ) ) {
             set_mode( mode_t::LEAVE_HOME );
         }
     }
@@ -673,7 +673,7 @@ void ghost_t::tick() noexcept {
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
 
-    if( pos_.intersects_f( global_maze->tunnel1_box() ) || pos_.intersects_f( global_maze->tunnel2_box() ) ) {
+    if( pos_.intersects_i( global_maze->tunnel1_box() ) || pos_.intersects_i( global_maze->tunnel2_box() ) ) {
         set_speed(game_level_spec().ghost_speed_tunnel);
     } else {
         set_mode_speed();
