@@ -98,9 +98,23 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   atex_scared_flash( "S+", rend, ms_per_fright_flash/2, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 }, { 11*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex( &get_tex() ),
-  pos_( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() ),
-  target_( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() )
+  home_pos( -1, -1 ),
+  pos_( -1, -1 ),
+  target_( -1, -1 )
 {
+    if( ghost_t::personality_t::BLINKY == id ) {
+        // positioned outside of the box at start
+        home_pos = acoord_t( global_maze->ghost_start_box().center_x()-0.0f, global_maze->ghost_start_box().y()-0.0f );
+        // home_pos = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
+    } else if( ghost_t::personality_t::PINKY == id ) {
+        home_pos = acoord_t( global_maze->ghost_home_int_box().center_x()-0.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
+    } else if( ghost_t::personality_t::INKY == id ) {
+        home_pos = acoord_t( global_maze->ghost_home_int_box().center_x()-2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
+    } else {
+        home_pos = acoord_t( global_maze->ghost_home_int_box().center_x()+2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
+    }
+    pos_ = home_pos;
+    target_ = home_pos;
 }
 
 
@@ -127,16 +141,7 @@ void ghost_t::set_speed(const float pct) noexcept {
 void ghost_t::set_next_target() noexcept {
     switch( mode_ ) {
         case mode_t::HOME:
-            if( ghost_t::personality_t::BLINKY == id ) {
-                target_ = acoord_t( global_maze->ghost_start_box().x(), global_maze->ghost_start_box().y() );
-                break;
-            } else if( ghost_t::personality_t::PINKY == id ) {
-                target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
-            } else if( ghost_t::personality_t::INKY == id ) {
-                target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
-            } else {
-                target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
-            }
+            target_ = home_pos;
             target_.set_centered(keyframei_);
             break;
 
@@ -220,7 +225,11 @@ void ghost_t::set_next_target() noexcept {
             break;
 
         case mode_t::PHANTOM:
-            target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
+            if( ghost_t::personality_t::BLINKY == id ) {
+                target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
+            } else {
+                target_ = home_pos;
+            }
             target_.set_centered(keyframei_);
             break;
 
@@ -312,7 +321,8 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         const float d_half = ( global_maze->width() * global_maze->height() ) / 2;
 
         // not_up on red_zones acts as collision, also assume it as a wall when deciding whether we have a decision point or not!
-        const bool not_up = !in_house() && ( pos_.intersects_i( global_maze->red_zone1_box() ) || pos_.intersects_i( global_maze->red_zone2_box() ) );
+        const bool not_up = is_scattering_or_chasing() &&
+                            ( pos_.intersects_i( global_maze->red_zone1_box() ) || pos_.intersects_i( global_maze->red_zone2_box() ) );
 
         const direction_t left_dir = rot_left(cur_dir);
         const direction_t right_dir = rot_right(cur_dir);
@@ -535,7 +545,7 @@ void ghost_t::set_mode_speed() noexcept {
             set_speed(game_level_spec().ghost_fright_speed);
             break;
         case mode_t::PHANTOM:
-            set_speed(1.00f);
+            set_speed(2.00f);
             break;
         default:
             break;
@@ -565,16 +575,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                     pellet_counter_active_ = false;
                 }
             }
-            if( ghost_t::personality_t::BLINKY == id ) {
-                // positioned outside of the box at start
-                pos_ = acoord_t( global_maze->ghost_start_box().center_x()-0.0f, global_maze->ghost_start_box().y()-0.0f );
-            } else if( ghost_t::personality_t::PINKY == id ) {
-                pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()-0.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
-            } else if( ghost_t::personality_t::INKY == id ) {
-                pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()-2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
-            } else {
-                pos_ = acoord_t( global_maze->ghost_home_int_box().center_x()+2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
-            }
+            pos_ = home_pos;
             dir_ = direction_t::LEFT;
             pos_.set_aligned_dir(keyframei_);
             break;
@@ -668,7 +669,7 @@ void ghost_t::tick() noexcept {
             return; // wait
         }
     } else if( mode_t::LEAVE_HOME == mode_ ) {
-        if( pos_.intersects(target_) ) {
+        if( pos_.intersects_f( target_ ) ) {
             if( mode_t::PHANTOM == mode_last && mode_t::SCARED == global_mode ) {
                 // avoid re-materialized ghost to restart SCARED again
                 set_mode( global_mode_last );
@@ -689,7 +690,7 @@ void ghost_t::tick() noexcept {
             set_next_target(); // update dummy
         }
     } else if( mode_t::PHANTOM == mode_ ) {
-        if( pos_.intersects_i( global_maze->ghost_home_int_box() ) ) {
+        if( pos_.intersects_f( target_) ) { // too fuzzy: global_maze->ghost_home_int_box()
             set_mode( mode_t::LEAVE_HOME );
         }
     }

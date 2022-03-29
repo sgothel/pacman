@@ -225,6 +225,7 @@ class ghost_t {
         animtex_t atex_phantom;
         animtex_t * atex;
 
+        acoord_t home_pos;
         acoord_t pos_;
         acoord_t target_;
 

@@ -95,11 +95,15 @@ If false, a more accurate implementation, the pacman bugfix, is used:
   - Sync speed by dropping tick, every n-frames
 - Ghost *AI*
     - Scared RNG target
-    - Scatter and chase targets
-    - Next move algo
+    - Scatter, chase and phantom targets
+    - Next `direction_t` algo
     - Grouped wave switch of scatter, chase and frightened
     - Exit home using local and global pellet timer
     - PRNG with an identical seed value every new level and life for predictable results
+    - Adjust tunnel speed
+    - No turning up in *Red-Zones* if chasing or scattering
+- Pacman
+    - show eaten ghosts score onscreen (FREEZE)
 - Level specification (per level)
   - Timings
     - scatter and chase duration per phase
@@ -110,25 +114,29 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - ghost speed normal, frightening or in tunnel
   - Score
 - Score
-    - show eaten ghosts score onscreen
+    - ghost 1-4 per power pellet
 - Sound
   - Using wav chunks, mixed from seperated channels
 
 ### To Do
 - Ghost *AI*
   - *Elroy 1+2* mode
-  - Tunnel speed
-  - *Red-zones* w/o turning up
 - Score
     - Fruits / Bonus
-- Pacman lives
+- Pacman
+    - Lives
+    - Freeze pacman only for 3 frames after eating power pellet
 - Sound
   - Use lossy formats
   - Complete samples
 - Extension
-  - Second play moves a ghost
+  - Second player moves a ghost
 - Maze
   - Render maze itself from maze-spec file
+- Persistent game state
+  - Save/load game state
+  - Screenshot
+  - Record video
 
 ## Media Data
 
