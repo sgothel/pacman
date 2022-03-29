@@ -345,6 +345,7 @@ class pacman_t {
         uint64_t score_;
         int freeze_score;
         box_t freeze_box_;
+        int freeze_frame_count;
 
         animtex_t atex_left;
         animtex_t atex_right;

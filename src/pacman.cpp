@@ -81,6 +81,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   score_( 0 ),
   freeze_score( -1 ),
   freeze_box_(-1, -1, -1, -1),
+  freeze_frame_count(0),
   atex_left( "L", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 0*13, 0 }, { 1*13, 0 } }),
   atex_right("R", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 2*13, 0 }, { 3*13, 0 } }),
   atex_up(   "U", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 4*13, 0 }, { 5*13, 0 } }),
@@ -261,6 +262,9 @@ bool pacman_t::tick() noexcept {
             set_mode( mode_t::HOME );
         }
         return true;
+    } else if( 0 < freeze_frame_count ) {
+        --freeze_frame_count;
+        return true;
     }
     // NORMAL and POWERED
 
@@ -310,6 +314,7 @@ bool pacman_t::tick() noexcept {
                     set_mode( mode_t::POWERED );
                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                     next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
+                    freeze_frame_count = 3;
                 }
             } else if( tile_t::EMPTY == tile ) {
                 if( next_empty_field_frame_cntr.count_down() ) {

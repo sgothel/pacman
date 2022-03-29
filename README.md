@@ -104,6 +104,7 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - No turning up in *Red-Zones* if chasing or scattering
 - Pacman
     - show eaten ghosts score onscreen (FREEZE)
+    - Freeze pacman only for 3 frames after eating power pellet
 - Level specification (per level)
   - Timings
     - scatter and chase duration per phase
@@ -125,7 +126,6 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - Fruits / Bonus
 - Pacman
     - Lives
-    - Freeze pacman only for 3 frames after eating power pellet
 - Sound
   - Use lossy formats
   - Complete samples
