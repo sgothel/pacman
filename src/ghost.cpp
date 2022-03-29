@@ -559,7 +559,6 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             }
             dir_ = direction_t::LEFT;
             pos_.set_aligned_dir(keyframei_);
-            set_next_target(); // set target immediately
             break;
         }
         case mode_t::LEAVE_HOME:
@@ -567,7 +566,6 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             pellet_counter_active_ = false;
             dir_ = direction_t::LEFT;
             pos_.set_aligned_dir(keyframei_);
-            set_next_target(); // set target immediately
             break;
         case mode_t::CHASE:
             mode_ = m1;
@@ -610,7 +608,6 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             mode_ = m1;
             mode_ms_left = -1;
             ++live_counter_during_pacman_live;
-            set_next_target(); // set target immediately
             break;
         default:
             mode_ = m1;
