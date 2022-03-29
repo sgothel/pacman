@@ -245,6 +245,9 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         return; // NOP
     }
 
+    // Perform one full step to next tile as look-ahead
+    static const keyframei_t one_step(1.0f, 1.0f, true /* nearest */);
+
     /**
      * [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier)
      * - ghost prefers directions in this order: up, left, down, right
@@ -267,16 +270,16 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         if( rdir != inv_dir && pos_.test(rdir, keyframei_, collisiontest) ) {
             new_dir = rdir;
             choice = 1;
-        } else if( rdir != direction_t::UP && inv_dir != direction_t::UP && pos_.test(direction_t::UP, keyframei_, collisiontest) ) {
+        } else if( rdir != direction_t::UP && inv_dir != direction_t::UP && pos_.test(direction_t::UP, one_step, collisiontest) ) {
             new_dir = direction_t::UP;
             choice = 2;
-        } else if( rdir != direction_t::LEFT && inv_dir != direction_t::LEFT && pos_.test(direction_t::LEFT, keyframei_, collisiontest) ) {
+        } else if( rdir != direction_t::LEFT && inv_dir != direction_t::LEFT && pos_.test(direction_t::LEFT, one_step, collisiontest) ) {
             new_dir = direction_t::LEFT;
             choice = 3;
-        } else if( rdir != direction_t::DOWN && inv_dir != direction_t::DOWN && pos_.test(direction_t::DOWN, keyframei_, collisiontest) ) {
+        } else if( rdir != direction_t::DOWN && inv_dir != direction_t::DOWN && pos_.test(direction_t::DOWN, one_step, collisiontest) ) {
             new_dir = direction_t::DOWN;
             choice = 4;
-        } else if( rdir != direction_t::RIGHT && inv_dir != direction_t::RIGHT && pos_.test(direction_t::RIGHT, keyframei_, collisiontest) ) {
+        } else if( rdir != direction_t::RIGHT && inv_dir != direction_t::RIGHT && pos_.test(direction_t::RIGHT, one_step, collisiontest) ) {
             new_dir = direction_t::RIGHT;
             choice = 5;
         } else {
@@ -302,9 +305,6 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         acoord_t down = pos_;    // 1
         acoord_t left = pos_;    // 2
         acoord_t up = pos_;      // 3
-
-        // Perform one full step to next tile as look-ahead
-        static const keyframei_t one_step(1.0f, 1.0f, true /* nearest */);
 
         const bool dir_coll[4] = {
                 !right.step(direction_t::RIGHT, one_step, collisiontest),
