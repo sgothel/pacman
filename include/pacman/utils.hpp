@@ -359,7 +359,7 @@ enum class random_engine_mode_t {
 };
 
 /**
- * Evenly distributes random number engine in the range [min .. max]
+ * Random number engine in the range [min .. max]
  * with `result_type` using `std::uint_fast32_t`.
  *
  * Implementation complies with `C++ named requirements: UniformRandomBitGenerator`.
@@ -452,6 +452,7 @@ public:
      * Depending on passed random_engine_mode_t Mode_type,
      * the implementation will use a predictable PRNG (default) or a hardware dependent RNG.
      *
+     * @see C++ named requirements: UniformRandomBitGenerator`
      * @see is_rng()
      * @see seed()
      */
@@ -477,6 +478,7 @@ public:
      *
      * If is_rng() is true, i.e. using a non-predictable RNG, this method is a NOP.
      *
+     * @see C++ named requirements: UniformRandomBitGenerator`
      * @see is_rng()
      */
     void seed(result_type value) noexcept {
