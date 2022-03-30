@@ -321,12 +321,6 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         const constexpr int L = 2;
         const constexpr int U = 3;
 
-        const float d_inf =  ( global_maze->width() * global_maze->height() ) * 10; // infinity :)
-
-        const float d_half = use_manhatten_distance() ?
-                             ( global_maze->width() + global_maze->height() ) / 2 : // Manhatten half game diagonal
-                             ( global_maze->width() * global_maze->height() ) / 2;  // Euclidean half game diagonal squared
-
         // not_up on red_zones acts as collision, also assume it as a wall when deciding whether we have a decision point or not!
         const bool not_up = is_scattering_or_chasing() &&
                             ( pos_.intersects_i( global_maze->red_zone1_box() ) || pos_.intersects_i( global_maze->red_zone2_box() ) );
@@ -354,8 +348,16 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
                 choice = 20;
             }
         } else {
-            // find shortest path
+            // decision: find shortest path
+
+            const float d_inf =  ( global_maze->width() * global_maze->height() ) * 10; // infinity :)
+
+            const float d_half = use_manhatten_distance() ?
+                                 ( global_maze->width() + global_maze->height() ) / 2 : // Manhatten half game diagonal
+                                 ( global_maze->width() * global_maze->height() ) / 2;  // Euclidean half game diagonal squared
+
             float dir_dist[4];
+
             if( use_manhatten_distance() ) {
                 // not default
                 dir_dist[R] = dir_coll[R] ? d_inf : dir_pos[R].distance_manhatten_i(target_);
