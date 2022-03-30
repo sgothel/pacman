@@ -891,7 +891,6 @@ int main(int argc, char *argv[])
                 text_texture_ref ttex = get_text_texture_cache(txt_key);
                 if( nullptr == ttex ) {
                     const box_t& msg_box = global_maze->message_box();
-                    log_printf("XXX msg_box: %s\n", msg_box.toString().c_str());
                     ttex = draw_text_scaled(rend, font_ttf(), txt_key,
                                             pacman_t::rgb_color[0], pacman_t::rgb_color[1], pacman_t::rgb_color[2],
                                             [&](const texture_t& tex, int &x, int&y) {
