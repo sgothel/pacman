@@ -84,6 +84,40 @@ bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-w
   - Down: `DOWN` or `S`
   - Right: `RIGHT` or `D`
 
+### Video Recording Example
+
+We assume we are in the project folder having `bin/pacman` build and created a `video` folder.
+ 
+- Use the first command to start the game while recording bmp snapshots each frame 
+to `video/puckman-01-*.bmp`.
+- Use the second command to convert same files to `video/puckman-01.mp4`.
+- Use the third command to delete the bmp files
+- Use the forth command to play the video with `mpv`
+ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
+bin/pacman -record video/puckman-01 -wwidth 1044 -wheight 1080 -show_targets -show_debug_gfx
+scripts/bmps_to_mp4.sh video/puckman-01
+rm video/puckman-01*bmp
+mpv video/puckman-01.mp4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+## Deviation from the Original
+
+### Look-Ahead Decision Point
+As stated in [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
+the ghosts select their next direction one tile ahead of an intersection.
+
+This current code queries a decision when reaching the center of every tile, i.e.:
+- detecting whether its just an alley to move forward, or
+- to make a decision on an intersection - looking ahead on all valid exits and comparing the distance.
+
+Code for [selecting a new direction](../tree/src/ghost.cpp#n272).
+
+Hence this code utilize a more current Puckman position, in case the original code 
+has such a double look-ahead implemented using an older Puckman position.
+
+This needs to be berified.
+
 ### Bugfix Mode
 
 With the `-bugfix` mode enabled, see `Usage` above,
@@ -102,23 +136,7 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pinky's up-traget to be 4 ahead as intended
 - ...
 
-### Video Recording Example
 
-We assume we are in the project folder having `bin/pacman` build and created a `video` folder.
- 
-- Use the first command to start the game while recording bmp snapshots each frame 
-to `video/puckman-01-*.bmp`.
-- Use the second command to convert same files to `video/puckman-01.mp4`.
-- Use the third command to delete the bmp files
-- Use the forth command to play the video with `mpv`
- 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman -record video/puckman-01 -wwidth 1044 -wheight 1080 -show_targets -show_debug_gfx
-scripts/bmps_to_mp4.sh video/puckman-01
-rm video/puckman-01*bmp
-mpv video/puckman-01.mp4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- 
 ## Implementation Status 
 
 ### Done
