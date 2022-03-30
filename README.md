@@ -184,6 +184,10 @@ and assumed to be in the public domain.
 
 ## Changes
 
+**0.2.0**
+
+* Stability, next_target bug fix and alternative distance function
+
 **0.1.0**
 
 * Usable working state with most ghost algorithms for further analysis and demonstration
