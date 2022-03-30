@@ -62,7 +62,7 @@ int ghost_t::id_to_yoff(ghost_t::personality_t id) noexcept {
 }
 
 animtex_t& ghost_t::get_tex() noexcept {
-    if( in_house() && mode_t::SCARED == global_mode ) {
+    if( at_home() && mode_t::SCARED == global_mode ) {
         return atex_scared;
     }
     switch( mode_ ) {
