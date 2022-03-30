@@ -43,62 +43,9 @@ int win_pixel_scale() noexcept;
 int get_frames_per_sec() noexcept;
 inline int get_ms_per_frame() noexcept { return (int)std::round(1000.0 / (float)get_frames_per_sec()); }
 
-/** Returns current game level, range [1..255] */
-int get_current_level() noexcept;
-
-extern std::unique_ptr<maze_t> global_maze;
-
-extern std::shared_ptr<global_tex_t> global_tex;
-
-typedef std::shared_ptr<ghost_t> ghost_ref;
-/**
- * ghosts are in proper ghost_t enum order for array access,
- * i.e. BLINKY, PINKY, INKY and CLYDE.
- */
-std::vector<ghost_ref>& ghosts() noexcept;
-
-ghost_ref ghost(const ghost_t::personality_t id) noexcept;
-
-typedef std::shared_ptr<pacman_t> pacman_ref;
-extern pacman_ref pacman;
-
-enum class audio_clip_t : int {
-    INTRO = 0,
-    MUNCH = 1,
-    EAT_FRUIT = 2,
-    EAT_GHOST = 3,
-    EXTRA = 4,
-    INTERMISSION = 5,
-    DEATH = 6
-};
-constexpr int number(const audio_clip_t item) noexcept {
-    return static_cast<int>(item);
-}
-
-typedef std::shared_ptr<audio_sample_t> audio_sample_ref;
-extern std::vector<audio_sample_ref> audio_samples;
-
 TTF_Font* font_ttf() noexcept;
 
-/**
- * By default the original pacman behavior is being implemented:
- * - weighted (round) tile position for collision tests
- * - pinky's up-target not 4 ahead, but 4 ahead and 4 to the left
- * - ...
- *
- * If false, a more accurate implementation, the pacman bugfix, is used:
- * - pixel accurate tile position for collision tests
- * - pinky's up-traget to be 4 ahead as intended
- * - ...
- *
- * TODO: Keep in sync with README.md
- */
-bool use_original_pacman_behavior() noexcept;
 
-bool show_debug_gfx() noexcept;
-
-bool log_fps() noexcept;
-bool log_moves() noexcept;
 bool log_modes() noexcept;
 
 #endif /* PACMAN_GLOBALS_HPP_ */

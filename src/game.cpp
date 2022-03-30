@@ -47,6 +47,13 @@ int win_pixel_scale() noexcept{ return win_pixel_scale_; }
 static int frames_per_sec = 0;
 int get_frames_per_sec() noexcept { return frames_per_sec; }
 
+static TTF_Font* font_ttf_ = nullptr;
+TTF_Font* font_ttf() noexcept { return font_ttf_; }
+
+//
+// globals across modules 'game.hpp'
+//
+
 static int current_level = 1;
 int get_current_level() noexcept { return current_level; }
 
@@ -66,9 +73,6 @@ ghost_ref ghost(const ghost_t::personality_t id) noexcept {
     }
 }
 std::vector<audio_sample_ref> audio_samples;
-
-static TTF_Font* font_ttf_ = nullptr;
-TTF_Font* font_ttf() noexcept { return font_ttf_; }
 
 static bool original_pacman_behavior = true;
 bool use_original_pacman_behavior() noexcept { return original_pacman_behavior; }

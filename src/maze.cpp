@@ -60,6 +60,13 @@ std::string acoord_t::stats_t::toString() const noexcept {
 
 }
 
+acoord_t::acoord_t() noexcept
+: x_pos_i(-1), y_pos_i(-1),
+  x_pos_f(-1), y_pos_f(-1),
+  last_dir_(direction_t::LEFT),
+  last_collided(false)
+{}
+
 acoord_t::acoord_t(const int x, const int y) noexcept
 : x_pos_i(x), y_pos_i(y),
   x_pos_f(x), y_pos_f(y),
