@@ -355,7 +355,6 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
             }
         } else {
             // find shortest path
-            // use_manhatten_distance()
             float dir_dist[4];
             if( use_manhatten_distance() ) {
                 // not default
@@ -380,21 +379,19 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
                 log_printf(std::string(to_string(id_)+": distances u "+std::to_string(dir_dist[U])+", l "+std::to_string(dir_dist[L])+", d "+std::to_string(dir_dist[D])+", r "+std::to_string(dir_dist[R])+"\n").c_str());
             }
 
-            const float d_pref = 0.0f;
-
             // Check for a clear short path: Reversal has been punished and collision dir_dist set to 'max * 10'
             //
             // A: dir_dist[d] <= dir_dist[other] (inverse direction is punished, collision set to 'max * 10')
-            if( dir_dist[U] - d_pref <= dir_dist[D] && dir_dist[U] - d_pref <= dir_dist[L] && dir_dist[U] - d_pref <= dir_dist[R] ) {
+            if( dir_dist[U] <= dir_dist[D] && dir_dist[U] <= dir_dist[L] && dir_dist[U] <= dir_dist[R] ) {
                 new_dir = direction_t::UP;
                 choice = 30;
-            } else if( dir_dist[L] - d_pref <= dir_dist[U] && dir_dist[L] - d_pref <= dir_dist[D] && dir_dist[L] - d_pref <= dir_dist[R] ) {
+            } else if( dir_dist[L] <= dir_dist[U] && dir_dist[L] <= dir_dist[D] && dir_dist[L] <= dir_dist[R] ) {
                 new_dir = direction_t::LEFT;
                 choice = 31;
-            } else if( dir_dist[D] - d_pref <= dir_dist[U] && dir_dist[D] - d_pref <= dir_dist[L] && dir_dist[D] - d_pref <= dir_dist[R] ) {
+            } else if( dir_dist[D] <= dir_dist[U] && dir_dist[D] <= dir_dist[L] && dir_dist[D] <= dir_dist[R] ) {
                 new_dir = direction_t::DOWN;
                 choice = 32;
-            } else if( dir_dist[R] - d_pref <= dir_dist[U] && dir_dist[R] - d_pref <= dir_dist[D] && dir_dist[R] - d_pref <= dir_dist[L] ) {
+            } else if( dir_dist[R] <= dir_dist[U] && dir_dist[R] <= dir_dist[D] && dir_dist[R] <= dir_dist[L] ) {
                 new_dir = direction_t::RIGHT;
                 choice = 33;
             } else {
