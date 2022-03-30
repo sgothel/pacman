@@ -62,11 +62,12 @@ Following commandline arguments are supported
 - `-show_all` enable `-show_modes`, `-show_moves`, `-show_targets` and `-show_debug_gfx`
 - `-no_ghosts` to disable all ghosts
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
+- `-dist_manhatten` to use the Manhatten distance function instead of the Euclidean default
 - `-level <int>` to start at given level
 - `-record <basename-of-bmp-files>` to record each frame as a bmp file at known fps. The basename may contain folder names. The resulting bmp files may be converted to video using [scripts/bmps_to_mp4.sh](../tree/scripts/bmps_to_mp4.sh), see below.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-level <int>] [-record <basename-of-bmp-files>]
+bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Keyboard Input
@@ -137,6 +138,7 @@ mpv video/puckman-01.mp4
     - PRNG with an identical seed value every new level and life for predictable results
     - Adjust tunnel speed
     - No turning up in *Red-Zones* if chasing or scattering
+    - Optionally use alternative Manhatten distance function instead of the Euclidean default.
 - Pacman
     - show eaten ghosts and fruit score onscreen (FREEZE)
     - Freeze pacman only for 3 frames after eating power pellet
