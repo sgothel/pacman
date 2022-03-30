@@ -28,6 +28,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <map>
 #include <inttypes.h>
 #include <functional>
 
@@ -174,26 +175,31 @@ class animtex_t {
 };
 
 /**
- * Storage for a rendered text allowing caching for performance.
+ * Storage for a rendered text allowing caching for performance,
+ * see text_texture_cache_t below.
  */
 struct text_texture_t {
     std::string text;
-    texture_t texture;
+    texture_t tex;
     bool scaled_pos;
     int x_pos;
     int y_pos;
 
     text_texture_t(const std::string text_, SDL_Renderer* rend, SDL_Surface* surface, bool scaled_pos_, int x_, int y_) noexcept
-    : text(text_), texture(rend, surface), scaled_pos(scaled_pos_), x_pos(x_), y_pos(y_) {}
+    : text(text_), tex(rend, surface), scaled_pos(scaled_pos_), x_pos(x_), y_pos(y_) {}
 
-    void redraw(SDL_Renderer* rend) noexcept {
-        if( scaled_pos ) {
-            texture.draw_scaled_dimpos(rend, x_pos, y_pos);
-        } else {
-            texture.draw_scaled_dim(rend, x_pos, y_pos);
-        }
-    }
+    void redraw(SDL_Renderer* rend) noexcept;
+
+    void redraw(SDL_Renderer* rend, bool scaled_pos_, int x_, int y_) noexcept;
+
+    std::string toString() const noexcept;
 };
+typedef std::shared_ptr<text_texture_t> text_texture_ref;
+
+/**
+ * A very simple text_texture_t cache modeled as an unordered map.
+ */
+typedef std::unordered_map<std::string, text_texture_ref> text_texture_cache_t;
 
 /**
  *
@@ -206,9 +212,9 @@ struct text_texture_t {
  * @param g
  * @param b
  */
-std::shared_ptr<text_texture_t> draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept;
+text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept;
 
-std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, std::function<void(const texture_t& texture, int &x_, int&y_)> scaled_coord) noexcept;
+text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, std::function<void(const texture_t& tex, int &x_, int&y_)> scaled_coord) noexcept;
 
 void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height, uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept;
 

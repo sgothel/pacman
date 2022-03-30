@@ -643,6 +643,13 @@ maze_t::maze_t(const std::string& fname) noexcept
         file.close();
         if( original.validate_size() ) {
             reset();
+
+            // center below ghost_home_ext, 1 tile
+            fruit_box_.set( trunc_to_int(ghost_home_ext.center_x()), ghost_home_ext.y()+ghost_home_ext.height(), 1, 1);
+
+            // below ghost_home_ext, centered, whole length, 1 tile height
+            message_box_.set( ghost_home_ext.x(), ghost_home_ext.y()+ghost_home_ext.height(), ghost_home_ext.width(), 1);
+
             return; // OK
         }
     } else {

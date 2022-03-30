@@ -307,14 +307,34 @@ std::string animtex_t::toString() const noexcept {
             ", textures["+tex_s+"]]";
 }
 
-std::shared_ptr<text_texture_t> draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept {
+void text_texture_t::redraw(SDL_Renderer* rend) noexcept {
+    if( scaled_pos ) {
+        tex.draw_scaled_dimpos(rend, x_pos, y_pos);
+    } else {
+        tex.draw_scaled_dim(rend, x_pos, y_pos);
+    }
+}
+
+void text_texture_t::redraw(SDL_Renderer* rend, bool scaled_pos_, int x_, int y_) noexcept {
+    if( scaled_pos_ ) {
+        tex.draw_scaled_dimpos(rend, x_, y_);
+    } else {
+        tex.draw_scaled_dim(rend, x_, y_);
+    }
+}
+
+std::string text_texture_t::toString() const noexcept {
+    return "ttext['"+text+"', "+std::to_string(x_pos)+"/"+std::to_string(y_pos)+", scaled "+std::to_string(scaled_pos)+": "+tex.toString()+"]";
+}
+
+text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept {
     SDL_Color foregroundColor = { r, g, b, 255 };
 
     SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
     if( nullptr != textSurface ) {
         std::shared_ptr<text_texture_t> ttex = std::make_shared<text_texture_t>(text, rend, textSurface, false, x, y);
         SDL_FreeSurface(textSurface);
-        ttex->texture.draw_scaled_dim(rend, x, y);
+        ttex->tex.draw_scaled_dim(rend, x, y);
         // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
         return ttex;
     } else {
@@ -323,16 +343,16 @@ std::shared_ptr<text_texture_t> draw_text(SDL_Renderer* rend, TTF_Font* font, co
     }
 }
 
-std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b,
-                                                 std::function<void(const texture_t& tex_, int &x_, int&y_)> scaled_coord) noexcept {
+text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b,
+                                  std::function<void(const texture_t& tex_, int &x_, int&y_)> scaled_coord) noexcept {
     SDL_Color foregroundColor = { r, g, b, 255 };
 
     SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
     if( nullptr != textSurface ) {
         std::shared_ptr<text_texture_t> ttex = std::make_shared<text_texture_t>(text, rend, textSurface, true, 0, 0);
         SDL_FreeSurface(textSurface);
-        scaled_coord(ttex->texture, ttex->x_pos, ttex->y_pos);
-        ttex->texture.draw_scaled_dimpos(rend, ttex->x_pos, ttex->y_pos);
+        scaled_coord(ttex->tex, ttex->x_pos, ttex->y_pos);
+        ttex->tex.draw_scaled_dimpos(rend, ttex->x_pos, ttex->y_pos);
         // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
         return ttex;
     } else {

@@ -367,11 +367,19 @@ void pacman_t::draw(SDL_Renderer* rend) noexcept {
     if( mode_t::FREEZE == mode_ ) {
         if( 0 <= freeze_score ) {
             if( nullptr != font_ttf() ) {
-                std::string score_s = std::to_string( freeze_score );
-                draw_text_scaled(rend, font_ttf(), score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
-                    x = round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - tex.width()  / 2;
-                    y = round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale() ) - tex.height() / 2;
-                });
+                std::string txt_key = std::to_string( freeze_score );
+                text_texture_ref ttex = get_text_texture_cache( txt_key );
+                if( nullptr == ttex ) {
+                    ttex = draw_text_scaled(rend, font_ttf(), txt_key, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
+                        x = round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - tex.width()  / 2;
+                        y = round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale() ) - tex.height() / 2;
+                    });
+                    put_text_texture_cache(txt_key, ttex);
+                } else {
+                    ttex->redraw(rend, true,
+                            round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - ttex->tex.width()  / 2,
+                            round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale() ) - ttex->tex.height() / 2 );
+                }
             }
         }
     } else {

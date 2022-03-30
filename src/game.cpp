@@ -50,6 +50,33 @@ int get_frames_per_sec() noexcept { return frames_per_sec; }
 static TTF_Font* font_ttf_ = nullptr;
 TTF_Font* font_ttf() noexcept { return font_ttf_; }
 
+static text_texture_cache_t text_texture_cache;
+
+text_texture_ref get_text_texture_cache(const std::string& key) noexcept {
+    if( true ) {
+        return text_texture_cache[ key ];
+    } else {
+        text_texture_ref ttex = text_texture_cache[ key ];
+        if( nullptr == ttex ) {
+            log_printf("text_texture_cache::get: Missing '%s'\n", key.c_str());
+        } else {
+            log_printf("text_texture_cache::get: Has '%s' -> %s\n", key.c_str(), ttex->toString().c_str());
+        }
+        return ttex;
+    }
+}
+
+void put_text_texture_cache(const std::string& key, text_texture_ref ttex) noexcept {
+    text_texture_cache[ key ] = ttex;
+    if( false ) {
+        if( nullptr == ttex ) {
+            log_printf("text_texture_cache::put: Empty '%s'\n", key.c_str());
+        } else {
+            log_printf("text_texture_cache::put: Filld '%s' <- %s\n", key.c_str(), ttex->toString().c_str());
+        }
+    }
+}
+
 //
 // globals across modules 'game.hpp'
 //
@@ -578,10 +605,6 @@ int main(int argc, char *argv[])
     uint64_t frame_count_total = 0;
     int snapshot_counter = 0;
 
-    uint64_t last_score = pacman->score();
-    std::shared_ptr<text_texture_t> ttex_score = nullptr;
-    std::shared_ptr<text_texture_t> ttex_score_title = nullptr;
-
     set_game_mode(game_mode_t::PAUSE, 0);
 
     while (!close) {
@@ -628,8 +651,7 @@ int main(int argc, char *argv[])
                             break;
                         case SDL_WINDOWEVENT_RESIZED:
                             on_window_resized(rend, event.window.data1, event.window.data2);
-                            ttex_score_title = nullptr;
-                            ttex_score = nullptr;
+                            text_texture_cache.clear();
                             break;
                         case SDL_WINDOWEVENT_SIZE_CHANGED:
                             // INFO_PRINT("Window SizeChanged: %d x %d\n", event.window.data1, event.window.data2);
@@ -815,26 +837,46 @@ int main(int argc, char *argv[])
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }
 
-        // top line
         if( nullptr != font_ttf() ) {
-            if( nullptr == ttex_score_title ) {
-                const std::string highscore_s("HIGH SCORE");
-                ttex_score_title = draw_text_scaled(rend, font_ttf(), highscore_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
-                    x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
-                    y = global_maze->x_to_pixel(0, win_pixel_scale());
-                });
-            } else {
-                ttex_score_title->redraw(rend);
+            // top line: title
+            {
+                const std::string txt_key("HIGH SCORE");
+                text_texture_ref ttex = get_text_texture_cache(txt_key);
+                if( nullptr == ttex ) {
+                    ttex = draw_text_scaled(rend, font_ttf(), txt_key, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
+                        x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
+                        y = global_maze->x_to_pixel(0, win_pixel_scale());
+                    });
+                    put_text_texture_cache(txt_key, ttex);
+                } else {
+                    ttex->redraw(rend);
+                }
             }
-            if( nullptr != ttex_score && last_score == pacman->score() ) {
-                ttex_score->redraw(rend);
-            } else {
+            // 2nd line: score
+            {
+                // No caching ..
                 std::string score_s = std::to_string( pacman->score() );
-                ttex_score = draw_text_scaled(rend, font_ttf(), score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
+                draw_text_scaled(rend, font_ttf(), score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
                     x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
                     y = global_maze->x_to_pixel(1, win_pixel_scale());
                 });
-                last_score = pacman->score();
+            }
+
+            // optional text
+            if( game_mode_t::LEVEL_START == game_mode ) {
+                const std::string txt_key("Ready!");
+                text_texture_ref ttex = get_text_texture_cache(txt_key);
+                if( nullptr == ttex ) {
+                    const box_t& msg_box = global_maze->message_box();
+                    log_printf("XXX msg_box: %s\n", msg_box.toString().c_str());
+                    ttex = draw_text_scaled(rend, font_ttf(), txt_key, 0xff, 0xff, 0x00, [&](const texture_t& tex, int &x, int&y) {
+                        x = global_maze->x_to_pixel(msg_box.center_x(), win_pixel_scale()) - tex.width()  / 2;
+                        y = global_maze->x_to_pixel(msg_box.y(), win_pixel_scale()) - tex.height() / 4;
+                    });
+                    put_text_texture_cache(txt_key, ttex);
+                } else {
+                    ttex->redraw(rend);
+                }
             }
         }
 

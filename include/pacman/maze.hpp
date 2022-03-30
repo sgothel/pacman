@@ -337,6 +337,10 @@ class maze_t {
         field_t active;
         field_t original;
 
+        // derived data
+        box_t fruit_box_;
+        box_t message_box_;
+
         bool digest_iposition_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept;
         bool digest_fposition_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept;
         bool digest_ibox_line(const std::string& name, box_t& dest, const std::string& line) noexcept;
@@ -360,6 +364,8 @@ class maze_t {
         constexpr const box_t&    ghost_home_ext_box() const noexcept { return ghost_home_ext; }
         constexpr const box_t&    ghost_home_int_box() const noexcept { return ghost_home_int; }
         constexpr const box_t&    ghost_start_box() const noexcept { return ghost_start; }
+        constexpr const box_t&    fruit_box() const noexcept { return fruit_box_; }
+        constexpr const box_t&    message_box() const noexcept { return message_box_; }
 
         constexpr int ppt_x() const noexcept { return ppt_x_; }
         constexpr int ppt_y() const noexcept { return ppt_y_; }
