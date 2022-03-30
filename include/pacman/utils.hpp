@@ -267,6 +267,10 @@ class box_t {
         int h_;
 
     public:
+        /** Empty w/ position -1 / -1 and dimension 0x0 */
+        box_t() noexcept
+        : x_(-1), y_(-1), w_(0), h_(0) {}
+
         box_t(const int x, const int y, const int w, const int h) noexcept
         : x_(x), y_(y), w_(w), h_(h) {}
 

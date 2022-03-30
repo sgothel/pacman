@@ -97,10 +97,7 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   atex_scared( "S", rend, ms_per_atex, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
   atex_scared_flash( "S+", rend, ms_per_fright_flash/2, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 }, { 11*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
-  atex( &get_tex() ),
-  home_pos( -1, -1 ),
-  pos_( -1, -1 ),
-  target_( -1, -1 )
+  atex( &get_tex() )
 {
     if( ghost_t::personality_t::BLINKY == id ) {
         // positioned outside of the box at start

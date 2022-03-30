@@ -569,21 +569,7 @@ bool maze_t::digest_ibox_line(const std::string& name, box_t& dest, const std::s
 }
 
 maze_t::maze_t(const std::string& fname) noexcept
-: filename(fname),
-  top_left_scatter_(-1, -1),
-  bottom_left_scatter_(-1, -1),
-  bottom_right_scatter_(-1, -1),
-  top_right_scatter_(-1, -1),
-  tunnel1(-1, -1, -1, -1),
-  tunnel2(-1, -1, -1, -1),
-  red_zone1(-1, -1, -1, -1),
-  red_zone2(-1, -1, -1, -1),
-  pacman_start_pos_(-1, -1),
-  ghost_home_ext(-1, -1, -1, -1),
-  ghost_home_int(-1, -1, -1, -1),
-  ghost_start(-1, -1, -1, -1),
-  ppt_x_( -1 ),
-  ppt_y_( -1 )
+: filename(fname)
 {
     int field_line_iter = 0;
     std::fstream file;

@@ -105,6 +105,9 @@ class acoord_t {
         bool step_impl(direction_t dir, const bool test_only, const keyframei_t& keyframei, collisiontest_simple_t ct0, collisiontest_t ct1) noexcept;
 
     public:
+        /** Empty w/ position -1 / -1 */
+        acoord_t() noexcept;
+
         acoord_t(const int x, const int y) noexcept;
 
         acoord_t(const float x, const float y) noexcept;

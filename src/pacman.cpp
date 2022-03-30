@@ -80,7 +80,6 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   current_dir( direction_t::LEFT ),
   score_( 0 ),
   freeze_score( -1 ),
-  freeze_box_(-1, -1, -1, -1),
   freeze_frame_count(0),
   atex_left( "L", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 0*13, 0 }, { 1*13, 0 } }),
   atex_right("R", rend, ms_per_tex, global_tex->all_images(), 0, 28, 13, 13, { { 2*13, 0 }, { 3*13, 0 } }),
