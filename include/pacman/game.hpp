@@ -194,6 +194,9 @@ class ghost_t {
             PHANTOM
         };
 
+        /** RGB color of the ghosts in number(personality_t) order. */
+        static std::vector<std::vector<int>> rgb_color;
+
     private:
         static random_engine_t<random_engine_mode_t::STD_RNG> rng_hw;
         static random_engine_t<random_engine_mode_t::STD_PRNG_0> rng_prng;
@@ -213,7 +216,7 @@ class ghost_t {
         keyframei_t keyframei_;
         countdown_t sync_next_frame_cntr;
 
-        personality_t id;
+        personality_t id_;
         int live_counter_during_pacman_live;
         mode_t mode_;
         mode_t mode_last;
@@ -272,6 +275,8 @@ class ghost_t {
         }
 
         void destroy() noexcept;
+
+        constexpr personality_t id() const noexcept { return id_; }
 
         constexpr const keyframei_t& keyframei() const noexcept { return keyframei_; }
 
@@ -332,6 +337,9 @@ class pacman_t {
         static constexpr int number(const mode_duration_t item) noexcept {
             return static_cast<int>(item);
         }
+
+        /** RGB color of pacman . */
+        static std::vector<int> rgb_color;
 
     private:
         static random_engine_t<random_engine_mode_t::STD_RNG> rng_hw;

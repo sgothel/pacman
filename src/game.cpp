@@ -808,11 +808,24 @@ int main(int argc, char *argv[])
                 acoord_t pinky_top_left = global_maze->top_left_scatter();
                 acoord_t inky_bottom_right = global_maze->bottom_right_scatter();
                 acoord_t clyde_bottom_left = global_maze->bottom_left_scatter();
-                draw_box(rend, true, win_pixel_offset, 0, 0,                       0,                       1, 1, 0xff, 0xff, 0x00, 255); // pacman color
-                draw_box(rend, true, win_pixel_offset, 0, blinky_top_right.x_i(),  blinky_top_right.y_i(),  1, 1, 0xff, 0x00, 0x00, 255); // blinky color
-                draw_box(rend, true, win_pixel_offset, 0, pinky_top_left.x_i(),    pinky_top_left.y_i(),    1, 1, 0xff, 0xb7, 0xff, 255); // pinky color
-                draw_box(rend, true, win_pixel_offset, 0, inky_bottom_right.x_i(), inky_bottom_right.y_i(), 1, 1, 0x00, 0xff, 0xff, 255); // inky color
-                draw_box(rend, true, win_pixel_offset, 0, clyde_bottom_left.x_i(), clyde_bottom_left.y_i(), 1, 1, 0xff, 0xb7, 0x51, 255); // clyde color
+                draw_box(rend, true, win_pixel_offset, 0, 0, 0, 1, 1,
+                        pacman_t::rgb_color[0], pacman_t::rgb_color[1], pacman_t::rgb_color[2], 255);
+                draw_box(rend, true, win_pixel_offset, 0, blinky_top_right.x_i(),  blinky_top_right.y_i(), 1, 1,
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::BLINKY ) ][0],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::BLINKY ) ][1],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::BLINKY ) ][2], 255);
+                draw_box(rend, true, win_pixel_offset, 0, pinky_top_left.x_i(),    pinky_top_left.y_i(),    1, 1,
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::PINKY ) ][0],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::PINKY ) ][1],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::PINKY ) ][2], 255);
+                draw_box(rend, true, win_pixel_offset, 0, inky_bottom_right.x_i(), inky_bottom_right.y_i(), 1, 1,
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::INKY ) ][0],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::INKY ) ][1],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::INKY ) ][2], 255);
+                draw_box(rend, true, win_pixel_offset, 0, clyde_bottom_left.x_i(), clyde_bottom_left.y_i(), 1, 1,
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::CLYDE ) ][0],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::CLYDE ) ][1],
+                        ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::CLYDE ) ][2], 255);
             }
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }
@@ -831,7 +844,11 @@ int main(int argc, char *argv[])
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
             for(ghost_ref ghost : ghosts()) {
-                SDL_SetRenderDrawColor(rend, 255, 255, 255, 255);
+                SDL_SetRenderDrawColor(rend,
+                                       ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][0],
+                                       ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][1],
+                                       ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][2], 255);
+
                 const acoord_t& p1 = ghost->position();
                 const acoord_t& p2 = ghost->target();
                 SDL_RenderDrawLine(rend,
@@ -875,7 +892,9 @@ int main(int argc, char *argv[])
                 if( nullptr == ttex ) {
                     const box_t& msg_box = global_maze->message_box();
                     log_printf("XXX msg_box: %s\n", msg_box.toString().c_str());
-                    ttex = draw_text_scaled(rend, font_ttf(), txt_key, 0xff, 0xff, 0x00, [&](const texture_t& tex, int &x, int&y) {
+                    ttex = draw_text_scaled(rend, font_ttf(), txt_key,
+                                            pacman_t::rgb_color[0], pacman_t::rgb_color[1], pacman_t::rgb_color[2],
+                                            [&](const texture_t& tex, int &x, int&y) {
                         x = global_maze->x_to_pixel(msg_box.center_x(), win_pixel_scale()) - tex.width()  / 2;
                         y = global_maze->x_to_pixel(msg_box.y(), win_pixel_scale()) - tex.height() / 4;
                     });

@@ -80,12 +80,12 @@ animtex_t& ghost_t::get_tex() noexcept {
     }
 }
 
-ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields_per_sec_total_) noexcept
+ghost_t::ghost_t(const personality_t id__, SDL_Renderer* rend, const float fields_per_sec_total_) noexcept
 : fields_per_sec_total(fields_per_sec_total_),
   current_speed_pct(0.75f),
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
-  id( id_ ),
+  id_( id__ ),
   live_counter_during_pacman_live( 0 ),
   mode_( mode_t::AWAY ),
   mode_last( mode_t::AWAY ),
@@ -93,19 +93,19 @@ ghost_t::ghost_t(const personality_t id_, SDL_Renderer* rend, const float fields
   dir_( direction_t::LEFT ),
   pellet_counter_active_( false ),
   pellet_counter_( 0 ),
-  atex_normal( "N", rend, ms_per_atex, global_tex->all_images(), 0, id_to_yoff(id), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
+  atex_normal( "N", rend, ms_per_atex, global_tex->all_images(), 0, id_to_yoff(id_), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex_scared( "S", rend, ms_per_atex, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
   atex_scared_flash( "S+", rend, ms_per_fright_flash/2, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 }, { 11*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex( &get_tex() )
 {
-    if( ghost_t::personality_t::BLINKY == id ) {
+    if( ghost_t::personality_t::BLINKY == id_ ) {
         // positioned outside of the box at start
         home_pos = acoord_t( global_maze->ghost_start_box().center_x()-0.0f, global_maze->ghost_start_box().y()-0.0f );
         // home_pos = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
-    } else if( ghost_t::personality_t::PINKY == id ) {
+    } else if( ghost_t::personality_t::PINKY == id_ ) {
         home_pos = acoord_t( global_maze->ghost_home_int_box().center_x()-0.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
-    } else if( ghost_t::personality_t::INKY == id ) {
+    } else if( ghost_t::personality_t::INKY == id_ ) {
         home_pos = acoord_t( global_maze->ghost_home_int_box().center_x()-2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
     } else {
         home_pos = acoord_t( global_maze->ghost_home_int_box().center_x()+2.0f, global_maze->ghost_home_int_box().center_y()-0.0f );
@@ -131,7 +131,7 @@ void ghost_t::set_speed(const float pct) noexcept {
     pos_.set_aligned_dir(keyframei_);
     sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
     if( log_moves() ) {
-        log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
+        log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id_).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
     }
 }
 
@@ -148,7 +148,7 @@ void ghost_t::set_next_target() noexcept {
             break;
 
         case mode_t::CHASE:
-            switch( id ) {
+            switch( id_ ) {
                 case ghost_t::personality_t::BLINKY:
                     target_ = pacman->position();
                     break;
@@ -202,7 +202,7 @@ void ghost_t::set_next_target() noexcept {
             break;
 
         case mode_t::SCATTER:
-            switch( id ) {
+            switch( id_ ) {
                 case ghost_t::personality_t::BLINKY:
                     target_ = global_maze->top_right_scatter();
                     break;
@@ -222,7 +222,7 @@ void ghost_t::set_next_target() noexcept {
             break;
 
         case mode_t::PHANTOM:
-            if( ghost_t::personality_t::BLINKY == id ) {
+            if( ghost_t::personality_t::BLINKY == id_ ) {
                 target_ = acoord_t( global_maze->ghost_home_int_box().center_x(), global_maze->ghost_home_int_box().center_y() );
             } else {
                 target_ = home_pos;
@@ -238,6 +238,13 @@ void ghost_t::set_next_target() noexcept {
             break;
     }
 }
+
+std::vector<std::vector<int>> ghost_t::rgb_color = {
+        { 0xff, 0x00, 0x00 }, // blinky color
+        { 0xff, 0xb7, 0xff }, // pinky color
+        { 0x00, 0xff, 0xff }, // inky color
+        { 0xff, 0xb7, 0x51 }  // clyde color
+};
 
 random_engine_t<random_engine_mode_t::STD_RNG> ghost_t::rng_hw;
 random_engine_t<random_engine_mode_t::STD_PRNG_0> ghost_t::rng_prng;
@@ -368,9 +375,9 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
             dir_dist[ ::number(inv_dir) ] += d_half;
 
             if( log_moves() ) {
-                log_printf(std::string(to_string(id)+": p "+pos_.toIntString()+", u "+dir_pos[U].toIntString()+", l "+dir_pos[L].toIntString()+", d "+dir_pos[D].toIntString()+", r "+dir_pos[R].toIntString()+"\n").c_str());
-                log_printf(std::string(to_string(id)+": collisions not_up "+std::to_string(not_up)+", u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
-                log_printf(std::string(to_string(id)+": distances u "+std::to_string(dir_dist[U])+", l "+std::to_string(dir_dist[L])+", d "+std::to_string(dir_dist[D])+", r "+std::to_string(dir_dist[R])+"\n").c_str());
+                log_printf(std::string(to_string(id_)+": p "+pos_.toIntString()+", u "+dir_pos[U].toIntString()+", l "+dir_pos[L].toIntString()+", d "+dir_pos[D].toIntString()+", r "+dir_pos[R].toIntString()+"\n").c_str());
+                log_printf(std::string(to_string(id_)+": collisions not_up "+std::to_string(not_up)+", u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
+                log_printf(std::string(to_string(id_)+": distances u "+std::to_string(dir_dist[U])+", l "+std::to_string(dir_dist[L])+", d "+std::to_string(dir_dist[D])+", r "+std::to_string(dir_dist[R])+"\n").c_str());
             }
 
             const float d_pref = 0.0f;
@@ -429,7 +436,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
     } // SCARED or not
     dir_ = new_dir;
     if( log_moves() ) {
-        log_printf("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s c%d e%d -> %s\n", to_string(id).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
+        log_printf("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s c%d e%d -> %s\n", to_string(id_).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
                 choice, to_string(mode_).c_str(), mode_ms_left, pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), target_.toShortString().c_str());
     }
 }
@@ -643,7 +650,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     set_mode_speed();
     set_next_target();
     if( log_modes() ) {
-        log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id).c_str(),
+        log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id_).c_str(),
                 to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms, mode_ms_left,
                 current_speed_pct, pos_.toShortString().c_str(), target_.toShortString().c_str());
     }
@@ -714,7 +721,7 @@ void ghost_t::tick() noexcept {
     }
     if( log_moves() || DEBUG_GFX_BOUNDS ) {
         log_printf("%s tick: %s, %s [%d ms], pos %s c%d e%d crash %d -> %s, textures %s\n",
-                to_string(id).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
+                to_string(id_).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
                 pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), collision_maze,
                 target_.toShortString().c_str(), atex->toString().c_str());
     }
@@ -737,7 +744,10 @@ void ghost_t::draw(SDL_Renderer* rend) noexcept {
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
             const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
-            SDL_SetRenderDrawColor(rend, 255, 0, 0, 255);
+            SDL_SetRenderDrawColor(rend,
+                                   rgb_color[ number( id() ) ][0],
+                                   rgb_color[ number( id() ) ][1],
+                                   rgb_color[ number( id() ) ][2], 255);
             // pos is on player center position
             SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - ( atex->width()  * win_pixel_scale() ) / 2,
                                 .y=                   round_to_int( pos_.y_f() * global_maze->ppt_y() * win_pixel_scale() ) - ( atex->height() * win_pixel_scale() ) / 2,
@@ -754,7 +764,7 @@ void ghost_t::draw(SDL_Renderer* rend) noexcept {
 std::string ghost_t::pellet_counter_string() noexcept {
     std::string str = "global_pellet[on "+std::to_string(global_pellet_counter_active)+", ctr "+std::to_string(global_pellet_counter)+"], pellet[";
     for(ghost_ref g : ghosts()) {
-        str += to_string(g->id)+"[on "+std::to_string(g->pellet_counter_active_)+", ctr "+std::to_string(g->pellet_counter_)+"], ";
+        str += to_string(g->id_)+"[on "+std::to_string(g->pellet_counter_active_)+", ctr "+std::to_string(g->pellet_counter_)+"], ";
     }
     str += "]";
     return str;
@@ -801,7 +811,7 @@ int ghost_t::pellet_counter_limit() const noexcept {
         }
         if( 2 == get_current_level() ) {
             // level == 2
-            switch( id ) {
+            switch( id_ ) {
                 case ghost_t::personality_t::BLINKY:
                     return 0;
                 case ghost_t::personality_t::PINKY:
@@ -815,7 +825,7 @@ int ghost_t::pellet_counter_limit() const noexcept {
             }
         } else {
             // level == 1
-            switch( id ) {
+            switch( id_ ) {
                 case ghost_t::personality_t::BLINKY:
                     return 0;
                 case ghost_t::personality_t::PINKY:
@@ -830,7 +840,7 @@ int ghost_t::pellet_counter_limit() const noexcept {
         }
     }
     // global
-    switch( id ) {
+    switch( id_ ) {
         case ghost_t::personality_t::BLINKY:
             return 0;
         case ghost_t::personality_t::PINKY:
@@ -855,7 +865,7 @@ bool ghost_t::can_leave_home() noexcept {
         const int counter = pellet_counter();
         const int limit = pellet_counter_limit();
         if( counter >= limit ) {
-            if( global_pellet_counter_active && ghost_t::personality_t::CLYDE == id ) {
+            if( global_pellet_counter_active && ghost_t::personality_t::CLYDE == id_ ) {
                 // re-enable local counter
                 global_pellet_counter_active = false;
                 global_pellet_counter = 0;
@@ -874,7 +884,7 @@ bool ghost_t::can_leave_home() noexcept {
 //
 
 std::string ghost_t::toString() const noexcept {
-    return to_string(id)+"["+to_string(mode_)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos_.toString()+" -> "+target_.toShortString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
+    return to_string(id_)+"["+to_string(mode_)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos_.toString()+" -> "+target_.toShortString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
 }
 
 std::string to_string(ghost_t::personality_t id) noexcept {

@@ -37,6 +37,8 @@ static constexpr const bool DEBUG_GFX_BOUNDS = false;
 // pacman_t
 //
 
+std::vector<int> pacman_t::rgb_color = { 0xff, 0xff, 0x00 };
+
 random_engine_t<random_engine_mode_t::STD_RNG> pacman_t::rng_hw;
 
 animtex_t& pacman_t::get_tex() noexcept {
@@ -425,7 +427,7 @@ void pacman_t::draw(SDL_Renderer* rend) noexcept {
     if( show_debug_gfx() || DEBUG_GFX_BOUNDS ) {
         uint8_t r, g, b, a;
         SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
-        SDL_SetRenderDrawColor(rend, 255, 255, 0, 255);
+        SDL_SetRenderDrawColor(rend, rgb_color[0], rgb_color[1], rgb_color[2], 255);
         const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
         // pos is on player center position
         SDL_Rect bounds = { .x=win_pixel_offset + round_to_int( pos_.x_f() * global_maze->ppt_y() * win_pixel_scale() ) - ( atex->width()  * win_pixel_scale() ) / 2,
