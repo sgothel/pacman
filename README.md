@@ -69,24 +69,21 @@ Following commandline arguments are supported
 bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-level <int>] [-record <basename-of-bmp-files>]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#### Video Recording Example
+### Keyboard Input
 
-We assume we are in the project folder having `bin/pacman` build and created a `video` folder.
- 
-- Use the first command to start the game while recording bmp snapshots each frame 
-to `video/puckman-01-*.bmp`.
-- Use the second command to convert same files to `video/puckman-01.mp4`.
-- Use the third command to delete the bmp files
-- Use the forth command to play the video with `mpv`
- 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman -record video/puckman-01 -wwidth 1044 -wheight 1080 -show_targets -show_debug_gfx
-scripts/bmps_to_mp4.sh video/puckman-01
-rm video/puckman-01*bmp
-mpv video/puckman-01.mp4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- 
-## Bugfix Mode
+- General Control
+  - End programm: `Q` or `ESCAPE`
+  - Pause: `P`
+  - Reset: `R`
+  - Fullscreen: `F`
+  - Snapshot: `F12` (saved as `puckman-snap-abcd.bmp>`)
+- Player Control
+  - Up: `UP` or `W`
+  - Left: `LEFT` or `A`
+  - Down: `DOWN` or `S`
+  - Right: `RIGHT` or `D`
+
+### Bugfix Mode
 
 With the `-bugfix` mode enabled, see `Usage` above,
 the original puckman behavior (bugs) are disabled.
@@ -104,20 +101,23 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pinky's up-traget to be 4 ahead as intended
 - ...
 
-### Keyboard Input
+### Video Recording Example
 
-- General Control
-  - End programm: `Q` or `ESCAPE`
-  - Pause: `P`
-  - Reset: `R`
-  - Fullscreen: `F`
-  - Snapshot: `F12` (saved as `puckman-snap-abcd.bmp>`)
-- Player Control
-  - Up: `UP` or `W`
-  - Left: `LEFT` or `A`
-  - Down: `DOWN` or `S`
-  - Right: `RIGHT` or `D`
-
+We assume we are in the project folder having `bin/pacman` build and created a `video` folder.
+ 
+- Use the first command to start the game while recording bmp snapshots each frame 
+to `video/puckman-01-*.bmp`.
+- Use the second command to convert same files to `video/puckman-01.mp4`.
+- Use the third command to delete the bmp files
+- Use the forth command to play the video with `mpv`
+ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
+bin/pacman -record video/puckman-01 -wwidth 1044 -wheight 1080 -show_targets -show_debug_gfx
+scripts/bmps_to_mp4.sh video/puckman-01
+rm video/puckman-01*bmp
+mpv video/puckman-01.mp4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
 ## Implementation Status 
 
 ### Done
@@ -155,6 +155,7 @@ If false, a more accurate implementation, the pacman bugfix, is used:
   - Using wav chunks, mixed from seperated channels
 - Persistent game state
   - Snapshot (screenshot)
+  - Video recording via bmp snapshots each frame
 
 ### To Do
 - Ghost *AI*
@@ -172,7 +173,6 @@ If false, a more accurate implementation, the pacman bugfix, is used:
   - Render maze itself from maze-spec file
 - Persistent game state
   - Save/load game state
-  - Record video
 
 ## Media Data
 
@@ -182,6 +182,10 @@ which were submitted and created by `Superjustinbros`
 and assumed to be in the public domain.
 
 ## Changes
+
+**0.1.0**
+
+* Usable working state with most ghost algorithms for further analysis and demonstration
 
 **0.0.1**
 
