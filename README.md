@@ -111,7 +111,9 @@ This current code queries a decision when reaching the center of every tile, i.e
 - detecting whether its just an alley to move forward, or
 - to make a decision on an intersection - looking ahead on all valid exits and comparing the distance.
 
-Code for [selecting a new direction](../tree/src/ghost.cpp#n272).
+Code sections of interest
+- Selecting a new direction [ghost_t::set_next_dir()](../tree/src/ghost.cpp#n272).
+- Selecting the target [ghost_t::set_next_target()](../tree/src/ghost.cpp#n138).
 
 Hence this code utilize a more current Puckman position, in case the original code 
 has such a double look-ahead implemented using an older Puckman position.
