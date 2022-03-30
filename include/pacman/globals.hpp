@@ -36,6 +36,7 @@
 // globals
 //
 
+int win_pixel_height() noexcept;
 int win_pixel_width() noexcept;
 int win_pixel_scale() noexcept;
 

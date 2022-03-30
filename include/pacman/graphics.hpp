@@ -212,4 +212,6 @@ std::shared_ptr<text_texture_t> draw_text_scaled(SDL_Renderer* rend, TTF_Font* f
 
 void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height, uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept;
 
+void save_snapshot(SDL_Renderer* rend, const int width, const int height, const std::string& fname) noexcept;
+
 #endif /* PACMAN_GRAPHICS_HPP_ */

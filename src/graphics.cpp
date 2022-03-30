@@ -354,3 +354,12 @@ void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_o
         SDL_RenderDrawRect(rend, &bounds);
     }
 }
+
+void save_snapshot(SDL_Renderer* rend, const int width, const int height, const std::string& fname) noexcept {
+    SDL_Surface *sshot = SDL_CreateRGBSurface(0, width, height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+    SDL_LockSurface(sshot);
+    SDL_RenderReadPixels(rend, NULL, SDL_PIXELFORMAT_ARGB8888, sshot->pixels, sshot->pitch);
+    SDL_SaveBMP(sshot, fname.c_str());
+    SDL_UnlockSurface(sshot);
+    SDL_FreeSurface(sshot);
+}

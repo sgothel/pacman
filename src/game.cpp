@@ -38,8 +38,10 @@
 //
 
 static int win_pixel_width_ = 0;
+static int win_pixel_height_ = 0;
 static int win_pixel_scale_ = 1;
 int win_pixel_width() noexcept { return win_pixel_width_; }
+int win_pixel_height() noexcept { return win_pixel_height_; }
 int win_pixel_scale() noexcept{ return win_pixel_scale_; }
 
 static int frames_per_sec = 0;
@@ -257,11 +259,10 @@ std::string global_tex_t::toString() const {
 //
 
 static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const int win_height_l) noexcept {
-    int win_pixel_height=0;
-    SDL_GetRendererOutputSize(rend, &win_pixel_width_, &win_pixel_height);
+    SDL_GetRendererOutputSize(rend, &win_pixel_width_, &win_pixel_height_);
 
     float sx = win_pixel_width() / global_maze->pixel_width();
-    float sy = win_pixel_height / global_maze->pixel_height();
+    float sy = win_pixel_height() / global_maze->pixel_height();
     win_pixel_scale_ = static_cast<int>( std::round( std::fmin<float>(sx, sy) ) );
 
     if( nullptr != font_ttf() ) {
@@ -275,7 +276,7 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
         font_ttf_ = TTF_OpenFont(fontfilename.c_str(), font_height);
     }
     log_printf("Window Resized: %d x %d pixel ( %d x %d logical ) @ %d hz\n",
-            win_pixel_width(), win_pixel_height, win_width_l, win_height_l, get_frames_per_sec());
+            win_pixel_width(), win_pixel_height(), win_width_l, win_height_l, get_frames_per_sec());
     log_printf("Pixel scale: %f x %f -> %d, font[ok %d, height %d]\n", sx, sy, win_pixel_scale(), nullptr!=font_ttf(), font_height);
 }
 
@@ -283,7 +284,7 @@ static std::string get_usage(const std::string& exename) noexcept {
     // TODO: Keep in sync with README.md
     return "Usage: "+exename+" [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
               "[-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] "+
-              "[-no_ghosts] [-bugfix] [-level <int>]";
+              "[-no_ghosts] [-bugfix] [-level <int>] [-record <basename-of-bmp-files>]";
 }
 
 //
@@ -363,6 +364,7 @@ int main(int argc, char *argv[])
     bool show_targets = false;
     bool use_audio = false;
     int pixel_filter_quality = 0;
+    std::string record_bmpseq_basename;
     {
         for(int i=1; i<argc; ++i) {
             if( 0 == strcmp("-audio", argv[i]) ) {
@@ -408,9 +410,13 @@ int main(int argc, char *argv[])
             } else if( 0 == strcmp("-level", argv[i]) && i+1<argc) {
                 current_level = atoi(argv[i+1]);
                 ++i;
+            } else if( 0 == strcmp("-record", argv[i]) && i+1<argc) {
+                record_bmpseq_basename = argv[i+1];
+                ++i;
             }
         }
     }
+    const std::string exename(argv[0]);
 
     global_maze = std::make_unique<maze_t>("media/playfield_pacman.txt");
 
@@ -432,7 +438,9 @@ int main(int argc, char *argv[])
         log_printf("Maze: %s\n", global_maze->toString().c_str());
     }
     {
-        log_printf("\n%s\n\n", get_usage(argv[0]).c_str());
+        log_printf("\n%s\n\n", get_usage(exename).c_str());
+        log_printf("- use_audio %d\n", use_audio);
+        log_printf("- pixqual %d\n", pixel_filter_quality);
         log_printf("- show_fps %d\n", log_fps());
         log_printf("- show_modes %d\n", log_modes());
         log_printf("- show_moves %d\n", log_moves());
@@ -443,8 +451,8 @@ int main(int argc, char *argv[])
         log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
         log_printf("- win size %d x %d\n", win_width, win_height);
         log_printf("- use_bugfix_pacman %d\n", !use_original_pacman_behavior());
-        log_printf("- use_audio %d\n", use_audio);
         log_printf("- level %d\n", get_current_level());
+        log_printf("- record %s\n", record_bmpseq_basename.c_str());
     }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -563,6 +571,8 @@ int main(int argc, char *argv[])
     uint64_t t0 = getCurrentMilliseconds();
     uint64_t t1 = t0;
     uint64_t frame_count = 0;
+    uint64_t frame_count_total = 0;
+    int snapshot_counter = 0;
 
     uint64_t last_score = pacman->score();
     std::shared_ptr<text_texture_t> ttex_score = nullptr;
@@ -666,6 +676,14 @@ int main(int argc, char *argv[])
                             fullscreen_flags = 0 == fullscreen_flags ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
                             SDL_SetWindowFullscreen(win, fullscreen_flags);
                             break;
+                        case SDL_SCANCODE_F12: {
+                            std::string snap_fname(128, '\0');
+                            const int written = std::snprintf(&snap_fname[0], snap_fname.size(), "puckman-snap-%4.4d.bmp", snapshot_counter);
+                            snap_fname.resize(written);
+                            save_snapshot(rend, win_pixel_width(), win_pixel_height(), snap_fname);
+                            ++snapshot_counter;
+                            break;
+                        }
                         default:
                             // nop
                             break;
@@ -846,7 +864,14 @@ int main(int argc, char *argv[])
  
         // swap double buffer incl. v-sync
         SDL_RenderPresent(rend);
+        if( record_bmpseq_basename.size() > 0 ) {
+            std::string snap_fname(128, '\0');
+            const int written = std::snprintf(&snap_fname[0], snap_fname.size(), "%s-%7.7" PRIu64 ".bmp", record_bmpseq_basename.c_str(), frame_count_total);
+            snap_fname.resize(written);
+            save_snapshot(rend, win_pixel_width(), win_pixel_height(), snap_fname);
+        }
         ++frame_count;
+        ++frame_count_total;
         if( !uses_vsync ) {
             const int64_t fudge_ns = NanoPerMilli / 4;
             const uint64_t ms_per_frame = (uint64_t)std::round(1000.0 / (float)get_frames_per_sec());

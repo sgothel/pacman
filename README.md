@@ -63,11 +63,29 @@ Following commandline arguments are supported
 - `-no_ghosts` to disable all ghosts
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
 - `-level <int>` to start at given level
+- `-record <basename-of-bmp-files>` to record each frame as a bmp file at known fps. The basename may contain folder names. The resulting bmp files may be converted to video using [scripts/bmps_to_mp4.sh](https://jausoft.com/cgit/cs_class/pacman.git/tree/scripts/bmps_to_mp4.sh), see below.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-level <int>]
+bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-level <int>] [-record <basename-of-bmp-files>]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+#### Video Recording Example
+
+We assume we are in the project folder having `bin/pacman` build and created a `video` folder.
+ 
+- Use the first command to start the game while recording bmp snapshots each frame 
+to `video/puckman-01-*.bmp`.
+- Use the second command to convert same files to `video/puckman-01.mp4`.
+- Use the third command to delete the bmp files
+- Use the forth command to play the video with `mpv`
+ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
+bin/pacman -record video/puckman-01 -wwidth 1044 -wheight 1080 -show_targets -show_debug_gfx
+scripts/bmps_to_mp4.sh video/puckman-01
+rm video/puckman-01*bmp
+mpv video/puckman-01.mp4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
 ## Bugfix Mode
 
 With the `-bugfix` mode enabled, see `Usage` above,
@@ -88,14 +106,17 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 
 ### Keyboard Input
 
-- End programm: `Q` or `ESCAPE`
-- Pause: `P`
-- Reset: `R`
-- Fullscreen: `F`
-- Up: `UP` or `W`
-- Left: `LEFT` or `A`
-- Down: `DOWN` or `S`
-- Right: `RIGHT` or `D`
+- General Control
+  - End programm: `Q` or `ESCAPE`
+  - Pause: `P`
+  - Reset: `R`
+  - Fullscreen: `F`
+  - Snapshot: `F12` (saved as `puckman-snap-abcd.bmp>`)
+- Player Control
+  - Up: `UP` or `W`
+  - Left: `LEFT` or `A`
+  - Down: `DOWN` or `S`
+  - Right: `RIGHT` or `D`
 
 ## Implementation Status 
 
@@ -132,6 +153,8 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - ghost 1-4 per power pellet
 - Sound
   - Using wav chunks, mixed from seperated channels
+- Persistent game state
+  - Snapshot (screenshot)
 
 ### To Do
 - Ghost *AI*
@@ -149,7 +172,6 @@ If false, a more accurate implementation, the pacman bugfix, is used:
   - Render maze itself from maze-spec file
 - Persistent game state
   - Save/load game state
-  - Screenshot
   - Record video
 
 ## Media Data
