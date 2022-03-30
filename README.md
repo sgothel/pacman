@@ -138,7 +138,7 @@ mpv video/puckman-01.mp4
     - Adjust tunnel speed
     - No turning up in *Red-Zones* if chasing or scattering
 - Pacman
-    - show eaten ghosts score onscreen (FREEZE)
+    - show eaten ghosts and fruit score onscreen (FREEZE)
     - Freeze pacman only for 3 frames after eating power pellet
 - Level specification (per level)
   - Timings
@@ -151,6 +151,7 @@ mpv video/puckman-01.mp4
   - Score
 - Score
     - ghost 1-4 per power pellet
+    - Fruits / Bonus
 - Sound
   - Using wav chunks, mixed from seperated channels
 - Persistent game state
@@ -160,8 +161,6 @@ mpv video/puckman-01.mp4
 ### To Do
 - Ghost *AI*
   - *Elroy 1+2* mode
-- Score
-    - Fruits / Bonus
 - Pacman
     - Lives
 - Sound

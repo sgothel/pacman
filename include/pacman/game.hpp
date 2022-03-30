@@ -326,14 +326,29 @@ class pacman_t {
 
         /** mode durations in ms */
         enum class mode_duration_t : int {
-            HOMESTAY = 2000,
+            HOMESTAY = 1000,
             DEADANIM = 2000
         };
         static constexpr int number(const mode_duration_t item) noexcept {
             return static_cast<int>(item);
         }
+
     private:
+        static random_engine_t<random_engine_mode_t::STD_RNG> rng_hw;
         const int ms_per_tex = 167;
+
+        /**
+         * Notes about bonus fruits:
+         *
+         * - Fruits appear twice on each board.
+         *   - The first fruit appears after Puckman has eaten 70 dots
+         *   - The second fruit appears once there are only 70 dots remaining in the maze.
+         * - Duration is [9-10] seconds, is variable and not predictable with the use of patterns.
+         */
+        const int fruit_1_eaten =  70;
+        const int fruit_2_eaten = 170;
+        const int fruit_duration_min =  9000;
+        const int fruit_duration_max = 10000;
 
         const float fields_per_sec_total;
         float current_speed_pct;
@@ -344,6 +359,7 @@ class pacman_t {
         mode_t mode_;
         mode_t mode_last;
         int mode_ms_left;
+        int fruit_ms_left;
         int lives;
         int ghosts_eaten_powered;
         direction_t current_dir;
