@@ -281,9 +281,9 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 
 static std::string get_usage(const std::string& exename) noexcept {
     // TODO: Keep in sync with README.md
-    return "Usage: "+exename+" [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
+    return "Usage: "+exename+" [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
               "[-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] "+
-              "[-no_ghosts] [-bugfix] [-audio] [-level <int>]";
+              "[-no_ghosts] [-bugfix] [-level <int>]";
 }
 
 //
@@ -362,9 +362,15 @@ int main(int argc, char *argv[])
     bool disable_all_ghosts = false;
     bool show_targets = false;
     bool use_audio = false;
+    int pixel_filter_quality = 0;
     {
         for(int i=1; i<argc; ++i) {
-            if( 0 == strcmp("-show_fps", argv[i]) ) {
+            if( 0 == strcmp("-audio", argv[i]) ) {
+                use_audio = true;
+            } else if( 0 == strcmp("-pixqual", argv[i]) && i+1<argc) {
+                pixel_filter_quality = atoi(argv[i+1]);
+                ++i;
+            } else if( 0 == strcmp("-show_fps", argv[i]) ) {
                 enable_log_fps = true;
             } else if( 0 == strcmp("-show_modes", argv[i]) ) {
                 enable_log_modes = true;
@@ -399,8 +405,6 @@ int main(int argc, char *argv[])
                 disable_all_ghosts = true;
             } else if( 0 == strcmp("-bugfix", argv[i]) ) {
                 original_pacman_behavior = false;
-            } else if( 0 == strcmp("-audio", argv[i]) ) {
-                use_audio = true;
             } else if( 0 == strcmp("-level", argv[i]) && i+1<argc) {
                 current_level = atoi(argv[i+1]);
                 ++i;
@@ -477,6 +481,7 @@ int main(int argc, char *argv[])
     if( enable_vsync ) {
         SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
     }
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, std::to_string(pixel_filter_quality).c_str());
 
     SDL_Window* win = SDL_CreateWindow("Pacman",
                                        SDL_WINDOWPOS_UNDEFINED,

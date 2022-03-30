@@ -44,7 +44,11 @@ The binary shall be build to `bin/pacman`.
 
 ## Usage
 
+### Commandline Arguments
+
 Following commandline arguments are supported
+- `-audio` to turn on audio effects, i.e. playing the audio samples.
+- `-pixqual <int>` to increas pixel filtering quality, i.e. 0 = nearest (default), 1 = linear and 2 = anisotropic filtering. 
 - `-no_vsync` to force off hardware enabled vsync, which in turn enables manual fps synchronization
 - `-fps <int>` to enforce a specific fps value, which will also set `-no_vsync` naturally
 - `-speed <int>` to set the 100% player speed in fields per seconds
@@ -58,11 +62,10 @@ Following commandline arguments are supported
 - `-show_all` enable `-show_modes`, `-show_moves`, `-show_targets` and `-show_debug_gfx`
 - `-no_ghosts` to disable all ghosts
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
-- `-audio` to turn on audio effects, i.e. playing the audio samples.
 - `-level <int>` to start at given level
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-audio] [-level <int>]
+bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-level <int>]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Bugfix Mode
@@ -82,6 +85,17 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pixel accurate tile position for collision tests
 - pinky's up-traget to be 4 ahead as intended
 - ...
+
+### Keyboard Input
+
+- End programm: `Q` or `ESCAPE`
+- Pause: `P`
+- Reset: `R`
+- Fullscreen: `F`
+- Up: `UP` or `W`
+- Left: `LEFT` or `A`
+- Down: `DOWN` or `S`
+- Right: `RIGHT` or `D`
 
 ## Implementation Status 
 
