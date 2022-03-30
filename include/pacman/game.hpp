@@ -481,6 +481,13 @@ extern std::vector<audio_sample_ref> audio_samples;
  */
 bool use_original_pacman_behavior() noexcept;
 
+/**
+ * Use manhatten distance instead of (squared) Euclidean.
+ *
+ * Default is to return false, i.e. use Euclidean distance.
+ */
+bool use_manhatten_distance() noexcept;
+
 bool show_debug_gfx() noexcept;
 
 bool log_fps() noexcept;

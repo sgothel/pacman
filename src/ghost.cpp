@@ -314,8 +314,11 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         const constexpr int L = 2;
         const constexpr int U = 3;
 
-        const float d_inf =  ( global_maze->width() * global_maze->height() ) * 10;
-        const float d_half = ( global_maze->width() * global_maze->height() ) / 2;
+        const float d_inf =  ( global_maze->width() * global_maze->height() ) * 10; // infinity :)
+
+        const float d_half = use_manhatten_distance() ?
+                             ( global_maze->width() + global_maze->height() ) / 2 : // Manhatten half game diagonal
+                             ( global_maze->width() * global_maze->height() ) / 2;  // Euclidean half game diagonal squared
 
         // not_up on red_zones acts as collision, also assume it as a wall when deciding whether we have a decision point or not!
         const bool not_up = is_scattering_or_chasing() &&
@@ -324,16 +327,13 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         const direction_t left_dir = rot_left(cur_dir);
         const direction_t right_dir = rot_right(cur_dir);
 
-        acoord_t right = pos_;   // 0
-        acoord_t down = pos_;    // 1
-        acoord_t left = pos_;    // 2
-        acoord_t up = pos_;      // 3
+        acoord_t dir_pos[4] = { pos_, pos_, pos_, pos_ }; // R D L U
 
         const bool dir_coll[4] = {
-                !right.step(direction_t::RIGHT, one_step, collisiontest),
-                !down.step(direction_t::DOWN, one_step, collisiontest),
-                !left.step(direction_t::LEFT, one_step, collisiontest),
-                not_up || !up.step(direction_t::UP, one_step, collisiontest) };
+                !dir_pos[R].step(direction_t::RIGHT, one_step, collisiontest),
+                !dir_pos[D].step(direction_t::DOWN, one_step, collisiontest),
+                !dir_pos[L].step(direction_t::LEFT, one_step, collisiontest),
+                !dir_pos[U].step(direction_t::UP, one_step, collisiontest) || not_up };
 
         if( dir_coll[ ::number(left_dir) ] && dir_coll[ ::number(right_dir) ] ) {
             // walls left and right
@@ -348,17 +348,27 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
             }
         } else {
             // find shortest path
-            float dir_dist[4] = {
-                    dir_coll[R] ? d_inf : right.sq_distance_i(target_),
-                    dir_coll[D] ? d_inf : down.sq_distance_i(target_),
-                    dir_coll[L] ? d_inf : left.sq_distance_i(target_),
-                    dir_coll[U] ? d_inf : up.sq_distance_i(target_) };
+            // use_manhatten_distance()
+            float dir_dist[4];
+            if( use_manhatten_distance() ) {
+                // not default
+                dir_dist[R] = dir_coll[R] ? d_inf : dir_pos[R].distance_manhatten_i(target_);
+                dir_dist[D] = dir_coll[D] ? d_inf : dir_pos[D].distance_manhatten_i(target_);
+                dir_dist[L] = dir_coll[L] ? d_inf : dir_pos[L].distance_manhatten_i(target_);
+                dir_dist[U] = dir_coll[U] ? d_inf : dir_pos[U].distance_manhatten_i(target_);
+            } else {
+                // default
+                dir_dist[R] = dir_coll[R] ? d_inf : dir_pos[R].sq_distance_i(target_);
+                dir_dist[D] = dir_coll[D] ? d_inf : dir_pos[D].sq_distance_i(target_);
+                dir_dist[L] = dir_coll[L] ? d_inf : dir_pos[L].sq_distance_i(target_);
+                dir_dist[U] = dir_coll[U] ? d_inf : dir_pos[U].sq_distance_i(target_);
+            }
 
             // penalty for inverse direction
             dir_dist[ ::number(inv_dir) ] += d_half;
 
             if( log_moves() ) {
-                log_printf(std::string(to_string(id)+": p "+pos_.toIntString()+", u "+up.toIntString()+", l "+left.toIntString()+", d "+down.toIntString()+", r "+right.toIntString()+"\n").c_str());
+                log_printf(std::string(to_string(id)+": p "+pos_.toIntString()+", u "+dir_pos[U].toIntString()+", l "+dir_pos[L].toIntString()+", d "+dir_pos[D].toIntString()+", r "+dir_pos[R].toIntString()+"\n").c_str());
                 log_printf(std::string(to_string(id)+": collisions not_up "+std::to_string(not_up)+", u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
                 log_printf(std::string(to_string(id)+": distances u "+std::to_string(dir_dist[U])+", l "+std::to_string(dir_dist[L])+", d "+std::to_string(dir_dist[D])+", r "+std::to_string(dir_dist[R])+"\n").c_str());
             }

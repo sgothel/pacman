@@ -104,6 +104,9 @@ std::vector<audio_sample_ref> audio_samples;
 static bool original_pacman_behavior = true;
 bool use_original_pacman_behavior() noexcept { return original_pacman_behavior; }
 
+static bool manhatten_distance_enabled = false;
+bool use_manhatten_distance() noexcept { return manhatten_distance_enabled; }
+
 static bool enable_debug_gfx = false;
 bool show_debug_gfx() noexcept { return enable_debug_gfx; }
 

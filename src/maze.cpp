@@ -195,8 +195,14 @@ int acoord_t::sq_distance_i(const int x, const int y) const noexcept {
 }
 
 float acoord_t::distance_manhatten(const float x, const float y) const noexcept {
-    const float x_d = x - x_pos_f;
-    const float y_d = y - y_pos_f;
+    const float x_d = std::abs( x - x_pos_f );
+    const float y_d = std::abs( y - y_pos_f );
+    return x_d + y_d;
+}
+
+int acoord_t::distance_manhatten_i(const int x, const int y) const noexcept {
+    const int x_d = std::abs( x - x_pos_i );
+    const int y_d = std::abs( y - y_pos_i );
     return x_d + y_d;
 }
 

@@ -183,34 +183,34 @@ class acoord_t {
          */
         bool intersects_i(const box_t& other) const noexcept;
 
-        /** Returns Euclidian distance */
+        /** Returns Euclidean distance */
         float distance(const float x, const float y) const noexcept;
 
-        /** Returns Euclidian distance */
+        /** Returns Euclidean distance */
         float distance(const acoord_t& other) const noexcept {
             return distance(other.x_pos_f, other.y_pos_f);
         }
 
-        /** Returns Euclidian distance */
+        /** Returns Euclidean distance */
         int distance_i(const int x, const int y) const noexcept;
 
-        /** Returns Euclidian distance */
+        /** Returns Euclidean distance */
         int distance_i(const acoord_t& other) const noexcept {
             return distance_i(other.x_pos_i, other.y_pos_i);
         }
 
-        /** Returns squared Euclidian distance */
+        /** Returns squared Euclidean distance */
         float sq_distance(const float x, const float y) const noexcept;
 
-        /** Returns squared Euclidian distance */
+        /** Returns squared Euclidean distance */
         float sq_distance(const acoord_t& other) const noexcept {
             return sq_distance(other.x_pos_f, other.y_pos_f);
         }
 
-        /** Returns squared Euclidian distance */
+        /** Returns squared Euclidean distance */
         int sq_distance_i(const int x, const int y) const noexcept;
 
-        /** Returns squared Euclidian distance */
+        /** Returns squared Euclidean distance */
         int sq_distance_i(const acoord_t& other) const noexcept {
             return sq_distance_i(other.x_pos_i, other.y_pos_i);
         }
@@ -221,6 +221,14 @@ class acoord_t {
         /** Returns Manhatten distance */
         float distance_manhatten(const acoord_t& other) const noexcept {
             return distance_manhatten(other.x_pos_f, other.y_pos_f);
+        }
+
+        /** Returns Manhatten distance */
+        int distance_manhatten_i(const int x, const int y) const noexcept;
+
+        /** Returns Manhatten distance */
+        int distance_manhatten_i(const acoord_t& other) const noexcept {
+            return distance_manhatten(other.x_pos_i, other.y_pos_i);
         }
 
         void incr_fwd(const direction_t dir, const keyframei_t& keyframei, const int tile_count) noexcept;
