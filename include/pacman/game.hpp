@@ -411,6 +411,7 @@ class pacman_t {
         const box_t& freeze_box() const noexcept { return freeze_box_; }
 
         void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
+        void stop_audio_loops() noexcept;
         void set_speed(const float pct) noexcept;
         const keyframei_t& get_keyframei() const noexcept { return keyframei_; }
 
@@ -463,9 +464,9 @@ enum class audio_clip_t : int {
     MUNCH = 1,
     EAT_FRUIT = 2,
     EAT_GHOST = 3,
-    EXTRA = 4,
-    INTERMISSION = 5,
-    DEATH = 6
+    DEATH = 4,
+    EXTRA = 5,
+    INTERMISSION = 6
 };
 constexpr int number(const audio_clip_t item) noexcept {
     return static_cast<int>(item);

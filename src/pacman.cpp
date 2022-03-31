@@ -118,6 +118,7 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     ghost_t::mode_t mg = ghost_t::mode_t::AWAY;
     switch( m ) {
         case mode_t::FREEZE:
+            stop_audio_loops();
             mode_ = m1;
             mode_ms_left = mode_ms;
             break;
@@ -126,7 +127,7 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             mg = ghost_t::mode_t::LEVEL_START;
             [[fallthrough]];
         case mode_t::HOME:
-            audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+            stop_audio_loops();
             mode_ = m1;
             mode_ms_left = number( mode_duration_t::HOMESTAY );
             if( ghost_t::mode_t::AWAY == mg ) {
@@ -155,7 +156,7 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             ghosts_eaten_powered = 0;
             break;
         case mode_t::DEAD:
-            audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+            stop_audio_loops();
             mode_ = m1;
             mode_ms_left = number( mode_duration_t::DEADANIM );
             atex_dead.reset();
@@ -172,6 +173,10 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                 to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms_left,
                 current_speed_pct, pos_.toShortString().c_str());
     }
+}
+
+void pacman_t::stop_audio_loops() noexcept {
+    audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
 }
 
 void pacman_t::set_speed(const float pct) noexcept {
@@ -349,6 +354,7 @@ bool pacman_t::tick() noexcept {
                     const box_t& b = global_maze->fruit_box();
                     freeze_box_.set(b.x()-1, b.y(), 2, 2);
                     set_mode(mode_t::FREEZE, 900);
+                    audio_samples[ ::number( audio_clip_t::EAT_FRUIT) ]->play();
                     if( log_modes() ) {
                         log_printf("pacman eats: a fruit: score %d, tile %s, left %dms\n", freeze_score, to_string(tile).c_str(), fruit_ms_left);
                     }
@@ -382,6 +388,7 @@ bool pacman_t::tick() noexcept {
                 score_ += freeze_score;
                 ++ghosts_eaten_powered;
                 g->set_mode( ghost_t::mode_t::PHANTOM );
+                audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                 audio_samples[ ::number( audio_clip_t::EAT_GHOST ) ]->play();
                 freeze_box_.set(pos_.x_i()-1, pos_.y_i()-1, 2, 2);
                 set_mode(mode_t::FREEZE, 900);

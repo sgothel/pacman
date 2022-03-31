@@ -77,17 +77,11 @@ class audio_sample_t {
         : audio_sample_t(fname, true, volume) {}
 
         /**
-         * Play this sample once
-         * @see set_single_play()
-         */
-        void play();
-
-        /**
          * Play this sample
-         * @param loops pass 0 for infinity, otherwise the number of loops.
+         * @param loops pass 0 for infinity, otherwise the number of loops. Defaults to 1.
          * @see set_single_play()
          */
-        void play(int loops);
+        void play(int loops=1);
 
         /**
          * Stop playing this sample.

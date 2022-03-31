@@ -509,13 +509,13 @@ int main(int argc, char *argv[])
     }
     if( use_audio ) {
         for(int i=0; i <= number( audio_clip_t::DEATH ); ++i) {
-            audio_samples.push_back( std::make_shared<audio_sample_t>("media/beginning.wav") );
-            audio_samples.push_back( std::make_shared<audio_sample_t>("media/chomp.wav") );
-            audio_samples.push_back( std::make_shared<audio_sample_t>("media/eatfruit.wav") );
-            audio_samples.push_back( std::make_shared<audio_sample_t>("media/eatghost.wav", false /* single_play */) );
-            audio_samples.push_back( std::make_shared<audio_sample_t>("media/extrapac.wav") );
-            audio_samples.push_back( std::make_shared<audio_sample_t>("media/intermission.wav") );
-            audio_samples.push_back( std::make_shared<audio_sample_t>("media/death.wav") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/intro.mp3") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/munch.wav") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/eatfruit.mp3") );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/eatghost.mp3", false /* single_play */) );
+            audio_samples.push_back( std::make_shared<audio_sample_t>("media/death.mp3") );
+            // audio_samples.push_back( std::make_shared<audio_sample_t>("media/extrapac.mp3") );
+            // audio_samples.push_back( std::make_shared<audio_sample_t>("media/intermission.mp3") );
         }
     } else {
         for(int i=0; i <= number( audio_clip_t::DEATH ); ++i) {
