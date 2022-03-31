@@ -8,7 +8,7 @@ LN	    := g++
 # DBGFLAGS := -ggdb3 -O0
 DBGFLAGS := -O3
 CPPFLAGS := -Wall -Iinclude ${DBGFLAGS} `sdl2-config --cflags`
-LNFLAGS := -Wall ${DBGFLAGS} -lm `sdl2-config --libs` -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+LNFLAGS := -Wall ${DBGFLAGS} -lm `sdl2-config --libs` -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lpthread
 
 HEADERS := include/pacman/*
 

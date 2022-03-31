@@ -25,6 +25,7 @@
 #include <pacman/graphics.hpp>
 #include <pacman/globals.hpp>
 
+#include <thread>
 #include <cstdio>
 
 static constexpr const bool DEBUG_LOG = false;
@@ -426,11 +427,25 @@ void draw_line(SDL_Renderer* rend, int pixel_width_scaled, int x_pixel_offset, i
     }
 }
 
+static std::atomic<int> active_threads = 0;
+
+static void store_surface(SDL_Surface *sshot, char* fname) noexcept {
+    active_threads++;
+    if( false ) {
+        fprintf(stderr, "XXX: %d: %s\n", active_threads.load(), fname);
+    }
+    SDL_SaveBMP(sshot, fname);
+    free(fname);
+    SDL_UnlockSurface(sshot);
+    SDL_FreeSurface(sshot);
+    active_threads--;
+}
+
 void save_snapshot(SDL_Renderer* rend, const int width, const int height, const std::string& fname) noexcept {
     SDL_Surface *sshot = SDL_CreateRGBSurface(0, width, height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
     SDL_LockSurface(sshot);
     SDL_RenderReadPixels(rend, NULL, SDL_PIXELFORMAT_ARGB8888, sshot->pixels, sshot->pitch);
-    SDL_SaveBMP(sshot, fname.c_str());
-    SDL_UnlockSurface(sshot);
-    SDL_FreeSurface(sshot);
+    char * fname2 = strdup(fname.c_str());
+    std::thread t(&store_surface, sshot, fname2);
+    t.detach();
 }

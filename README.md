@@ -29,7 +29,7 @@ The project requires make, g++ >= 8.3 and the libsdl2 for building.
 
 Installing build dependencies on Debian (11 or better):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-apt install git build-essential g++ gcc libc-dev make
+apt install git build-essential g++ gcc libc-dev libpthread-stubs0-dev make
 apt install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -175,7 +175,8 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - ghost 1-4 per power pellet
     - Fruits / Bonus
 - Sound
-  - Using wav chunks, mixed from seperated channels
+  - Using chunks (wav/mp3), mixed from seperated channels
+  - Use lossy formats where applicable
 - Persistent game state
   - Snapshot (screenshot)
   - Video recording via bmp snapshots each frame
@@ -186,7 +187,6 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - Pacman
     - Lives
 - Sound
-  - Use lossy formats
   - Complete samples
 - Extension
   - Second player moves a ghost
