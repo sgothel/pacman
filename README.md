@@ -10,8 +10,18 @@ This project likes to demonstrate a complex system written in modern C++
 for our computer science class.
 
 Besides management of animated sprite graphics, maze environment and tile positioning,
+animation speed synchronization, 
 the interesting part might be the ghost's state machine and their movements.
 
+Potential code sections of interest
+- Selecting a new direction [ghost_t::set_next_dir()](../tree/src/ghost.cpp#n272)
+- Selecting the target [ghost_t::set_next_target()](../tree/src/ghost.cpp#n138)
+- Pellet counter to leave home [ghost_t::pellet_...()](../tree/src/ghost.cpp#n771)
+- Level Specification [game_level_spec_t](../tree/src/game.cpp#n122)
+- Keyframe interval for animation [keyframei_t](../tree/include/pacman/utils.hpp#n96)
+- Random number engine [random_engine_t](../tree/include/pacman/utils.hpp#n349)
+
+## Previous Work
 To implement the original pacman game behavior like weighted tile collision,
 ghost algorithm, etc. - we have used the following documents for reference
 - Jamey Pittman's [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier)
@@ -20,6 +30,13 @@ ghost algorithm, etc. - we have used the following documents for reference
 
 The implementation is inspired by [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s
 original game [Puckman](https://en.wikipedia.org/wiki/Pac-Man).
+
+## License
+This project is for educational purposes and shall be distributed in source form only.
+
+This project is licensed under the MIT license.
+
+Namco holds the copyright on the original Puckman since 1980.
 
 ## Supported Platforms
 C++17 and better where the [SDL2 library](https://www.libsdl.org/) is supported.
@@ -105,20 +122,17 @@ mpv video/puckman-01.mp4
 
 ### Look-Ahead Decision Point
 As stated in [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
-the ghosts select their next direction one tile ahead of an intersection.
+the ghosts select their next direction *one tile ahead of an intersection*.
 
 This current code queries a decision when reaching the center of every tile, i.e.:
 - detecting whether its just an alley to move forward, or
 - to make a decision on an intersection - looking ahead on all valid exits and comparing the distance.
 
-Code sections of interest
-- Selecting a new direction [ghost_t::set_next_dir()](../tree/src/ghost.cpp#n272).
-- Selecting the target [ghost_t::set_next_target()](../tree/src/ghost.cpp#n138).
+Hence this code utilize a more current Puckman position.
 
-Hence this code utilize a more current Puckman position, in case the original code 
-has such a double look-ahead implemented using an older Puckman position.
-
-This needs to be berified.
+It has to be verified whether the original code 
+has such a double field look-ahead implemented 
+using a less current Puckman position when arriving on the intersection.
 
 ### Bugfix Mode
 
@@ -137,7 +151,6 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pixel accurate tile position for collision tests
 - pinky's up-traget to be 4 ahead as intended
 - ...
-
 
 ## Implementation Status 
 
