@@ -149,7 +149,8 @@ bool acoord_t::intersects_f(const acoord_t& other) const noexcept {
 }
 
 bool acoord_t::intersects_i(const acoord_t& other) const noexcept {
-    return x_pos_i == other.x_pos_i && y_pos_i == other.y_pos_i;
+    return x_pos_i == other.x_i() && y_pos_i == other.y_i();
+}
 
 bool acoord_t::intersects_i(const int x, const int y) const noexcept {
     return x_pos_i == x && y_pos_i == y;

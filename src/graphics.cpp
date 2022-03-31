@@ -118,7 +118,7 @@ void texture_t::draw2_i(SDL_Renderer* rend, const int x_pos, const int y_pos) no
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
         const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
         const int dxy = ( ( global_maze->ppt_y() * win_pixel_scale() ) / 3 );
-        SDL_Rect dest = { .x=win_pixel_offset + ( ( x_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
+        SDL_Rect dest = { .x=win_pixel_offset + ( ( x_pos * global_maze->ppt_x() * win_pixel_scale() ) - dxy ),
                           .y= ( ( y_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
                           .w=width_*win_pixel_scale(), .h=height_*win_pixel_scale() };
         SDL_RenderCopy(rend, tex_, &src, &dest);
@@ -139,7 +139,7 @@ void texture_t::draw2_f(SDL_Renderer* rend, const float x_pos, const float y_pos
         SDL_Rect src = { .x=x_, .y=y_, .w=width_, .h=height_};
         const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
         const int dxy = ( ( global_maze->ppt_y() * win_pixel_scale() ) / 3 );
-        SDL_Rect dest = { .x=win_pixel_offset + ( round_to_int( x_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
+        SDL_Rect dest = { .x=win_pixel_offset + ( round_to_int( x_pos * global_maze->ppt_x() * win_pixel_scale() ) - dxy ),
                           .y= ( round_to_int( y_pos * global_maze->ppt_y() * win_pixel_scale() ) - dxy ),
                           .w=width_*win_pixel_scale(), .h=height_*win_pixel_scale() };
         SDL_RenderCopy(rend, tex_, &src, &dest);
