@@ -216,7 +216,8 @@ text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string
 
 text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, std::function<void(const texture_t& tex, int &x_, int&y_)> scaled_coord) noexcept;
 
-void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height, uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept;
+void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height) noexcept;
+void draw_line(SDL_Renderer* rend, int pixel_width_scaled, int x_pixel_offset, int y_pixel_offset, float x1, float y1, float x2, float y2) noexcept;
 
 void save_snapshot(SDL_Renderer* rend, const int width, const int height, const std::string& fname) noexcept;
 

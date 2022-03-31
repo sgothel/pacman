@@ -375,8 +375,12 @@ class maze_t {
         constexpr const box_t&    fruit_box() const noexcept { return fruit_box_; }
         constexpr const box_t&    message_box() const noexcept { return message_box_; }
 
+        /** Return pixel per tile in x direction */
         constexpr int ppt_x() const noexcept { return ppt_x_; }
+
+        /** Return pixel per tile in y direction */
         constexpr int ppt_y() const noexcept { return ppt_y_; }
+
         constexpr int x_to_pixel(const int x, const int win_scale) const noexcept {
             return x * ppt_x_ * win_scale;
         }

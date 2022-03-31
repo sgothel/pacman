@@ -779,27 +779,23 @@ int main(int argc, char *argv[])
                 const box_t& red_zone2 = global_maze->red_zone2_box();
                 const box_t& tunnel1 = global_maze->tunnel1_box();
                 const box_t& tunnel2 = global_maze->tunnel2_box();
-                draw_box(rend, true, win_pixel_offset, 0, red_zone1.x(), red_zone1.y(), red_zone1.width(), red_zone1.height(), 255, 96, 96, 100);
-                draw_box(rend, true, win_pixel_offset, 0, red_zone2.x(), red_zone2.y(), red_zone2.width(), red_zone2.height(), 255, 96, 96, 100);
-                draw_box(rend, true, win_pixel_offset, 0, tunnel1.x(), tunnel1.y(), tunnel1.width(), tunnel1.height(),  96, 96, 255, 100);
-                draw_box(rend, true, win_pixel_offset, 0, tunnel2.x(), tunnel2.y(), tunnel2.width(), tunnel2.height(),  96, 96, 255, 100);
+
+                SDL_SetRenderDrawColor(rend, 255, 96, 96, 100);
+                draw_box(rend, true, win_pixel_offset, 0, red_zone1.x(), red_zone1.y(), red_zone1.width(), red_zone1.height());
+                draw_box(rend, true, win_pixel_offset, 0, red_zone2.x(), red_zone2.y(), red_zone2.width(), red_zone2.height());
+
+                SDL_SetRenderDrawColor(rend, 96, 96, 255, 100);
+                draw_box(rend, true, win_pixel_offset, 0, tunnel1.x(), tunnel1.y(), tunnel1.width(), tunnel1.height());
+                draw_box(rend, true, win_pixel_offset, 0, tunnel2.x(), tunnel2.y(), tunnel2.width(), tunnel2.height());
             }
             {
                 // Grey Grid
                 SDL_SetRenderDrawColor(rend, 150, 150, 150, 255);
-                for(int y = global_maze->height(); y>=0; --y) {
-                    SDL_RenderDrawLine(rend,
-                            win_pixel_offset + global_maze->x_to_pixel( 0, win_pixel_scale()),
-                                               global_maze->y_to_pixel( y, win_pixel_scale()),
-                            win_pixel_offset + global_maze->x_to_pixel( global_maze->width(), win_pixel_scale()),
-                                               global_maze->y_to_pixel( y, win_pixel_scale()) );
+                for(int y = global_maze->height()-1; y>=0; --y) {
+                    draw_line(rend, 1, win_pixel_offset, 0, 0, y, global_maze->width(), y);
                 }
-                for(int x = global_maze->width(); x>=0; --x) {
-                    SDL_RenderDrawLine(rend,
-                            win_pixel_offset + global_maze->x_to_pixel( x, win_pixel_scale()),
-                                               global_maze->y_to_pixel( 0, win_pixel_scale()),
-                            win_pixel_offset + global_maze->x_to_pixel( x, win_pixel_scale()),
-                                               global_maze->y_to_pixel( global_maze->height(), win_pixel_scale()) );
+                for(int x = global_maze->width()-1; x>=0; --x) {
+                    draw_line(rend, 1, win_pixel_offset, 0, x, 0, x, global_maze->height());
                 }
             }
             {
@@ -808,24 +804,33 @@ int main(int argc, char *argv[])
                 acoord_t pinky_top_left = global_maze->top_left_scatter();
                 acoord_t inky_bottom_right = global_maze->bottom_right_scatter();
                 acoord_t clyde_bottom_left = global_maze->bottom_left_scatter();
-                draw_box(rend, true, win_pixel_offset, 0, 0, 0, 1, 1,
-                        pacman_t::rgb_color[0], pacman_t::rgb_color[1], pacman_t::rgb_color[2], 255);
-                draw_box(rend, true, win_pixel_offset, 0, blinky_top_right.x_i(),  blinky_top_right.y_i(), 1, 1,
+
+                SDL_SetRenderDrawColor(rend, pacman_t::rgb_color[0], pacman_t::rgb_color[1], pacman_t::rgb_color[2], 255);
+                draw_box(rend, true, win_pixel_offset, 0, 0, 0, 1, 1);
+
+                SDL_SetRenderDrawColor(rend,
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::BLINKY ) ][0],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::BLINKY ) ][1],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::BLINKY ) ][2], 255);
-                draw_box(rend, true, win_pixel_offset, 0, pinky_top_left.x_i(),    pinky_top_left.y_i(),    1, 1,
+                draw_box(rend, true, win_pixel_offset, 0, blinky_top_right.x_i(),  blinky_top_right.y_i(), 1, 1);
+
+                SDL_SetRenderDrawColor(rend,
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::PINKY ) ][0],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::PINKY ) ][1],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::PINKY ) ][2], 255);
-                draw_box(rend, true, win_pixel_offset, 0, inky_bottom_right.x_i(), inky_bottom_right.y_i(), 1, 1,
+                draw_box(rend, true, win_pixel_offset, 0, pinky_top_left.x_i(),    pinky_top_left.y_i(),    1, 1);
+
+                SDL_SetRenderDrawColor(rend,
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::INKY ) ][0],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::INKY ) ][1],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::INKY ) ][2], 255);
-                draw_box(rend, true, win_pixel_offset, 0, clyde_bottom_left.x_i(), clyde_bottom_left.y_i(), 1, 1,
+                draw_box(rend, true, win_pixel_offset, 0, inky_bottom_right.x_i(), inky_bottom_right.y_i(), 1, 1);
+
+                SDL_SetRenderDrawColor(rend,
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::CLYDE ) ][0],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::CLYDE ) ][1],
                         ghost_t::rgb_color[ ghost_t::number( ghost_t::personality_t::CLYDE ) ][2], 255);
+                draw_box(rend, true, win_pixel_offset, 0, clyde_bottom_left.x_i(), clyde_bottom_left.y_i(), 1, 1);
             }
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }
@@ -841,21 +846,17 @@ int main(int argc, char *argv[])
         ghost_t::global_draw(rend);
 
         if( show_targets ) {
+            const int pixel_width_scaled = std::max( 1, round_to_int( win_pixel_scale() / 2.0f ) );
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
             for(ghost_ref ghost : ghosts()) {
-                SDL_SetRenderDrawColor(rend,
-                                       ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][0],
-                                       ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][1],
-                                       ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][2], 255);
-
                 const acoord_t& p1 = ghost->position();
                 const acoord_t& p2 = ghost->target();
-                SDL_RenderDrawLine(rend,
-                        win_pixel_offset + global_maze->x_to_pixel( p1.x_f(), win_pixel_scale()),
-                                           global_maze->y_to_pixel( p1.y_f(), win_pixel_scale()),
-                        win_pixel_offset + global_maze->x_to_pixel( p2.x_f(), win_pixel_scale()),
-                                           global_maze->y_to_pixel( p2.y_f(), win_pixel_scale()) );
+                SDL_SetRenderDrawColor(rend,
+                        ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][0],
+                        ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][1],
+                        ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][2], 255);
+                draw_line(rend, pixel_width_scaled, win_pixel_offset, 0, p1.x_f(), p1.y_f(), p2.x_f(), p2.y_f());
             }
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }

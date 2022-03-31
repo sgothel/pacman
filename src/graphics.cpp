@@ -327,7 +327,8 @@ std::string text_texture_t::toString() const noexcept {
     return "ttext['"+text+"', "+std::to_string(x_pos)+"/"+std::to_string(y_pos)+", scaled "+std::to_string(scaled_pos)+": "+tex.toString()+"]";
 }
 
-text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept {
+text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept
+{
     SDL_Color foregroundColor = { r, g, b, 255 };
 
     SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
@@ -344,7 +345,8 @@ text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string
 }
 
 text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b,
-                                  std::function<void(const texture_t& tex_, int &x_, int&y_)> scaled_coord) noexcept {
+                                  std::function<void(const texture_t& tex_, int &x_, int&y_)> scaled_coord) noexcept
+{
     SDL_Color foregroundColor = { r, g, b, 255 };
 
     SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
@@ -361,8 +363,9 @@ text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std:
     }
 }
 
-void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height, uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept {
-    SDL_SetRenderDrawColor(rend, r, g, b, a);
+void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset,
+              float x, float y, float width, float height) noexcept
+{
     SDL_Rect bounds = {
             .x=x_pixel_offset + global_maze->x_to_pixel(x, win_pixel_scale()),
             .y=y_pixel_offset + global_maze->y_to_pixel(y, win_pixel_scale()),
@@ -372,6 +375,54 @@ void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_o
         SDL_RenderFillRect(rend, &bounds);
     } else {
         SDL_RenderDrawRect(rend, &bounds);
+    }
+}
+
+void draw_line(SDL_Renderer* rend, int pixel_width_scaled, int x_pixel_offset, int y_pixel_offset,
+               float x1, float y1, float x2, float y2) noexcept
+{
+    if( 0 >= pixel_width_scaled ) {
+        return;
+    }
+    const int x1_i = x_pixel_offset + global_maze->x_to_pixel( x1, win_pixel_scale());
+    const int y1_i = y_pixel_offset + global_maze->y_to_pixel( y1, win_pixel_scale());
+    const int x2_i = x_pixel_offset + global_maze->x_to_pixel( x2, win_pixel_scale());
+    const int y2_i = y_pixel_offset + global_maze->y_to_pixel( y2, win_pixel_scale());
+    const int d_extra = pixel_width_scaled - 1;
+    if( 0 == d_extra ) {
+        SDL_RenderDrawLine(rend, x1_i, y1_i, x2_i, y2_i);
+        return;
+    }
+    const float d_x = std::abs( x1_i - x2_i );
+    const float d_y = std::abs( y1_i - y2_i );
+
+    // Create a polygon of connected dots, aka poly-line
+    const int c_l = -1 * ( d_extra / 2 + d_extra % 2 ); // gets the remainder
+    const int c_r =        d_extra / 2;
+    std::vector<SDL_Point> points;
+    bool first_of_two = true;
+    for(int i=c_l; i<=c_r; ++i) {
+        int ix, iy; // rough and simply thickness delta picking
+        if( d_y > d_x ) {
+            ix = i;
+            iy = 0;
+        } else {
+            ix = 0;
+            iy = i;
+        }
+        if( first_of_two ) {
+            points.push_back( SDL_Point { x1_i+ix, y1_i+iy } );
+            points.push_back( SDL_Point { x2_i+ix, y2_i+iy } );
+            first_of_two = false;
+        } else {
+            points.push_back( SDL_Point { x2_i+ix, y2_i+iy } );
+            points.push_back( SDL_Point { x1_i+ix, y1_i+iy } );
+            first_of_two = true;
+        }
+    }
+    const int err = SDL_RenderDrawLines(rend, points.data(), points.size());
+    if( false ) {
+        log_printf("Poly-Line thick_p %d, %d lines, d %.4f/%.4f, err %d, %s\n", pixel_width_scaled, points.size()/2, d_x, d_y, err, SDL_GetError());
     }
 }
 
