@@ -846,12 +846,14 @@ int main(int argc, char *argv[])
             y = global_maze->x_to_pixel(1, win_pixel_scale());
         });
 
-        // 2nd line - right: tiles
-        draw_text_scaled(rend, font_ttf(), std::to_string(global_maze->count(tile_t::PELLET))+" / "+std::to_string(global_maze->max(tile_t::PELLET)),
-                         255, 255, 255, false /* cache */, [&](const texture_t& tex, int &x, int&y) {
-            x = global_maze->pixel_width()*win_pixel_scale() - tex.width();
-            y = global_maze->x_to_pixel(1, win_pixel_scale());
-        });
+        if( show_debug_gfx() ) {
+            // 2nd line - right: tiles
+            draw_text_scaled(rend, font_ttf(), std::to_string(global_maze->count(tile_t::PELLET))+" / "+std::to_string(global_maze->max(tile_t::PELLET)),
+                             255, 255, 255, false /* cache */, [&](const texture_t& tex, int &x, int&y) {
+                x = global_maze->pixel_width()*win_pixel_scale() - tex.width();
+                y = global_maze->x_to_pixel(1, win_pixel_scale());
+            });
+        }
 
         // optional text
         if( game_mode_t::LEVEL_START == game_mode ) {
