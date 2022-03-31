@@ -99,6 +99,7 @@ direction_t rot_right(direction_t dir) noexcept;
 class keyframei_t {
     private:
         float frames_per_second_const_;
+        float fields_per_second_req_;
 
         /** frames_per_field, dividing the field in sub-fields. */
         int frames_per_field_;
@@ -141,7 +142,7 @@ class keyframei_t {
          * @param nearest if true (default), choosing the nearest frames_per_field for most accurate timing. Otherwise enforces an odd frames_per_field, which enables a single center position.
          */
         keyframei_t(const float frames_per_second, float fields_per_second_req, const bool nearest=true) noexcept
-        : frames_per_second_const_(frames_per_second),
+        : frames_per_second_const_(frames_per_second), fields_per_second_req_(fields_per_second_req),
           frames_per_field_( nearest ? calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req) :
                                        calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req) ),
           center_( fields_per_frame() * ( frames_per_field_ / 2 ) ),
@@ -160,6 +161,7 @@ class keyframei_t {
          */
         void reset(const float frames_per_second, const float fields_per_second_req, const bool nearest=true) noexcept {
             frames_per_second_const_ = frames_per_second;
+            fields_per_second_req_ = fields_per_second_req;
             frames_per_field_ = nearest ? calc_nearest_frames_per_field(frames_per_second_const_, fields_per_second_req) :
                                           calc_odd_frames_per_field(frames_per_second_const_, fields_per_second_req);
             center_ = fields_per_frame() * ( frames_per_field_ / 2 );

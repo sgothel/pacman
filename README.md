@@ -159,6 +159,7 @@ If false, a more accurate implementation, the pacman bugfix, is used:
     - Adjust tunnel speed
     - No turning up in *Red-Zones* if chasing or scattering
     - Optionally use alternative Manhatten distance function instead of the Euclidean default.
+    - *Elroy 1+2* mode
 - Pacman
     - show eaten ghosts and fruit score onscreen (FREEZE)
     - Freeze pacman only for 3 frames after eating power pellet
@@ -182,8 +183,6 @@ If false, a more accurate implementation, the pacman bugfix, is used:
   - Video recording via bmp snapshots each frame
 
 ### To Do
-- Ghost *AI*
-  - *Elroy 1+2* mode
 - Pacman
     - Lives
 - Sound

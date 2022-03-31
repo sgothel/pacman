@@ -72,7 +72,7 @@ animtex_t& pacman_t::get_tex() noexcept {
 
 pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexcept
 : fields_per_sec_total(fields_per_sec_total_),
-  current_speed_pct(0.80f),
+  current_speed_pct(0.0f),
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   next_empty_field_frame_cntr(0, false /* auto_reload */),
@@ -188,8 +188,8 @@ void pacman_t::set_speed(const float pct) noexcept {
     keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
     pos_.set_aligned_dir(keyframei_);
     reset_stats();
-    if( log_moves() ) {
-        log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %s, %s\n", old, current_speed_pct, sync_next_frame_cntr.toString().c_str(), keyframei_.toString().c_str());
+    if( log_modes() ) {
+        log_printf("pacman set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
     }
 }
 
@@ -200,11 +200,11 @@ void pacman_t::print_stats() noexcept {
         const float fields_per_seconds = get_fps(perf_fields_walked_t0, t1, stats.fields_walked_f);
         const float fps_draw = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked);
         const float fps_tick = get_fps(perf_fields_walked_t0, t1, perf_frame_count_walked - sync_next_frame_cntr.events());
-        log_printf("pacman stats: fields[%.2f walked, %.2f/s], fps[draw %.2f/s, tick %.2f/s], frames[draw %" PRIu64 ", synced %d], td %" PRIu64 " ms, req_speed[%f\%, fields %f/s], %s, %s\n",
+        log_printf("pacman stats: fields[%.2f walked, %.2f/s], fps[draw %.2f/s, tick %.2f/s], frames[draw %" PRIu64 ", synced %d], td %" PRIu64 " ms, speed %f\%, %s, %s\n",
                 stats.fields_walked_f, fields_per_seconds,
                 fps_draw, fps_tick, perf_frame_count_walked, sync_next_frame_cntr.events(),
                 t1-perf_fields_walked_t0,
-                current_speed_pct, fields_per_sec_total*current_speed_pct,
+                current_speed_pct,
                 keyframei_.toString().c_str(), pos_.toString().c_str());
     }
 }

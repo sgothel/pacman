@@ -82,7 +82,7 @@ animtex_t& ghost_t::get_tex() noexcept {
 
 ghost_t::ghost_t(const personality_t id__, SDL_Renderer* rend, const float fields_per_sec_total_) noexcept
 : fields_per_sec_total(fields_per_sec_total_),
-  current_speed_pct(0.75f),
+  current_speed_pct(0.0f),
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   id_( id__ ),
@@ -121,18 +121,19 @@ void ghost_t::destroy() noexcept {
     atex_phantom.destroy();
 }
 
-void ghost_t::set_speed(const float pct) noexcept {
+bool ghost_t::set_speed(const float pct) noexcept {
     if( std::abs( current_speed_pct - pct ) <= std::numeric_limits<float>::epsilon() ) {
-        return;
+        return false;
     }
     const float old = current_speed_pct;
     current_speed_pct = pct;
     keyframei_.reset(get_frames_per_sec(), fields_per_sec_total*pct, true /* nearest */);
     pos_.set_aligned_dir(keyframei_);
     sync_next_frame_cntr.reset( keyframei_.sync_frame_count(), true /* auto_reload */);
-    if( log_moves() ) {
+    if( log_modes() ) {
         log_printf("%s set_speed: %5.2f -> %5.2f: sync_each_frames %zd, %s\n", to_string(id_).c_str(), old, current_speed_pct, sync_next_frame_cntr.counter(), keyframei_.toString().c_str());
     }
+    return true;
 }
 
 void ghost_t::set_next_target() noexcept {
@@ -543,7 +544,7 @@ void ghost_t::global_draw(SDL_Renderer* rend) noexcept {
     }
 }
 
-void ghost_t::set_mode_speed() noexcept {
+bool ghost_t::set_mode_speed() noexcept {
     switch( mode_ ) {
         case mode_t::HOME:
             [[fallthrough]];
@@ -551,18 +552,28 @@ void ghost_t::set_mode_speed() noexcept {
             [[fallthrough]];
         case mode_t::CHASE:
             [[fallthrough]];
-        case mode_t::SCATTER:
-            set_speed(game_level_spec().ghost_speed);
+        case mode_t::SCATTER: {
+            if( ghost_t::personality_t::BLINKY == id_ ) {
+                const int pellets_left = global_maze->count(tile_t::PELLET);
+                if( pellets_left <= game_level_spec().elroy2_dots_left ) { // elroy2_dots < elroy1_dots
+                    return set_speed(game_level_spec().elroy2_speed);
+                } else if( pellets_left <= game_level_spec().elroy1_dots_left ) {
+                    return set_speed(game_level_spec().elroy1_speed);
+                }
+            }
+            return set_speed(game_level_spec().ghost_speed);
             break;
+        }
         case mode_t::SCARED:
-            set_speed(game_level_spec().ghost_fright_speed);
+            return set_speed(game_level_spec().ghost_fright_speed);
             break;
         case mode_t::PHANTOM:
-            set_speed(2.00f);
+            return set_speed(2.00f);
             break;
         default:
             break;
     }
+    return false;
 }
 
 void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
@@ -786,6 +797,7 @@ void ghost_t::notify_pellet_eaten() noexcept {
         } else if( nullptr != clyde && clyde->at_home() && clyde->pellet_counter_active_ ) {
             clyde->pellet_counter_++;
         }
+        blinky->set_mode_speed(); // in case he shall become Elroy
     }
     if( DEBUG_PELLET_COUNTER ) {
         log_printf("%s\n", pellet_counter_string().c_str());

@@ -263,7 +263,8 @@ class ghost_t {
         void set_next_target() noexcept;
         void set_next_dir(const bool collision, const bool is_center) noexcept;
 
-        void set_mode_speed() noexcept;
+        /** Return true if speed changed, otherwise false */
+        bool set_mode_speed() noexcept;
         void tick() noexcept;
         void draw(SDL_Renderer* rend) noexcept;
 
@@ -289,7 +290,8 @@ class ghost_t {
         constexpr const acoord_t& position() const noexcept { return pos_; }
         constexpr const acoord_t& target() const noexcept { return target_; }
 
-        void set_speed(const float pct) noexcept;
+        /** Return true if speed changed, otherwise false */
+        bool set_speed(const float pct) noexcept;
 
         /** For global SCATTER, CHASE or SCARED mode switch, etc. */
         static void set_global_mode(const mode_t m, const int mode_ms=-1) noexcept;
