@@ -696,7 +696,10 @@ std::string maze_t::toString() const noexcept {
                     ", pacman "+pacman_start_pos_.toShortString()+
                     ", ghost[ext "+ghost_home_ext.toString()+", int "+ghost_home_int.toString()+
                     ", start "+ghost_start.toString()+
-                    "], fruit "+fruit_pos_.toShortString()+", tex "+texture_file+
+                    "], fruit "+fruit_pos_.toShortString()+
+                    ", pellets[ normal "+std::to_string(count(tile_t::PELLET))+"/"+std::to_string(max(tile_t::PELLET))+
+                    ", power "+std::to_string(count(tile_t::PELLET_POWER))+"/"+std::to_string(max(tile_t::PELLET_POWER))+
+                    "], tex "+texture_file+
                     ", ppt "+std::to_string(ppt_x_)+"x"+std::to_string(ppt_y_)+
                     "]";
 }

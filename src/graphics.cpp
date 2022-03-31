@@ -308,7 +308,7 @@ std::string animtex_t::toString() const noexcept {
             ", textures["+tex_s+"]]";
 }
 
-void text_texture_t::redraw(SDL_Renderer* rend) noexcept {
+void text_texture_t::draw(SDL_Renderer* rend) noexcept {
     if( scaled_pos ) {
         tex.draw_scaled_dimpos(rend, x_pos, y_pos);
     } else {
@@ -316,7 +316,7 @@ void text_texture_t::redraw(SDL_Renderer* rend) noexcept {
     }
 }
 
-void text_texture_t::redraw(SDL_Renderer* rend, bool scaled_pos_, int x_, int y_) noexcept {
+void text_texture_t::draw(SDL_Renderer* rend, bool scaled_pos_, int x_, int y_) noexcept {
     if( scaled_pos_ ) {
         tex.draw_scaled_dimpos(rend, x_, y_);
     } else {
@@ -328,39 +328,93 @@ std::string text_texture_t::toString() const noexcept {
     return "ttext['"+text+"', "+std::to_string(x_pos)+"/"+std::to_string(y_pos)+", scaled "+std::to_string(scaled_pos)+": "+tex.toString()+"]";
 }
 
-text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept
-{
-    SDL_Color foregroundColor = { r, g, b, 255 };
+static text_texture_cache_t text_texture_cache;
 
-    SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
-    if( nullptr != textSurface ) {
-        std::shared_ptr<text_texture_t> ttex = std::make_shared<text_texture_t>(text, rend, textSurface, false, x, y);
-        SDL_FreeSurface(textSurface);
-        ttex->tex.draw_scaled_dim(rend, x, y);
-        // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
-        return ttex;
+text_texture_ref get_text_texture_cache(const std::string& key) noexcept {
+    if( true ) {
+        return text_texture_cache[ key ];
     } else {
-        log_printf("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
+        text_texture_ref ttex = text_texture_cache[ key ];
+        if( nullptr == ttex ) {
+            log_printf("text_texture_cache::get: Missing '%s'\n", key.c_str());
+        } else {
+            log_printf("text_texture_cache::get: Has '%s' -> %s\n", key.c_str(), ttex->toString().c_str());
+        }
+        return ttex;
+    }
+}
+
+void put_text_texture_cache(const std::string& key, text_texture_ref ttex) noexcept {
+    text_texture_cache[ key ] = ttex;
+    if( false ) {
+        if( nullptr == ttex ) {
+            log_printf("text_texture_cache::put: Empty '%s'\n", key.c_str());
+        } else {
+            log_printf("text_texture_cache::put: Filld '%s' <- %s\n", key.c_str(), ttex->toString().c_str());
+        }
+    }
+}
+
+void clear_text_texture_cache() noexcept {
+    text_texture_cache.clear();
+}
+
+text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b, const bool use_cache) noexcept
+{
+    if( nullptr == rend || nullptr == font ) {
         return nullptr;
+    }
+    text_texture_ref ttex = use_cache ? get_text_texture_cache(text) : nullptr;
+    if( nullptr == ttex ) {
+        SDL_Color foregroundColor = { r, g, b, 255 };
+
+        SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
+        if( nullptr != textSurface ) {
+            ttex = std::make_shared<text_texture_t>(text, rend, textSurface, false, x, y);
+            SDL_FreeSurface(textSurface);
+            ttex->tex.draw_scaled_dim(rend, x, y);
+            // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
+            return ttex;
+        } else {
+            log_printf("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
+            return nullptr;
+        }
+    } else {
+        ttex->draw(rend, false /* scaled_pos_ */, x, y);
+        return ttex;
     }
 }
 
 text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b,
+                                  const bool use_cache,
                                   std::function<void(const texture_t& tex_, int &x_, int&y_)> scaled_coord) noexcept
 {
-    SDL_Color foregroundColor = { r, g, b, 255 };
-
-    SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
-    if( nullptr != textSurface ) {
-        std::shared_ptr<text_texture_t> ttex = std::make_shared<text_texture_t>(text, rend, textSurface, true, 0, 0);
-        SDL_FreeSurface(textSurface);
-        scaled_coord(ttex->tex, ttex->x_pos, ttex->y_pos);
-        ttex->tex.draw_scaled_dimpos(rend, ttex->x_pos, ttex->y_pos);
-        // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
-        return ttex;
-    } else {
-        log_printf("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
+    if( nullptr == rend || nullptr == font ) {
         return nullptr;
+    }
+    text_texture_ref ttex = use_cache ? get_text_texture_cache(text) : nullptr;
+    if( nullptr == ttex ) {
+        SDL_Color foregroundColor = { r, g, b, 255 };
+
+        SDL_Surface* textSurface = TTF_RenderText_Solid(font, text.c_str(), foregroundColor);
+        if( nullptr != textSurface ) {
+            ttex = std::make_shared<text_texture_t>(text, rend, textSurface, true, 0, 0);
+            SDL_FreeSurface(textSurface);
+            scaled_coord(ttex->tex, ttex->x_pos, ttex->y_pos);
+            ttex->draw(rend);
+            // log_print("draw_text: '%s', tex %s\n", text.c_str(), tex.toString().c_str());
+            if( use_cache ) {
+                put_text_texture_cache(text, ttex);
+            }
+            return ttex;
+        } else {
+            log_printf("draw_text: Null texture for '%s': %s\n", text.c_str(), SDL_GetError());
+            return nullptr;
+        }
+    } else {
+        scaled_coord(ttex->tex, ttex->x_pos, ttex->y_pos);
+        ttex->draw(rend);
+        return ttex;
     }
 }
 

@@ -45,8 +45,4 @@ inline int get_ms_per_frame() noexcept { return (int)std::round(1000.0 / (float)
 
 TTF_Font* font_ttf() noexcept;
 
-text_texture_ref get_text_texture_cache(const std::string& key) noexcept;
-
-void put_text_texture_cache(const std::string& key, text_texture_ref ttex) noexcept;
-
 #endif /* PACMAN_GLOBALS_HPP_ */

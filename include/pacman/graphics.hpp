@@ -188,9 +188,9 @@ struct text_texture_t {
     text_texture_t(const std::string text_, SDL_Renderer* rend, SDL_Surface* surface, bool scaled_pos_, int x_, int y_) noexcept
     : text(text_), tex(rend, surface), scaled_pos(scaled_pos_), x_pos(x_), y_pos(y_) {}
 
-    void redraw(SDL_Renderer* rend) noexcept;
+    void draw(SDL_Renderer* rend) noexcept;
 
-    void redraw(SDL_Renderer* rend, bool scaled_pos_, int x_, int y_) noexcept;
+    void draw(SDL_Renderer* rend, bool scaled_pos_, int x_, int y_) noexcept;
 
     std::string toString() const noexcept;
 };
@@ -200,6 +200,12 @@ typedef std::shared_ptr<text_texture_t> text_texture_ref;
  * A very simple text_texture_t cache modeled as an unordered map.
  */
 typedef std::unordered_map<std::string, text_texture_ref> text_texture_cache_t;
+
+text_texture_ref get_text_texture_cache(const std::string& key) noexcept;
+
+void put_text_texture_cache(const std::string& key, text_texture_ref ttex) noexcept;
+
+void clear_text_texture_cache() noexcept;
 
 /**
  *
@@ -212,9 +218,10 @@ typedef std::unordered_map<std::string, text_texture_ref> text_texture_cache_t;
  * @param g
  * @param b
  */
-text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b) noexcept;
+text_texture_ref draw_text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y, uint8_t r, uint8_t g, uint8_t b, const bool use_cache) noexcept;
 
-text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, std::function<void(const texture_t& tex, int &x_, int&y_)> scaled_coord) noexcept;
+text_texture_ref draw_text_scaled(SDL_Renderer* rend, TTF_Font* font, const std::string& text, uint8_t r, uint8_t g, uint8_t b, const bool use_cache,
+                                  std::function<void(const texture_t& tex, int &x_, int&y_)> scaled_coord) noexcept;
 
 void draw_box(SDL_Renderer* rend, bool filled, int x_pixel_offset, int y_pixel_offset, float x, float y, float width, float height) noexcept;
 void draw_line(SDL_Renderer* rend, int pixel_width_scaled, int x_pixel_offset, int y_pixel_offset, float x1, float y1, float x2, float y2) noexcept;

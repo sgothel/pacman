@@ -50,33 +50,6 @@ int get_frames_per_sec() noexcept { return frames_per_sec; }
 static TTF_Font* font_ttf_ = nullptr;
 TTF_Font* font_ttf() noexcept { return font_ttf_; }
 
-static text_texture_cache_t text_texture_cache;
-
-text_texture_ref get_text_texture_cache(const std::string& key) noexcept {
-    if( true ) {
-        return text_texture_cache[ key ];
-    } else {
-        text_texture_ref ttex = text_texture_cache[ key ];
-        if( nullptr == ttex ) {
-            log_printf("text_texture_cache::get: Missing '%s'\n", key.c_str());
-        } else {
-            log_printf("text_texture_cache::get: Has '%s' -> %s\n", key.c_str(), ttex->toString().c_str());
-        }
-        return ttex;
-    }
-}
-
-void put_text_texture_cache(const std::string& key, text_texture_ref ttex) noexcept {
-    text_texture_cache[ key ] = ttex;
-    if( false ) {
-        if( nullptr == ttex ) {
-            log_printf("text_texture_cache::put: Empty '%s'\n", key.c_str());
-        } else {
-            log_printf("text_texture_cache::put: Filld '%s' <- %s\n", key.c_str(), ttex->toString().c_str());
-        }
-    }
-}
-
 //
 // globals across modules 'game.hpp'
 //
@@ -657,7 +630,7 @@ int main(int argc, char *argv[])
                             break;
                         case SDL_WINDOWEVENT_RESIZED:
                             on_window_resized(rend, event.window.data1, event.window.data2);
-                            text_texture_cache.clear();
+                            clear_text_texture_cache();
                             break;
                         case SDL_WINDOWEVENT_SIZE_CHANGED:
                             // INFO_PRINT("Window SizeChanged: %d x %d\n", event.window.data1, event.window.data2);
@@ -861,48 +834,34 @@ int main(int argc, char *argv[])
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }
 
-        if( nullptr != font_ttf() ) {
-            // top line: title
-            {
-                const std::string txt_key("HIGH SCORE");
-                text_texture_ref ttex = get_text_texture_cache(txt_key);
-                if( nullptr == ttex ) {
-                    ttex = draw_text_scaled(rend, font_ttf(), txt_key, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
-                        x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
-                        y = global_maze->x_to_pixel(0, win_pixel_scale());
-                    });
-                    put_text_texture_cache(txt_key, ttex);
-                } else {
-                    ttex->redraw(rend);
-                }
-            }
-            // 2nd line: score
-            {
-                // No caching ..
-                std::string score_s = std::to_string( pacman->score() );
-                draw_text_scaled(rend, font_ttf(), score_s, 255, 255, 255, [&](const texture_t& tex, int &x, int&y) {
-                    x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
-                    y = global_maze->x_to_pixel(1, win_pixel_scale());
-                });
-            }
+        // top line: title
+        draw_text_scaled(rend, font_ttf(), "HIGH SCORE", 255, 255, 255, true /* cache */, [&](const texture_t& tex, int &x, int&y) {
+            x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
+            y = global_maze->x_to_pixel(0, win_pixel_scale());
+        });
 
-            // optional text
-            if( game_mode_t::LEVEL_START == game_mode ) {
-                const std::string txt_key("Ready!");
-                text_texture_ref ttex = get_text_texture_cache(txt_key);
-                if( nullptr == ttex ) {
-                    const box_t& msg_box = global_maze->message_box();
-                    ttex = draw_text_scaled(rend, font_ttf(), txt_key,
-                                            pacman_t::rgb_color[0], pacman_t::rgb_color[1], pacman_t::rgb_color[2],
-                                            [&](const texture_t& tex, int &x, int&y) {
-                        x = global_maze->x_to_pixel(msg_box.center_x(), win_pixel_scale()) - tex.width()  / 2;
-                        y = global_maze->x_to_pixel(msg_box.y(), win_pixel_scale()) - tex.height() / 4;
-                    });
-                    put_text_texture_cache(txt_key, ttex);
-                } else {
-                    ttex->redraw(rend);
-                }
-            }
+        // 2nd line - center: score
+        draw_text_scaled(rend, font_ttf(), std::to_string( pacman->score() ), 255, 255, 255, false /* cache */, [&](const texture_t& tex, int &x, int&y) {
+            x = ( global_maze->pixel_width()*win_pixel_scale() - tex.width() ) / 2;
+            y = global_maze->x_to_pixel(1, win_pixel_scale());
+        });
+
+        // 2nd line - right: tiles
+        draw_text_scaled(rend, font_ttf(), std::to_string(global_maze->count(tile_t::PELLET))+" / "+std::to_string(global_maze->max(tile_t::PELLET)),
+                         255, 255, 255, false /* cache */, [&](const texture_t& tex, int &x, int&y) {
+            x = global_maze->pixel_width()*win_pixel_scale() - tex.width();
+            y = global_maze->x_to_pixel(1, win_pixel_scale());
+        });
+
+        // optional text
+        if( game_mode_t::LEVEL_START == game_mode ) {
+            const box_t& msg_box = global_maze->message_box();
+            draw_text_scaled(rend, font_ttf(), "Ready!",
+                             pacman_t::rgb_color[0], pacman_t::rgb_color[1], pacman_t::rgb_color[2],
+                             true /* cache */, [&](const texture_t& tex, int &x, int&y) {
+                x = global_maze->x_to_pixel(msg_box.center_x(), win_pixel_scale()) - tex.width()  / 2;
+                y = global_maze->x_to_pixel(msg_box.y(), win_pixel_scale()) - tex.height() / 4;
+            });
         }
 
         // bottom line: level
