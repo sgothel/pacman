@@ -150,6 +150,9 @@ bool acoord_t::intersects_f(const acoord_t& other) const noexcept {
 
 bool acoord_t::intersects_i(const acoord_t& other) const noexcept {
     return x_pos_i == other.x_pos_i && y_pos_i == other.y_pos_i;
+
+bool acoord_t::intersects_i(const int x, const int y) const noexcept {
+    return x_pos_i == x && y_pos_i == y;
 }
 
 bool acoord_t::intersects(const acoord_t& other) const noexcept {
@@ -650,8 +653,8 @@ maze_t::maze_t(const std::string& fname) noexcept
         if( original.validate_size() ) {
             reset();
 
-            // center below ghost_home_ext, 1 tile
-            fruit_box_.set( trunc_to_int(ghost_home_ext.center_x()), ghost_home_ext.y()+ghost_home_ext.height(), 1, 1);
+            // center below ghost_home_ext, 1 tile, centered horizontal
+            fruit_pos_.set_pos(ghost_home_ext.center_x()-0.5f,  (float)(ghost_home_ext.y()+ghost_home_ext.height()));
 
             // below ghost_home_ext, centered, whole length, 1 tile height
             message_box_.set( ghost_home_ext.x(), ghost_home_ext.y()+ghost_home_ext.height(), ghost_home_ext.width(), 1);
@@ -670,10 +673,14 @@ maze_t::maze_t(const std::string& fname) noexcept
     ppt_y_ = 0;
 }
 
-void maze_t::draw(std::function<void(const int x, const int y, tile_t tile)> draw_pixel) noexcept {
+void maze_t::draw(std::function<void(const float x, const float y, tile_t tile)> draw_pixel) noexcept {
     for(int y=0; y<height(); ++y) {
         for(int x=0; x<width(); ++x) {
-            draw_pixel(x, y, active.tile_nc(x, y));
+            if( fruit_pos_.intersects_i(x, y) ) {
+                draw_pixel(fruit_pos_.x_f(), fruit_pos_.y_f(), active.tile_nc(x, y));
+            } else {
+                draw_pixel(x, y, active.tile_nc(x, y));
+            }
         }
     }
 }
@@ -688,7 +695,7 @@ std::string maze_t::toString() const noexcept {
                     ", pacman "+pacman_start_pos_.toShortString()+
                     ", ghost[ext "+ghost_home_ext.toString()+", int "+ghost_home_int.toString()+
                     ", start "+ghost_start.toString()+
-                    "], tex "+texture_file+
+                    "], fruit "+fruit_pos_.toShortString()+", tex "+texture_file+
                     ", ppt "+std::to_string(ppt_x_)+"x"+std::to_string(ppt_y_)+
                     "]";
 }

@@ -273,13 +273,13 @@ std::shared_ptr<const texture_t> global_tex_t::texture(const tile_t tile) const 
     return 0 <= idx ? textures[idx] : nullptr;
 }
 
-void global_tex_t::draw_tile(const tile_t tile, SDL_Renderer* rend, const int x, const int y) noexcept {
+void global_tex_t::draw_tile(const tile_t tile, SDL_Renderer* rend, const float x, const float y) noexcept {
     if( tile_t::PELLET_POWER == tile ) {
         atex_pellet_power.draw2(rend, x, y);
     } else {
         std::shared_ptr<texture_t> tex = texture(tile);
         if( nullptr != tex ) {
-            tex->draw2_i(rend, x, y);
+            tex->draw2_f(rend, x, y);
         }
     }
 }
@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
     {
         log_printf("--- 8< ---\n");
         const int maze_width = global_maze->width();
-        global_maze->draw( [&maze_width](int x, int y, tile_t tile) {
+        global_maze->draw( [&maze_width](float x, float y, tile_t tile) {
             fprintf(stderr, "%s", to_string(tile).c_str());
             if( x == maze_width-1 ) {
                 fprintf(stderr, "\n");
@@ -837,7 +837,7 @@ int main(int argc, char *argv[])
 
         pacman_maze_tex->draw(rend, 0, 0);
 
-        global_maze->draw( [&rend](int x, int y, tile_t tile) {
+        global_maze->draw( [&rend](float x, float y, tile_t tile) {
             global_tex->draw_tile(tile, rend, x, y);
         });
 

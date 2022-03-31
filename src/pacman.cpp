@@ -288,8 +288,8 @@ bool pacman_t::tick() noexcept {
     if( 0 < fruit_ms_left ) {
         fruit_ms_left = std::max( 0, fruit_ms_left - get_ms_per_frame() );
         if( 0 == fruit_ms_left ) {
-            const box_t& b = global_maze->fruit_box();
-            global_maze->set_tile(b.x(), b.y(), tile_t::EMPTY);
+            const acoord_t& f_p = global_maze->fruit_pos();
+            global_maze->set_tile(f_p.x_i(), f_p.y_i(), tile_t::EMPTY);
         }
     }
 
@@ -307,9 +307,10 @@ bool pacman_t::tick() noexcept {
         const int y_i = pos_.y_i();
         const tile_t tile = global_maze->tile(x_i, y_i);
         const bool entered_tile = pos_.entered_tile(keyframei_);
+        const bool is_center = pos_.is_center(keyframei_);
         if( log_moves() || DEBUG_GFX_BOUNDS ) {
             log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
-                    to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), entered_tile,
+                    to_string(current_dir).c_str(), pos_.toString().c_str(), is_center, entered_tile,
                     to_string(tile).c_str(),
                     collision_maze, collision_enemies, atex->toString().c_str());
         }
@@ -318,8 +319,8 @@ bool pacman_t::tick() noexcept {
             reset_stats();
         } else { // if( entered_tile ) {
             if( tile_t::PELLET <= tile && tile <= tile_t::KEY ) {
-                global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                 if( tile_t::PELLET == tile ) {
+                    global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                     score_ += ::number( tile_to_score(tile) );
                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                     if( mode_t::POWERED == mode_ ) {
@@ -330,34 +331,24 @@ bool pacman_t::tick() noexcept {
                     next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                     ghost_t::notify_pellet_eaten();
 
-                    if( fruit_1_eaten == global_maze->count(tile_t::PELLET) ||
-                        fruit_2_eaten == global_maze->count(tile_t::PELLET) )
+                    if( fruit_1_eaten == global_maze->taken(tile_t::PELLET) ||
+                        fruit_2_eaten == global_maze->taken(tile_t::PELLET) )
                     {
-                        const box_t& b = global_maze->fruit_box();
+                        const acoord_t& f_p = global_maze->fruit_pos();
                         const tile_t fruit = game_level_spec().symbol;
-                        global_maze->set_tile(b.x(), b.y(), fruit);
+                        global_maze->set_tile(f_p.x_i(), f_p.y_i(), fruit);
                         fruit_ms_left = fruit_duration_min + ( rng_hw() % ( fruit_duration_max - fruit_duration_min + 1 ) );
                         if( log_modes() ) {
                             log_printf("fruit appears: tile %s, dur %dms\n", to_string( fruit ).c_str(), fruit_ms_left);
                         }
                     }
                 } else if( tile_t::PELLET_POWER == tile ) {
+                    global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                     score_ += ::number( tile_to_score(tile) );
                     set_mode( mode_t::POWERED );
                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                     next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                     freeze_frame_count = 3;
-                } else {
-                    // bonus fruit
-                    freeze_score = game_level_spec().bonus_points;
-                    score_ += freeze_score;
-                    const box_t& b = global_maze->fruit_box();
-                    freeze_box_.set(b.x()-1, b.y(), 2, 2);
-                    set_mode(mode_t::FREEZE, 900);
-                    audio_samples[ ::number( audio_clip_t::EAT_FRUIT) ]->play();
-                    if( log_modes() ) {
-                        log_printf("pacman eats: a fruit: score %d, tile %s, left %dms\n", freeze_score, to_string(tile).c_str(), fruit_ms_left);
-                    }
                 }
             } else if( tile_t::EMPTY == tile ) {
                 if( next_empty_field_frame_cntr.count_down() ) {
@@ -367,6 +358,24 @@ bool pacman_t::tick() noexcept {
                         set_speed(game_level_spec().pacman_speed);
                     }
                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
+                }
+            }
+            if( is_center ) {
+                // bonus fruit test on float position, since it crosses two tiles
+                const acoord_t& f_p = global_maze->fruit_pos();
+                const tile_t fruit_tile = global_maze->tile(f_p.x_i(), f_p.y_i());
+                if( tile_t::CHERRY <= fruit_tile && fruit_tile <= tile_t::KEY && pos_.intersects_f(f_p) ) {
+                    global_maze->set_tile(f_p.x_i(), f_p.y_i(), tile_t::EMPTY);
+                    freeze_score = game_level_spec().bonus_points;
+                    score_ += freeze_score;
+                    freeze_box_.set(f_p.x_i()-1, f_p.y_i()-1, 2, 2);
+                    set_mode(mode_t::FREEZE, 900);
+                    audio_samples[ ::number( audio_clip_t::EAT_FRUIT) ]->play();
+                    if( log_modes() ) {
+                        log_printf("pacman eats: a fruit: score %d, tile [pos %s, fpos %s], left %dms, pos[self %s, fruit %s]\n",
+                                freeze_score, to_string(tile).c_str(), to_string(fruit_tile).c_str(), fruit_ms_left,
+                                pos_.toShortString().c_str(), f_p.toShortString().c_str());
+                    }
                 }
             }
         }

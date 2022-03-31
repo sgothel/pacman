@@ -166,6 +166,8 @@ class acoord_t {
          */
         bool intersects_i(const acoord_t& other) const noexcept;
 
+        bool intersects_i(const int x, const int y) const noexcept;
+
         /**
          * Intersection test using either the pixel accurate float method
          * or the original pacman game weighted int method
@@ -346,7 +348,7 @@ class maze_t {
         field_t original;
 
         // derived data
-        box_t fruit_box_;
+        acoord_t fruit_pos_;
         box_t message_box_;
 
         bool digest_iposition_line(const std::string& name, acoord_t& dest, const std::string& line) noexcept;
@@ -372,7 +374,7 @@ class maze_t {
         constexpr const box_t&    ghost_home_ext_box() const noexcept { return ghost_home_ext; }
         constexpr const box_t&    ghost_home_int_box() const noexcept { return ghost_home_int; }
         constexpr const box_t&    ghost_start_box() const noexcept { return ghost_start; }
-        constexpr const box_t&    fruit_box() const noexcept { return fruit_box_; }
+        constexpr const acoord_t& fruit_pos() const noexcept { return fruit_pos_; }
         constexpr const box_t&    message_box() const noexcept { return message_box_; }
 
         /** Return pixel per tile in x direction */
@@ -411,10 +413,13 @@ class maze_t {
         }
 
         constexpr int count(const tile_t tile) const noexcept { return active.count(tile); }
+        constexpr int taken(const tile_t tile) const noexcept { return original.count(tile) - active.count(tile); }
+        constexpr int max(const tile_t tile) const noexcept { return original.count(tile); }
+
         tile_t tile(const int x, const int y) const noexcept { return active.tile(x, y); }
         void set_tile(const int x, const int y, tile_t tile) noexcept { active.set_tile(x, y, tile); }
 
-        void draw(std::function<void(const int x_pos, const int y_pos, tile_t tile)> draw_pixel) noexcept;
+        void draw(std::function<void(const float x_pos, const float y_pos, tile_t tile)> draw_pixel) noexcept;
 
         void reset() noexcept;
 

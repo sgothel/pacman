@@ -153,7 +153,7 @@ class global_tex_t {
             return true;
         }
 
-        void draw_tile(const tile_t tile, SDL_Renderer* rend, const int x, const int y) noexcept;
+        void draw_tile(const tile_t tile, SDL_Renderer* rend, const float x, const float y) noexcept;
 
         std::string toString() const;
 };
