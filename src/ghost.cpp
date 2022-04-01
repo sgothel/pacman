@@ -181,8 +181,8 @@ void ghost_t::set_next_target() noexcept {
                     float p_[] = { p.x_f(), p.y_f() };
                     float b_[] = { b.x_f(), b.y_f() };
                     float bp_[] = { (p_[0] - b_[0])*2, (p_[1] - b_[1])*2 }; // vec_bp * 2
-                    p.set_pos_clipped( keyframei_.center_value( bp_[0] + b_[0] ),
-                                       keyframei_.center_value( bp_[1] + b_[1] ) ); // add back to blinky
+                    p.set_pos( keyframei_.center_value( bp_[0] + b_[0] ),
+                               keyframei_.center_value( bp_[1] + b_[1] ) ); // add back to blinky
                     target_ = p;
                     break;
                 }
