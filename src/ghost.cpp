@@ -870,7 +870,9 @@ void ghost_t::notify_pellet_eaten() noexcept {
         } else if( nullptr != clyde && clyde->at_home() && clyde->pellet_counter_active_ ) {
             clyde->pellet_counter_++;
         }
-        blinky->set_mode_speed(); // in case he shall become Elroy
+        if( nullptr != blinky ) {
+            blinky->set_mode_speed(); // in case he shall become Elroy
+        }
     }
     if( DEBUG_PELLET_COUNTER ) {
         log_printf("%s\n", pellet_counter_string().c_str());
