@@ -72,6 +72,11 @@ struct ghost_wave_t {
 };
 typedef std::vector<ghost_wave_t> ghost_wave_vec_t;
 
+// ghost_t::ghost_count size - one for each
+typedef std::vector<int> ghost_pellet_counter_limit_t;
+
+extern ghost_pellet_counter_limit_t global_ghost_pellet_counter_limit;
+
 /**
  * `Level Specification` from [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
  * Appendix A: Reference Tables.
@@ -93,6 +98,8 @@ struct game_level_spec_t {
     int elroy2_dots_left;
     float elroy2_speed;
     ghost_wave_vec_t ghost_waves;
+    ghost_pellet_counter_limit_t ghost_pellet_counter_limit;
+    int ghost_max_home_time_ms;
 };
 
 const game_level_spec_t& game_level_spec(const int level) noexcept;
@@ -180,6 +187,7 @@ class ghost_t {
         static constexpr int number(const personality_t item) noexcept {
             return static_cast<int>(item);
         }
+        static constexpr const int ghost_count = 4;
 
         enum class mode_t {
             /** Turned off ghosts while pacman's death animation */
@@ -226,6 +234,7 @@ class ghost_t {
         int pellet_counter_;
         static bool global_pellet_counter_active;
         static int global_pellet_counter;
+        static int global_pellet_time_left;
 
         animtex_t atex_normal;
         animtex_t atex_scared;

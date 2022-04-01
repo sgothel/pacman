@@ -25,8 +25,8 @@ Potential code sections of interest
 To implement the original pacman game behavior like weighted tile collision,
 ghost algorithm, etc. - we have used the following documents for reference
 - Jamey Pittman's [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier)
-- [Understanding Pac-Man Ghost Behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
-- [Why do Pinky and Inky have different behaviors when Pac-Man is facing up?](http://donhodges.com/pacman_pinky_explanation.htm)
+- Chad Birch's [Understanding Pac-Man Ghost Behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
+- Don Hodges's [Why do Pinky and Inky have different behaviors when Pac-Man is facing up?](http://donhodges.com/pacman_pinky_explanation.htm)
 
 The implementation is inspired by [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s
 original game [Puckman](https://en.wikipedia.org/wiki/Pac-Man).
@@ -159,19 +159,22 @@ If false, a more accurate implementation, the pacman bugfix, is used:
   - Renderer fps derived *step width*, i.e. sub-tiles
   - Sync speed by dropping tick, every n-frames
 - Ghost *AI*
-    - Scared RNG target
-    - Scatter, chase and phantom targets
-    - Next `direction_t` algo
-    - Grouped wave switch of scatter, chase and frightened
-    - Exit home using local and global pellet timer
+  - Scatter, chase and phantom targets
+  - Scared RNG target
     - PRNG with an identical seed value every new level and life for predictable results
-    - Adjust tunnel speed
+  - Next `direction_t` algo
     - No turning up in *Red-Zones* if chasing or scattering
     - Optionally use alternative Manhatten distance function instead of the Euclidean default.
+  - Grouped wave switch of scatter, chase and frightened
+  - Exit Home
+    - Using local and global pellet timer
+    - Additional maximum time when no pellets are eaten
+  - Speed    
+    - Adjust tunnel speed
     - *Elroy 1+2* mode
 - Pacman
-    - show eaten ghosts and fruit score onscreen (FREEZE)
-    - Freeze pacman only for 3 frames after eating power pellet
+  - show eaten ghosts and fruit score onscreen (FREEZE)
+  - Freeze pacman only for 3 frames after eating power pellet
 - Level specification (per level)
   - Timings
     - scatter and chase duration per phase
@@ -193,7 +196,7 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 
 ### To Do
 - Pacman
-    - Lives
+  - Lives
 - Sound
   - Complete samples
 - Extension

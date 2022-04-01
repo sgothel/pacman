@@ -44,6 +44,7 @@ int ghost_t::global_scatter_mode_count = 0;
 
 bool ghost_t::global_pellet_counter_active = false;
 int ghost_t::global_pellet_counter = 0;
+int ghost_t::global_pellet_time_left = 0;
 
 int ghost_t::id_to_yoff(ghost_t::personality_t id) noexcept {
     switch( id ) {
@@ -484,6 +485,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::LEVEL_START:
             global_pellet_counter_active = false;
             global_pellet_counter = 0;
+            global_pellet_time_left = game_level_spec().ghost_max_home_time_ms;
             global_scatter_mode_count = 0;
             reset_random();
             [[fallthrough]];
@@ -543,6 +545,9 @@ void ghost_t::global_tick() noexcept {
     if( pacman_t::mode_t::FREEZE != pacman->mode() ) {
         if( 0 < global_mode_ms_left ) {
             global_mode_ms_left = std::max( 0, global_mode_ms_left - get_ms_per_frame() );
+        }
+        if( 0 < global_pellet_time_left ) {
+            global_pellet_time_left = std::max( 0, global_pellet_time_left - get_ms_per_frame() );
         }
 
         if( mode_t::CHASE == global_mode ) {
@@ -874,6 +879,7 @@ void ghost_t::notify_pellet_eaten() noexcept {
             blinky->set_mode_speed(); // in case he shall become Elroy
         }
     }
+    global_pellet_time_left = game_level_spec().ghost_max_home_time_ms; // reset
     if( DEBUG_PELLET_COUNTER ) {
         log_printf("%s\n", pellet_counter_string().c_str());
     }
@@ -891,60 +897,18 @@ int ghost_t::pellet_counter() const noexcept {
 
 int ghost_t::pellet_counter_limit() const noexcept {
     if( pellet_counter_active_ ) {
-        if( 3 <= get_current_level() ) {
-            // level >= 3 at start of every level
-            return 0;
-        }
-        if( 2 == get_current_level() ) {
-            // level == 2
-            switch( id_ ) {
-                case ghost_t::personality_t::BLINKY:
-                    return 0;
-                case ghost_t::personality_t::PINKY:
-                    return 0;
-                case ghost_t::personality_t::INKY:
-                    return 0;
-                case ghost_t::personality_t::CLYDE:
-                    [[fallthrough]];
-                default:
-                    return 50;
-            }
-        } else {
-            // level == 1
-            switch( id_ ) {
-                case ghost_t::personality_t::BLINKY:
-                    return 0;
-                case ghost_t::personality_t::PINKY:
-                    return 0;
-                case ghost_t::personality_t::INKY:
-                    return 30;
-                case ghost_t::personality_t::CLYDE:
-                    [[fallthrough]];
-                default:
-                    return 60;
-            }
-        }
+        return game_level_spec().ghost_pellet_counter_limit[ number(id_) ];
     }
     // global
-    switch( id_ ) {
-        case ghost_t::personality_t::BLINKY:
-            return 0;
-        case ghost_t::personality_t::PINKY:
-            return 7;
-        case ghost_t::personality_t::INKY:
-            return 17;
-        case ghost_t::personality_t::CLYDE:
-            [[fallthrough]];
-        default:
-            return 32;
-    }
+    return global_ghost_pellet_counter_limit[ number(id_) ];
 }
 
 bool ghost_t::can_leave_home() noexcept {
     if( at_home() ) {
-        // FIXME: Add no_eating_pellet timout, duration for pacman not eating any pellets
-        // Level <= 4: 4s000ms
-        // Level >= 5: 3000ms
+        if( 0 == global_pellet_time_left ) {
+            global_pellet_time_left = game_level_spec().ghost_max_home_time_ms; // reset
+            return true;
+        }
         if( 0 < live_counter_during_pacman_live ) {
             return true;
         }
