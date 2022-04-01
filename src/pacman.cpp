@@ -309,7 +309,7 @@ bool pacman_t::tick() noexcept {
         const bool entered_tile = pos_.entered_tile(keyframei_);
         const bool is_center = pos_.is_center(keyframei_);
         if( log_moves() || DEBUG_GFX_BOUNDS ) {
-            log_printf("pacman tick: %s, %s c%d e%d '%s', crash[maze %d, ghosts %d], textures %s\n",
+            log_printf("pacman tick: %s, %s c%d e%d '%s', coll[maze %d, ghosts %d], textures %s\n",
                     to_string(current_dir).c_str(), pos_.toString().c_str(), is_center, entered_tile,
                     to_string(tile).c_str(),
                     collision_maze, collision_enemies, atex->toString().c_str());

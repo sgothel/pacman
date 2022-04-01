@@ -77,6 +77,10 @@ std::vector<audio_sample_ref> audio_samples;
 static bool original_pacman_behavior = true;
 bool use_original_pacman_behavior() noexcept { return original_pacman_behavior; }
 
+static bool decision_one_field_ahead = true;
+bool use_decision_one_field_ahead() noexcept {
+    return decision_one_field_ahead;
+}
 static bool manhatten_distance_enabled = false;
 bool use_manhatten_distance() noexcept { return manhatten_distance_enabled; }
 
@@ -291,7 +295,7 @@ static std::string get_usage(const std::string& exename) noexcept {
     // TODO: Keep in sync with README.md
     return "Usage: "+exename+" [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
               "[-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] "+
-              "[-no_ghosts] [-bugfix] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]";
+              "[-no_ghosts] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]";
 }
 
 //
@@ -414,6 +418,8 @@ int main(int argc, char *argv[])
                 disable_all_ghosts = true;
             } else if( 0 == strcmp("-bugfix", argv[i]) ) {
                 original_pacman_behavior = false;
+            } else if( 0 == strcmp("-decision_on_spot", argv[i]) ) {
+                decision_one_field_ahead = false;
             } else if( 0 == strcmp("-dist_manhatten", argv[i]) ) {
                 manhatten_distance_enabled = true;
             } else if( 0 == strcmp("-level", argv[i]) && i+1<argc) {
@@ -460,6 +466,7 @@ int main(int argc, char *argv[])
         log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
         log_printf("- win size %d x %d\n", win_width, win_height);
         log_printf("- bugfix %d\n", !use_original_pacman_behavior());
+        log_printf("- decision_on_spot %d\n", !use_decision_one_field_ahead());
         log_printf("- distance %s\n", use_manhatten_distance() ? "Manhatten" : "Euclidean");
         log_printf("- level %d\n", get_current_level());
         log_printf("- record %s\n", record_bmpseq_basename.size()==0 ? "disabled" : record_bmpseq_basename.c_str());

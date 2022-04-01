@@ -79,12 +79,13 @@ Following commandline arguments are supported
 - `-show_all` enable `-show_modes`, `-show_moves`, `-show_targets` and `-show_debug_gfx`
 - `-no_ghosts` to disable all ghosts
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
+- `-decision_on_spot` to enable ghot's deciding next turn on the spot with a more current position, otherwise one tile ahead.
 - `-dist_manhatten` to use the Manhatten distance function instead of the Euclidean default
 - `-level <int>` to start at given level
 - `-record <basename-of-bmp-files>` to record each frame as a bmp file at known fps. The basename may contain folder names. The resulting bmp files may be converted to video using [scripts/bmps_to_mp4.sh](../tree/scripts/bmps_to_mp4.sh), see below.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]
+bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Keyboard Input
@@ -118,22 +119,17 @@ rm video/puckman-01*bmp
 mpv video/puckman-01.mp4
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  
-## Deviation from the Original
+## Optional Deviations from the Original
 
-### Look-Ahead Decision Point
+### Decision on the Spot
 As stated in [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
 the ghosts select their next direction *one tile ahead of an intersection*.
 
-This current code queries a decision when reaching the center of every tile, i.e.:
-- detecting whether its just an alley to move forward, or
-- to make a decision on an intersection - looking ahead on all valid exits and comparing the distance.
+With the `-decision_on_spot` mode enabled, see `Usage` above,
+the ghosts decide their next direction for each field using a more current pacman position.
 
-Hence this code utilize a more current Puckman position.
-
-It has to be verified whether the original code 
-has such a double field look-ahead implemented 
-using a less current Puckman position when arriving on the intersection.
-
+The default setting is to use the original *one tile ahead of an intersection*.
+   
 ### Bugfix Mode
 
 With the `-bugfix` mode enabled, see `Usage` above,

@@ -237,6 +237,11 @@ class ghost_t {
         acoord_t pos_;
         acoord_t target_;
 
+        /** if use_decision_one_field_ahead(), the look-ahead next direction when reaching pos_next */
+        direction_t dir_next;
+        /** if use_decision_one_field_ahead(), the look-ahead next pos_next. Set to -1/-1 to trigger next lookup. */
+        acoord_t pos_next;
+
         static int id_to_yoff(ghost_t::personality_t id) noexcept;
 
         animtex_t& get_tex() noexcept;
@@ -491,6 +496,18 @@ extern std::vector<audio_sample_ref> audio_samples;
  * TODO: Keep in sync with README.md
  */
 bool use_original_pacman_behavior() noexcept;
+
+/**
+ * As stated in `The Pac-Man Dossier`,
+ * the ghosts select their next direction *one tile ahead of an intersection*.
+ *
+ * If this is true, the decision point is
+ * one step ahead of a potential intersection befor reaching it, the default.
+ *
+ * Otherwise each field will be tested when reached
+ * with a more current pacman position.
+ */
+bool use_decision_one_field_ahead() noexcept;
 
 /**
  * Use manhatten distance instead of (squared) Euclidean.

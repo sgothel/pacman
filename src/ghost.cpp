@@ -31,7 +31,6 @@
 #include <cstdio>
 #include <time.h>
 
-static constexpr const bool DEBUG_GFX_BOUNDS = false;
 static constexpr const bool DEBUG_PELLET_COUNTER = false;
 
 //
@@ -97,7 +96,9 @@ ghost_t::ghost_t(const personality_t id__, SDL_Renderer* rend, const float field
   atex_scared( "S", rend, ms_per_atex, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 } }),
   atex_scared_flash( "S+", rend, ms_per_fright_flash/2, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 }, { 11*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
-  atex( &get_tex() )
+  atex( &get_tex() ),
+  dir_next( dir_ ),
+  pos_next(-1, -1)
 {
     if( ghost_t::personality_t::BLINKY == id_ ) {
         // positioned outside of the box at start
@@ -293,23 +294,43 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
     const direction_t cur_dir = dir_;
     const direction_t inv_dir = inverse(cur_dir);
     direction_t new_dir;
-    int choice = 0;
+    int choice;
+
+    // the position to be tested
+    acoord_t  test_pos = pos_;
+
+    bool ahead_coll;
+    if( use_decision_one_field_ahead() ) {
+        // If ahead_coll -> true (in corner),
+        // needs to set actual dir_ instead of dir_next and shall not set pos_next!
+        test_pos.set_centered(one_step);
+        ahead_coll = !test_pos.step(cur_dir, one_step, collisiontest);
+        if( ahead_coll ) {
+            pos_next.set_pos(-1, -1);
+            test_pos = pos_;
+        } else {
+            pos_next = test_pos;
+            pos_next.set_centered(keyframei_);
+        }
+    } else {
+        ahead_coll = false;
+    }
 
     if( mode_t::SCARED == mode_ ) {
         const direction_t rdir = get_random_dir();
-        if( rdir != inv_dir && pos_.test(rdir, keyframei_, collisiontest) ) {
+        if( rdir != inv_dir && test_pos.test(rdir, one_step, collisiontest) ) {
             new_dir = rdir;
             choice = 1;
-        } else if( rdir != direction_t::UP && inv_dir != direction_t::UP && pos_.test(direction_t::UP, one_step, collisiontest) ) {
+        } else if( rdir != direction_t::UP && inv_dir != direction_t::UP && test_pos.test(direction_t::UP, one_step, collisiontest) ) {
             new_dir = direction_t::UP;
             choice = 2;
-        } else if( rdir != direction_t::LEFT && inv_dir != direction_t::LEFT && pos_.test(direction_t::LEFT, one_step, collisiontest) ) {
+        } else if( rdir != direction_t::LEFT && inv_dir != direction_t::LEFT && test_pos.test(direction_t::LEFT, one_step, collisiontest) ) {
             new_dir = direction_t::LEFT;
             choice = 3;
-        } else if( rdir != direction_t::DOWN && inv_dir != direction_t::DOWN && pos_.test(direction_t::DOWN, one_step, collisiontest) ) {
+        } else if( rdir != direction_t::DOWN && inv_dir != direction_t::DOWN && test_pos.test(direction_t::DOWN, one_step, collisiontest) ) {
             new_dir = direction_t::DOWN;
             choice = 4;
-        } else if( rdir != direction_t::RIGHT && inv_dir != direction_t::RIGHT && pos_.test(direction_t::RIGHT, one_step, collisiontest) ) {
+        } else if( rdir != direction_t::RIGHT && inv_dir != direction_t::RIGHT && test_pos.test(direction_t::RIGHT, one_step, collisiontest) ) {
             new_dir = direction_t::RIGHT;
             choice = 5;
         } else {
@@ -324,18 +345,25 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
 
         // not_up on red_zones acts as collision, also assume it as a wall when deciding whether we have a decision point or not!
         const bool not_up = is_scattering_or_chasing() &&
-                            ( pos_.intersects_i( global_maze->red_zone1_box() ) || pos_.intersects_i( global_maze->red_zone2_box() ) );
+                            ( test_pos.intersects_i( global_maze->red_zone1_box() ) || test_pos.intersects_i( global_maze->red_zone2_box() ) );
 
         const direction_t left_dir = rot_left(cur_dir);
         const direction_t right_dir = rot_right(cur_dir);
 
-        acoord_t dir_pos[4] = { pos_, pos_, pos_, pos_ }; // R D L U
+        acoord_t dir_pos[4] = { test_pos, test_pos, test_pos, test_pos }; // R D L U
 
         const bool dir_coll[4] = {
                 !dir_pos[R].step(direction_t::RIGHT, one_step, collisiontest),
                 !dir_pos[D].step(direction_t::DOWN, one_step, collisiontest),
                 !dir_pos[L].step(direction_t::LEFT, one_step, collisiontest),
                 !dir_pos[U].step(direction_t::UP, one_step, collisiontest) || not_up };
+
+        if( log_moves() ) {
+            log_printf(std::string(to_string(id_)+" set_next_dir: curr "+to_string(cur_dir)+" -> "+to_string(dir_next)+"\n").c_str());
+            log_printf(std::string(to_string(id_)+": p "+pos_.toShortString()+" -> "+test_pos.toShortString()+" (pos_next "+pos_next.toShortString()+")\n").c_str());
+            log_printf(std::string(to_string(id_)+": u "+dir_pos[U].toIntString()+", l "+dir_pos[L].toIntString()+", d "+dir_pos[D].toIntString()+", r "+dir_pos[R].toIntString()+"\n").c_str());
+            log_printf(std::string(to_string(id_)+": collisions not_up "+std::to_string(not_up)+", a "+std::to_string(ahead_coll)+", u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
+        }
 
         if( dir_coll[ ::number(left_dir) ] && dir_coll[ ::number(right_dir) ] ) {
             // walls left and right
@@ -377,8 +405,6 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
             dir_dist[ ::number(inv_dir) ] += d_half;
 
             if( log_moves() ) {
-                log_printf(std::string(to_string(id_)+": p "+pos_.toIntString()+", u "+dir_pos[U].toIntString()+", l "+dir_pos[L].toIntString()+", d "+dir_pos[D].toIntString()+", r "+dir_pos[R].toIntString()+"\n").c_str());
-                log_printf(std::string(to_string(id_)+": collisions not_up "+std::to_string(not_up)+", u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
                 log_printf(std::string(to_string(id_)+": distances u "+std::to_string(dir_dist[U])+", l "+std::to_string(dir_dist[L])+", d "+std::to_string(dir_dist[D])+", r "+std::to_string(dir_dist[R])+"\n").c_str());
             }
 
@@ -434,10 +460,14 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
             } // B - D
         } // A - D
     } // SCARED or not
-    dir_ = new_dir;
+    if( use_decision_one_field_ahead() && !ahead_coll ) {
+        dir_next = new_dir;
+    } else {
+        dir_ = new_dir;
+    }
     if( log_moves() ) {
         log_printf("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s c%d e%d -> %s\n", to_string(id_).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
-                choice, to_string(mode_).c_str(), mode_ms_left, pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), target_.toShortString().c_str());
+                choice, to_string(mode_).c_str(), mode_ms_left, test_pos.toShortString().c_str(), test_pos.is_center(keyframei_), test_pos.entered_tile(keyframei_), target_.toShortString().c_str());
     }
 }
 
@@ -601,6 +631,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             }
             pos_ = home_pos;
             dir_ = direction_t::LEFT;
+            dir_next = dir_;
+            pos_next.set_pos(-1, -1);
             pos_.set_aligned_dir(keyframei_);
             break;
         }
@@ -608,6 +640,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             mode_ = m1;
             pellet_counter_active_ = false;
             dir_ = direction_t::LEFT;
+            dir_next = dir_;
+            pos_next.set_pos(-1, -1);
             pos_.set_aligned_dir(keyframei_);
             break;
         case mode_t::CHASE:
@@ -617,6 +651,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
+            dir_next = dir_;
+            pos_next.set_pos(-1, -1);
             break;
         case mode_t::SCATTER:
             mode_ = m1;
@@ -625,6 +661,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
+            dir_next = dir_;
+            pos_next.set_pos(-1, -1);
             break;
         case mode_t::SCARED: {
             if( mode_t::HOME == old_mode ) {
@@ -636,6 +674,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                     mode_ = m1;
                     mode_ms_left = mode_ms;
                     dir_ = direction_t::LEFT;
+                    dir_next = dir_;
+                    pos_next.set_pos(-1, -1);
                 } else {
                     // NOP: From outside: pacman -> set_global_mode()
                     // Wait for own tick to reach start pos
@@ -644,6 +684,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
                 mode_ = m1;
                 mode_ms_left = game_level_spec().fright_time_ms;
                 dir_ = inverse(dir_);
+                dir_next = dir_;
+                pos_next.set_pos(-1, -1);
             }
             break;
         }
@@ -659,6 +701,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     }
     set_mode_speed();
     set_next_target();
+    pos_next.set_pos(-1, -1);
     if( log_modes() ) {
         log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id_).c_str(),
                 to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms, mode_ms_left,
@@ -723,20 +766,50 @@ void ghost_t::tick() noexcept {
         return ( mode_t::LEAVE_HOME == mode_ || mode_t::PHANTOM == mode_ ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
-
     if( pos_.intersects_i( global_maze->tunnel1_box() ) || pos_.intersects_i( global_maze->tunnel2_box() ) ) {
         set_speed(game_level_spec().ghost_speed_tunnel);
     } else {
         set_mode_speed();
     }
-    if( log_moves() || DEBUG_GFX_BOUNDS ) {
-        log_printf("%s tick: %s, %s [%d ms], pos %s c%d e%d crash %d -> %s, textures %s\n",
-                to_string(id_).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
-                pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_), collision_maze,
-                target_.toShortString().c_str(), atex->toString().c_str());
+    if( use_decision_one_field_ahead() ) {
+        if( pos_.is_center(keyframei_) && pos_.intersects_i(pos_next) ) {
+            if( log_moves() ) {
+                log_printf("%s tick dir_next: %s -> %s, pos %s, reached %s, coll %d\n",
+                        to_string(id_).c_str(), to_string(dir_).c_str(), to_string(dir_next).c_str(),
+                        pos_.toShortString().c_str(), pos_next.toShortString().c_str(), collision_maze);
+            }
+            dir_ = dir_next;
+            pos_next.set_pos(-1, -1);
+            set_next_dir(collision_maze, true /* center */);
+        } else if( collision_maze ) {
+            // safeguard against move deadlock, should not happen - could if not centered (was a tunnel issue)
+            if( log_moves() ) {
+                log_printf("%s tick dir_next: %s -> %s, pos %s, skipped %s, coll %d - collision\n",
+                        to_string(id_).c_str(), to_string(dir_).c_str(), to_string(dir_next).c_str(),
+                        pos_.toShortString().c_str(), pos_next.toShortString().c_str(), collision_maze);
+            }
+            pos_next.set_pos(-1, -1);
+            set_next_dir(collision_maze, pos_.is_center(keyframei_));
+        } else if( pos_next.intersects_i(-1, -1) ) {
+            set_next_dir(collision_maze, pos_.is_center(keyframei_));
+        }
     }
-
-    set_next_dir(collision_maze, pos_.is_center(keyframei_));
+    if( log_moves() ) {
+        if( use_decision_one_field_ahead() ) {
+            log_printf("%s tick: %s -> %s, %s [%d ms], pos %s c%d e%d coll %d -> %s -> %s, textures %s\n",
+                    to_string(id_).c_str(), to_string(dir_).c_str(), to_string(dir_next).c_str(), to_string(mode_).c_str(), mode_ms_left,
+                    pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_),
+                    collision_maze, pos_next.toShortString().c_str(), target_.toShortString().c_str(), atex->toString().c_str());
+        } else {
+            log_printf("%s tick: %s, %s [%d ms], pos %s c%d e%d, coll %d -> %s, textures %s\n",
+                    to_string(id_).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
+                    pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_),
+                    collision_maze, target_.toShortString().c_str(), atex->toString().c_str());
+        }
+    }
+    if( !use_decision_one_field_ahead() ) {
+        set_next_dir(collision_maze, pos_.is_center(keyframei_));
+    }
 }
 
 void ghost_t::draw(SDL_Renderer* rend) noexcept {
@@ -750,7 +823,7 @@ void ghost_t::draw(SDL_Renderer* rend) noexcept {
     atex->draw2(rend, pos_.x_f()-keyframei_.center(), pos_.y_f()-keyframei_.center());
 
     if( show_debug_gfx() ) {
-        if( show_debug_gfx() || DEBUG_GFX_BOUNDS ) {
+        if( show_debug_gfx() ) {
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
             const int win_pixel_offset = ( win_pixel_width() - global_maze->pixel_width()*win_pixel_scale() ) / 2;
