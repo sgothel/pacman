@@ -362,7 +362,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
         if( log_moves() ) {
             log_printf(std::string(to_string(id_)+" set_next_dir: curr "+to_string(cur_dir)+" -> "+to_string(dir_next)+"\n").c_str());
             log_printf(std::string(to_string(id_)+": p "+pos_.toShortString()+" -> "+test_pos.toShortString()+" (pos_next "+pos_next.toShortString()+")\n").c_str());
-            log_printf(std::string(to_string(id_)+": u "+dir_pos[U].toIntString()+", l "+dir_pos[L].toIntString()+", d "+dir_pos[D].toIntString()+", r "+dir_pos[R].toIntString()+"\n").c_str());
+            log_printf(std::string(to_string(id_)+": u "+dir_pos[U].toIntString()+", l "+dir_pos[L].toIntString()+", d "+dir_pos[D].toIntString()+", r "+dir_pos[R].toIntString()+", target "+target_.toShortString()+"\n").c_str());
             log_printf(std::string(to_string(id_)+": collisions not_up "+std::to_string(not_up)+", a "+std::to_string(ahead_coll)+", u "+std::to_string(dir_coll[U])+", l "+std::to_string(dir_coll[L])+", d "+std::to_string(dir_coll[D])+", r "+std::to_string(dir_coll[R])+"\n").c_str());
         }
 

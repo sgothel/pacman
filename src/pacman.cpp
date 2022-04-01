@@ -369,7 +369,7 @@ bool pacman_t::tick() noexcept {
                     freeze_score = game_level_spec().bonus_points;
                     score_ += freeze_score;
                     freeze_box_.set(f_p.x_i()-1, f_p.y_i()-1, 2, 2);
-                    set_mode(mode_t::FREEZE, 900);
+                    set_mode(mode_t::FREEZE, number( mode_duration_t::FREEZE ));
                     audio_samples[ ::number( audio_clip_t::EAT_FRUIT) ]->play();
                     if( log_modes() ) {
                         log_printf("pacman eats: a fruit: score %d, tile [pos %s, fpos %s], left %dms, pos[self %s, fruit %s]\n",
@@ -400,7 +400,7 @@ bool pacman_t::tick() noexcept {
                 audio_samples[ ::number( audio_clip_t::MUNCH ) ]->stop();
                 audio_samples[ ::number( audio_clip_t::EAT_GHOST ) ]->play();
                 freeze_box_.set(pos_.x_i()-1, pos_.y_i()-1, 2, 2);
-                set_mode(mode_t::FREEZE, 900);
+                set_mode(mode_t::FREEZE, number( mode_duration_t::FREEZE ));
                 if( false ) {
                     log_printf("pacman eats: ghost# %d, score %d, ghost %s\n", ghosts_eaten_powered, freeze_score, g->toString().c_str());
                 }

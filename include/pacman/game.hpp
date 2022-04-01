@@ -348,6 +348,7 @@ class pacman_t {
         /** mode durations in ms */
         enum class mode_duration_t : int {
             HOMESTAY = 1000,
+            FREEZE = 900,
             DEADANIM = 2000
         };
         static constexpr int number(const mode_duration_t item) noexcept {
