@@ -124,12 +124,17 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::FREEZE:
             stop_audio_loops();
             break;
-        case mode_t::LEVEL_SETUP:
+        case mode_t::LEVEL_SETUP: {
+            stop_audio_loops();
+            atex = &get_tex();
             ghost_t::set_global_mode(ghost_t::mode_t::LEVEL_SETUP);
             pos_ = global_maze->pacman_start_pos();
             pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
             set_dir( direction_t::LEFT );
+            const acoord_t& f_p = global_maze->fruit_pos();
+            global_maze->set_tile(f_p.x_i(), f_p.y_i(), tile_t::EMPTY);
             break;
+        }
         case mode_t::START:
             stop_audio_loops();
             ghost_t::set_global_mode(ghost_t::mode_t::START);
@@ -260,7 +265,6 @@ bool pacman_t::tick() noexcept {
                 return true;
             }
         case mode_t::LEVEL_SETUP:
-            set_mode( mode_t::START );
             return true;
         case mode_t::START:
             set_mode( mode_t::NORMAL );

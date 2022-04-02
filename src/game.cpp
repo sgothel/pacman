@@ -328,8 +328,9 @@ static std::string to_string(game_mode_t m) noexcept {
     }
 }
 enum class game_mode_duration_t : int {
-    ROUND_START_SOUND = 4000,
-    START       = 3000
+    LEVEL_START_SOUND = 4000,
+    LEVEL_START       = 3000,
+    START             = 2000
 };
 static constexpr int number(const game_mode_duration_t item) noexcept {
     return static_cast<int>(item);
@@ -345,17 +346,19 @@ static void set_game_mode(const game_mode_t m, const int caller) noexcept {
         case game_mode_t::NEXT_LEVEL:
             ++current_level;
             global_maze->reset();
-            [[fallthrough]];
-        case game_mode_t::START:
             pacman->set_mode( pacman_t::mode_t::LEVEL_SETUP );
             game_mode = game_mode_t::START;
             if( audio_samples[ number( audio_clip_t::INTRO ) ]->is_valid() ) {
-                // use_audio == true
                 audio_samples[ number( audio_clip_t::INTRO ) ]->play();
-                game_mode_ms_left = number( game_mode_duration_t::ROUND_START_SOUND );
+                game_mode_ms_left = number( game_mode_duration_t::LEVEL_START_SOUND );
             } else {
-                game_mode_ms_left = number( game_mode_duration_t::START );
+                game_mode_ms_left = number( game_mode_duration_t::LEVEL_START );
             }
+            break;
+        case game_mode_t::START:
+            pacman->set_mode( pacman_t::mode_t::LEVEL_SETUP );
+            game_mode = game_mode_t::START;
+            game_mode_ms_left = number( game_mode_duration_t::START );
             break;
         case game_mode_t::GAME:
             if( game_mode_t::START == old_mode ) {
@@ -601,8 +604,9 @@ int main(int argc, char *argv[])
     uint64_t frame_count_total = 0;
     int snapshot_counter = 0;
 
-    global_maze->reset();
-    set_game_mode(game_mode_t::START, 1);
+    current_level = start_level - 1;
+    pacman->reset_score();
+    set_game_mode(game_mode_t::NEXT_LEVEL, 1);
 
     while (!close) {
         SDL_Event event;
