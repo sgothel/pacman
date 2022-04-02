@@ -213,6 +213,19 @@ are copied from [Arcade - Pac-Man - General Sprites.png](https://www.spriters-re
 which were submitted and created by `Superjustinbros`
 and assumed to be in the public domain.
 
+Audio samples have been edited using any of the following sources
+- [Pacman Waka Waka Sound - Seamless Loop - 1 Hour Edition](https://www.youtube.com/watch?v=xbR_-kVEYQ0)
+- [PAC-MAN Namco Sounds - Start Music](https://www.youtube.com/watch?v=HwyAwPLHqnM)
+- [Pac Man Ghost Noises](https://www.youtube.com/watch?v=6mkiaIxH0sU)
+- [Pac Man Scared Ghosts](https://www.youtube.com/watch?v=JU3ZZtrqLZs)
+- [Pacman - Game Over Sound Effect (HD)](https://www.youtube.com/watch?v=EqObchtcyKY)
+- [Pac Man Sound Effects](https://www.youtube.com/watch?v=pIUeDjWZsEg)
+- [Steve Dunn's Pacman-TypeScript](https://github.com/SteveDunn/Pacman-TypeScript/tree/master/snd)
+- [Shaune Williams's Pac-Man](https://github.com/masonicGIT/pacman/tree/master/sounds)
+
+The included audio samples are incomplete by design, only demonstrating utilizing
+sound from a coding perspective using loops and concurrently mixed channels.
+
 ## Changes
 
 **1.0.0**
