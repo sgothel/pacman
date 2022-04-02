@@ -14,10 +14,10 @@ animation speed synchronization,
 the interesting part might be the ghost's state machine and their movements.
 
 Potential code sections of interest
-- Selecting a new direction [ghost_t::set_next_dir()](../tree/src/ghost.cpp#n272)
-- Selecting the target [ghost_t::set_next_target()](../tree/src/ghost.cpp#n138)
-- Pellet counter to leave home [ghost_t::pellet_...()](../tree/src/ghost.cpp#n771)
-- Level Specification [game_level_spec_t](../tree/src/game.cpp#n122)
+- Selecting a new direction [ghost_t::set_next_dir()](../tree/src/ghost.cpp#n275)
+- Selecting the target [ghost_t::set_next_target()](../tree/src/ghost.cpp#n141)
+- Pellet counter to leave home [ghost_t::pellet_...()](../tree/src/ghost.cpp#n884)
+- Level Specification [game_level_spec_t](../tree/src/game.cpp#n126)
 - Keyframe interval for animation [keyframei_t](../tree/include/pacman/utils.hpp#n96)
 - Random number engine [random_engine_t](../tree/include/pacman/utils.hpp#n349)
 
