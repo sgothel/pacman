@@ -190,10 +190,10 @@ class ghost_t {
         static constexpr const int ghost_count = 4;
 
         enum class mode_t {
-            /** Turned off ghosts while pacman's death animation */
+            PACMAN_DIED,
             AWAY,
-            /** Transitions to HOME right away */
-            LEVEL_START,
+            LEVEL_SETUP,
+            START,
             HOME,
             LEAVE_HOME,
             CHASE,
@@ -337,9 +337,8 @@ class pacman_t {
     public:
         enum class mode_t {
             FREEZE,
-            /** Transitions to HOME right away */
-            LEVEL_START,
-            HOME,
+            LEVEL_SETUP,
+            START,
             NORMAL,
             POWERED,
             DEAD
@@ -347,7 +346,6 @@ class pacman_t {
 
         /** mode durations in ms */
         enum class mode_duration_t : int {
-            HOMESTAY = 1000,
             FREEZE = 900,
             DEADANIM = 2000
         };

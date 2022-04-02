@@ -37,8 +37,8 @@ static constexpr const bool DEBUG_PELLET_COUNTER = false;
 // ghost_t
 //
 
-ghost_t::mode_t ghost_t::global_mode = mode_t::SCATTER;
-ghost_t::mode_t ghost_t::global_mode_last = mode_t::SCATTER;
+ghost_t::mode_t ghost_t::global_mode = mode_t::AWAY;
+ghost_t::mode_t ghost_t::global_mode_last = mode_t::AWAY;
 int ghost_t::global_mode_ms_left = 0; // for SCATTER, CHASE or SCARED
 int ghost_t::global_scatter_mode_count = 0;
 
@@ -476,64 +476,66 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
     if( m != global_mode ) { // only earmark last other mode
         global_mode_last = global_mode;
     }
+    global_mode = m;
+    global_mode_ms_left = mode_ms;
+    bool propagate = true;
     switch( m ) {
-        case mode_t::AWAY:
-            for(ghost_ref g : ghosts()) {
-                g->set_mode( m, mode_ms );
-            }
+        case mode_t::PACMAN_DIED:
+            global_pellet_counter_active = true;
+            global_pellet_counter = 0;
+            reset_random();
             break;
-        case mode_t::LEVEL_START:
+        case mode_t::AWAY:
+            break;
+        case mode_t::LEVEL_SETUP:
             global_pellet_counter_active = false;
             global_pellet_counter = 0;
             global_pellet_time_left = game_level_spec().ghost_max_home_time_ms;
             global_scatter_mode_count = 0;
             reset_random();
-            [[fallthrough]];
-        case mode_t::HOME: {
-            const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
-            if( pacman_initiated && mode_t::HOME == m ) {
-                // pacman died -> use global counter
-                global_pellet_counter_active = true;
-                global_pellet_counter = 0;
-                reset_random();
-            }
-            global_mode = mode_t::SCATTER;
-            global_mode_ms_left = 7000;
-            for(ghost_ref g : ghosts()) {
-                g->set_mode( m, mode_ms );
-            }
             break;
-        }
+        case mode_t::START:
+            break;
+        case mode_t::HOME:
+            break;
+        case mode_t::LEAVE_HOME:
+            break;
         case mode_t::CHASE:
-            global_mode = m;
-            global_mode_ms_left = get_ghost_wave(global_scatter_mode_count).chase_ms;
+            propagate = false;
             for(ghost_ref g : ghosts()) {
                 if( g->is_scattering_or_chasing() ) {
-                    g->set_mode( m );
+                    g->set_mode( global_mode, global_mode_ms_left );
                 }
             }
             break;
         case mode_t::SCATTER:
-            global_mode = m;
-            global_mode_ms_left = get_ghost_wave(global_scatter_mode_count).scatter_ms;
+            propagate = false;
             for(ghost_ref g : ghosts()) {
                 if( g->is_scattering_or_chasing() ) {
-                    g->set_mode( m );
+                    g->set_mode( global_mode, global_mode_ms_left );
                 }
             }
             ++global_scatter_mode_count;
             break;
         case mode_t::SCARED:
-            global_mode = m;
-            global_mode_ms_left = 0 <= mode_ms ? mode_ms : game_level_spec().fright_time_ms;
+            propagate = false;
             for(ghost_ref g : ghosts()) {
-                g->set_mode(m, g->in_house() ? -1 : mode_ms);
+                if( !g->in_house() ) {
+                    g->set_mode( global_mode, global_mode_ms_left );
+                }
             }
             break;
+        case mode_t::PHANTOM:
+            [[fallthrough]];
         default:
-            log_printf("Error: set_global_mode: %s [%d ms]; Current global_mode %s [%d -> %d ms], previous %s\n",
-                    to_string(m).c_str(), mode_ms, to_string(global_mode).c_str(), mode_ms, global_mode_ms_left, to_string(global_mode_last).c_str());
+            log_printf("Error: set_global_mode: %s -> %s -> %s [%s -> %d ms]\n",
+                    to_string(global_mode_last).c_str(), to_string(m).c_str(), to_string(global_mode).c_str(), mode_ms, global_mode_ms_left);
             return;
+    }
+    if( propagate ) {
+        for(ghost_ref g : ghosts()) {
+            g->set_mode( global_mode, global_mode_ms_left );
+        }
     }
     if( log_modes() ) {
         log_printf("ghosts set_global_mode: %s -> %s -> %s [%d -> %d ms]\n",
@@ -550,22 +552,46 @@ void ghost_t::global_tick() noexcept {
             global_pellet_time_left = std::max( 0, global_pellet_time_left - get_ms_per_frame() );
         }
 
-        if( mode_t::CHASE == global_mode ) {
-            if( 0 == global_mode_ms_left ) {
-                set_global_mode( mode_t::SCATTER );
-            }
-        } else if( mode_t::SCATTER == global_mode ) {
-            if( 0 == global_mode_ms_left ) {
-                set_global_mode( mode_t::CHASE );
-            }
-        } else if( mode_t::SCARED == global_mode ) {
-            if( 0 == global_mode_ms_left ) {
-                set_global_mode( global_mode_last );
-            }
-        } else {
-            log_printf("Error: global_tick: global_mode %s [%d ms], previous %s\n",
-                    to_string(global_mode).c_str(), global_mode_ms_left, to_string(global_mode_last).c_str());
-            return;
+        switch( global_mode ) {
+            case mode_t::PACMAN_DIED:
+                set_global_mode( mode_t::AWAY );
+                break;
+            case mode_t::AWAY:
+                break;
+            case mode_t::LEVEL_SETUP:
+                break;
+            case mode_t::START:
+                set_global_mode( mode_t::SCATTER, get_ghost_wave(global_scatter_mode_count).scatter_ms );
+                break;
+            case mode_t::HOME:
+                break;
+            case mode_t::LEAVE_HOME:
+                break;
+            case mode_t::CHASE:
+                if( 0 == global_mode_ms_left ) {
+                    set_global_mode( mode_t::SCATTER, get_ghost_wave(global_scatter_mode_count).scatter_ms );
+                }
+                break;
+            case mode_t::SCATTER:
+                if( 0 == global_mode_ms_left ) {
+                    set_global_mode( mode_t::CHASE, get_ghost_wave(global_scatter_mode_count).chase_ms );
+                }
+                break;
+            case mode_t::SCARED:
+                if( 0 == global_mode_ms_left ) {
+                    if( mode_t::CHASE == global_mode_last ) {
+                        set_global_mode( mode_t::CHASE, get_ghost_wave(global_scatter_mode_count).chase_ms );
+                    } else if( mode_t::SCATTER == global_mode_last ) {
+                        set_global_mode( mode_t::SCATTER, get_ghost_wave(global_scatter_mode_count).scatter_ms );
+                    } else {
+                        set_global_mode( global_mode_last );
+                    }
+                }
+                break;
+            case mode_t::PHANTOM:
+                break;
+            default:
+                break;
         }
     }
     for(ghost_ref g : ghosts()) {
@@ -581,6 +607,14 @@ void ghost_t::global_draw(SDL_Renderer* rend) noexcept {
 
 bool ghost_t::set_mode_speed() noexcept {
     switch( mode_ ) {
+        case mode_t::PACMAN_DIED:
+            break;
+        case mode_t::AWAY:
+            break;
+        case mode_t::LEVEL_SETUP:
+            break;
+        case mode_t::START:
+            [[fallthrough]];
         case mode_t::HOME:
             [[fallthrough]];
         case mode_t::LEAVE_HOME:
@@ -616,96 +650,76 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         mode_last = mode_;
     }
     const mode_t old_mode = mode_;
-    mode_t m1 = m;
+    const int old_mode_ms_left = mode_ms_left;
+    mode_ = m;
+    mode_ms_left = mode_ms;
     switch( m ) {
-        case mode_t::LEVEL_START:
+        case mode_t::PACMAN_DIED:
+            // use global counter
+            pellet_counter_active_ = false;
+            live_counter_during_pacman_live = 0;
+            break;
+        case mode_t::AWAY:
+            break;
+        case mode_t::LEVEL_SETUP:
+            pos_ = home_pos;
+            pos_.set_aligned_dir(keyframei_);
+            dir_ = direction_t::LEFT;
+            break;
+        case mode_t::START:
             pellet_counter_active_ = true;
             pellet_counter_ = 0;
-            m1 = mode_t::HOME;
-            [[fallthrough]];
+            live_counter_during_pacman_live = 0;
+            break;
         case mode_t::HOME: {
-            mode_ = m1;
-            mode_ms_left = 0 <= mode_ms ? mode_ms : 0;
-            const bool pacman_initiated = 0 <= mode_ms; /* pacman_initiated: LEVEL_START or pacman died */
-            if( pacman_initiated ) {
-                live_counter_during_pacman_live = 0;
-                if( mode_t::HOME == m ) {
-                    // pacman died -> use global counter
-                    pellet_counter_active_ = false;
-                }
-            }
             pos_ = home_pos;
-            dir_ = direction_t::LEFT;
-            dir_next = dir_;
-            pos_next.set_pos(-1, -1);
             pos_.set_aligned_dir(keyframei_);
+            dir_ = direction_t::LEFT;
             break;
         }
         case mode_t::LEAVE_HOME:
-            mode_ = m1;
             pellet_counter_active_ = false;
             dir_ = direction_t::LEFT;
-            dir_next = dir_;
-            pos_next.set_pos(-1, -1);
             pos_.set_aligned_dir(keyframei_);
             break;
         case mode_t::CHASE:
-            mode_ = m1;
+            // set_global_mode blocked if !is_scattering_or_chasing()
             if( mode_t::LEAVE_HOME == old_mode ) {
                 dir_ = direction_t::LEFT;
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
-            dir_next = dir_;
-            pos_next.set_pos(-1, -1);
             break;
         case mode_t::SCATTER:
-            mode_ = m1;
+            // set_global_mode blocked if !is_scattering_or_chasing()
             if( mode_t::LEAVE_HOME == old_mode ) {
                 dir_ = direction_t::LEFT;
             } else if( mode_t::SCARED != old_mode ) {
                 dir_ = inverse(dir_);
             }
-            dir_next = dir_;
-            pos_next.set_pos(-1, -1);
             break;
         case mode_t::SCARED: {
-            if( mode_t::HOME == old_mode ) {
-                // NOP
-                // preserve mode_ms_left timer for HOME
-            } else if( mode_t::LEAVE_HOME == old_mode ) {
-                if( 0 <= mode_ms ) {
-                    // From own tick, reached start pos and using remaining global_mode_ms_left
-                    mode_ = m1;
-                    mode_ms_left = mode_ms;
-                    dir_ = direction_t::LEFT;
-                    dir_next = dir_;
-                    pos_next.set_pos(-1, -1);
-                } else {
-                    // NOP: From outside: pacman -> set_global_mode()
-                    // Wait for own tick to reach start pos
-                }
+            // set_global_mode blocked if !in_house()
+            if( mode_t::LEAVE_HOME == old_mode ) {
+                // From own tick, reached start pos and using remaining global_mode_ms_left
+                dir_ = direction_t::LEFT;
             } else {
-                mode_ = m1;
-                mode_ms_left = game_level_spec().fright_time_ms;
                 dir_ = inverse(dir_);
-                dir_next = dir_;
-                pos_next.set_pos(-1, -1);
             }
             break;
         }
         case mode_t::PHANTOM:
-            mode_ = m1;
-            mode_ms_left = -1;
             ++live_counter_during_pacman_live;
             break;
         default:
-            mode_ = m1;
-            mode_ms_left = -1;
+            log_printf("%s set_global_mode: Error: %s -> %s [%d -> %d ms]; Global_mode %s -> %s [%d ms]\n", to_string(id_).c_str(),
+                    to_string(old_mode).c_str(), to_string(m).c_str(), old_mode_ms_left, mode_ms_left,
+                    to_string(global_mode_last).c_str(), to_string(global_mode).c_str(), global_mode_ms_left);
             break;
     }
     set_mode_speed();
     set_next_target();
+    dir_next = dir_;
     pos_next.set_pos(-1, -1);
     if( log_modes() ) {
         log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id_).c_str(),
@@ -732,39 +746,60 @@ void ghost_t::tick() noexcept {
         mode_ms_left = std::max( 0, mode_ms_left - get_ms_per_frame() );
     }
 
-    if( mode_t::AWAY == mode_ ) {
-        return; // NOP
-    } else if( mode_t::HOME == mode_ ) {
-        if( 0 == mode_ms_left && can_leave_home() ) {
-            set_mode( mode_t::LEAVE_HOME );
-        } else {
+    switch( mode_ ) {
+        case mode_t::PACMAN_DIED:
             return; // wait
-        }
-    } else if( mode_t::LEAVE_HOME == mode_ ) {
-        if( pos_.intersects_f( target_ ) ) {
-            if( mode_t::PHANTOM == mode_last && mode_t::SCARED == global_mode ) {
-                // avoid re-materialized ghost to restart SCARED again
-                set_mode( global_mode_last );
+        case mode_t::AWAY:
+            return; // wait
+        case mode_t::LEVEL_SETUP:
+            return; // wait
+        case mode_t::START:
+            set_mode( mode_t::HOME );
+            return; // wait
+        case mode_t::HOME: {
+            if( can_leave_home() ) {
+                set_mode( mode_t::LEAVE_HOME );
+                // move for exit
             } else {
-                // global_mode_ms_left in case for SCARED time left
-                set_mode( global_mode, global_mode_ms_left );
+                return; // wait
             }
-        } // else move for exit
-    } else if( mode_t::CHASE == mode_ ) {
-        set_next_target(); // update ...
-        // NOP -> global_mode
-    } else if( mode_t::SCATTER == mode_ ) {
-        // NOP -> global_mode
-    } else if( mode_t::SCARED == mode_ ) {
-        if( 0 == mode_ms_left ) {
-            set_mode( global_mode );
-        } else {
-            set_next_target(); // update dummy
+            break;
         }
-    } else if( mode_t::PHANTOM == mode_ ) {
-        if( pos_.intersects_f( target_) ) { // too fuzzy: global_maze->ghost_home_int_box()
-            set_mode( mode_t::LEAVE_HOME );
+        case mode_t::LEAVE_HOME: {
+            if( pos_.intersects_f( target_ ) ) {
+                if( mode_t::PHANTOM == mode_last && mode_t::SCARED == global_mode ) {
+                    // avoid re-materialized ghost to restart SCARED again
+                    set_mode( global_mode_last );
+                } else {
+                    // global_mode_ms_left in case for SCARED time left
+                    set_mode( global_mode, global_mode_ms_left );
+                }
+            } // else move for exit
+            break;
         }
+        case mode_t::CHASE:
+            set_next_target(); // update ...
+            break;
+        case mode_t::SCATTER:
+            break;
+        case mode_t::SCARED: {
+            if( 0 == mode_ms_left ) {
+                set_mode( global_mode );
+            } else {
+                set_next_target(); // update dummy
+            }
+            break;
+        }
+        case mode_t::PHANTOM: {
+            if( pos_.intersects_f( target_) ) { // too fuzzy: global_maze->ghost_home_int_box()
+                set_mode( mode_t::LEAVE_HOME );
+            }
+            break;
+        }
+        default:
+            log_printf("Error: tick: %s -> %s [%d ms]; Global_mode %s -> %s [%d ms]\n",
+                    to_string(mode_last).c_str(), to_string(mode_).c_str(), mode_ms_left, to_string(global_mode_last).c_str(), to_string(global_mode).c_str(), global_mode_ms_left);
+            return;
     }
 
     collision_maze = !pos_.step(dir_, keyframei_, [&](tile_t tile) -> bool {
@@ -954,10 +989,14 @@ std::string to_string(ghost_t::personality_t id) noexcept {
 
 std::string to_string(ghost_t::mode_t m) noexcept {
     switch( m ) {
+        case ghost_t::mode_t::PACMAN_DIED:
+            return "pacman_died";
         case ghost_t::mode_t::AWAY:
             return "away";
-        case ghost_t::mode_t::LEVEL_START:
-            return "level_start";
+        case ghost_t::mode_t::LEVEL_SETUP:
+            return "level_setup";
+        case ghost_t::mode_t::START:
+            return "start";
         case ghost_t::mode_t::HOME:
             return "home";
         case ghost_t::mode_t::LEAVE_HOME:

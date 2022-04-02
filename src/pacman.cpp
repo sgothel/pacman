@@ -43,11 +43,15 @@ random_engine_t<random_engine_mode_t::STD_RNG> pacman_t::rng_hw;
 
 animtex_t& pacman_t::get_tex() noexcept {
     switch( mode_ ) {
-        case pacman_t::mode_t::HOME:
+        case mode_t::FREEZE:
+            return *atex;
+        case mode_t::LEVEL_SETUP:
             return atex_home;
-        case pacman_t::mode_t::NORMAL:
+        case mode_t::START:
+            return atex_home;
+        case mode_t::NORMAL:
             [[fallthrough]];
-        case pacman_t::mode_t::POWERED:
+        case mode_t::POWERED:
             switch( current_dir ) {
                 case direction_t::DOWN:
                     return atex_down;
@@ -63,10 +67,10 @@ animtex_t& pacman_t::get_tex() noexcept {
                 default:
                     return atex_left;
             }
-        case pacman_t::mode_t::DEAD:
+        case mode_t::DEAD:
             return atex_dead;
         default:
-            return atex_left;
+            return *atex;
     }
 }
 
@@ -76,8 +80,8 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   next_empty_field_frame_cntr(0, false /* auto_reload */),
-  mode_( mode_t::LEVEL_START ),
-  mode_last( mode_t::LEVEL_START ),
+  mode_( mode_t::FREEZE ),
+  mode_last( mode_t::FREEZE ),
   mode_ms_left ( -1 ),
   fruit_ms_left( -1 ),
   lives( 3 ),
@@ -94,10 +98,10 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
           { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 }, { 4*14, 0 }, { 5*14, 0 },
           { 6*14, 0 }, { 7*14, 0 }, { 8*14, 0 }, { 9*14, 0 }, { 10*14, 0 }, { 11*14, 0 } }),
   atex_home( "H", ms_per_tex, { atex_dead.texture(0) }),
-  atex( &get_tex() ),
+  atex( &atex_home ),
   pos_( global_maze->pacman_start_pos() )
 {
-    set_mode( mode_t::LEVEL_START );
+    set_mode( mode_t::FREEZE );
 }
 
 void pacman_t::destroy() noexcept {
@@ -114,58 +118,43 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         mode_last = mode_;
     }
     const mode_t old_mode = mode_;
-    mode_t m1 = m;
-    ghost_t::mode_t mg = ghost_t::mode_t::AWAY;
+    mode_ = m;
+    mode_ms_left = mode_ms;
     switch( m ) {
         case mode_t::FREEZE:
             stop_audio_loops();
-            mode_ = m1;
-            mode_ms_left = mode_ms;
             break;
-        case mode_t::LEVEL_START:
-            m1 = mode_t::HOME;
-            mg = ghost_t::mode_t::LEVEL_START;
-            [[fallthrough]];
-        case mode_t::HOME:
-            stop_audio_loops();
-            mode_ = m1;
-            mode_ms_left = number( mode_duration_t::HOMESTAY );
-            if( ghost_t::mode_t::AWAY == mg ) {
-                mg = ghost_t::mode_t::HOME;
-            }
+        case mode_t::LEVEL_SETUP:
+            ghost_t::set_global_mode(ghost_t::mode_t::LEVEL_SETUP);
             pos_ = global_maze->pacman_start_pos();
             pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
             set_dir( direction_t::LEFT );
-            reset_stats(); // always, even if speed is unchanged
-            atex = &get_tex();
-            ghost_t::set_global_mode(mg, mode_ms_left);
-            set_speed(game_level_spec().pacman_speed);
+            break;
+        case mode_t::START:
+            stop_audio_loops();
+            ghost_t::set_global_mode(ghost_t::mode_t::START);
+            pos_ = global_maze->pacman_start_pos();
+            pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
+            set_dir( direction_t::LEFT );
             fruit_ms_left = 0;
             freeze_frame_count = 0;
+            set_speed(game_level_spec().pacman_speed);
             break;
         case mode_t::NORMAL:
-            mode_ = m1;
-            mode_ms_left = -1;
             set_speed(game_level_spec().pacman_speed);
             break;
         case mode_t::POWERED:
-            mode_ = m1;
-            mode_ms_left = game_level_spec().fright_time_ms;
             ghost_t::set_global_mode( ghost_t::mode_t::SCARED, mode_ms_left );
             set_speed(game_level_spec().pacman_powered_speed);
             ghosts_eaten_powered = 0;
             break;
         case mode_t::DEAD:
             stop_audio_loops();
-            mode_ = m1;
-            mode_ms_left = number( mode_duration_t::DEADANIM );
             atex_dead.reset();
-            ghost_t::set_global_mode(ghost_t::mode_t::AWAY);
+            ghost_t::set_global_mode(ghost_t::mode_t::PACMAN_DIED);
             audio_samples[ ::number( audio_clip_t::DEATH ) ]->play();
             break;
         default:
-            mode_ = m1;
-            mode_ms_left = -1;
             break;
     }
     if( log_modes() ) {
@@ -248,6 +237,10 @@ bool pacman_t::tick() noexcept {
     if( sync_next_frame_cntr.count_down() ) {
         return true; // skip tick, just repaint
     }
+    if( 0 < freeze_frame_count ) {
+        --freeze_frame_count;
+        return true;
+    }
 
     bool collision_maze = false;
     bool collision_enemies = false;
@@ -256,34 +249,38 @@ bool pacman_t::tick() noexcept {
         mode_ms_left = std::max( 0, mode_ms_left - get_ms_per_frame() );
     }
 
-    if( mode_t::FREEZE == mode_ ) {
-        if( 0 == mode_ms_left ) {
-            freeze_score = -1;
-            freeze_box_.set(-1, -1, -1, -1);
-            mode_ = mode_last;
-        }
-        return true;
-    } else if( mode_t::HOME == mode_ ) {
-        if( 0 == mode_ms_left ) {
+    switch( mode_ ) {
+        case mode_t::FREEZE:
+            if( 0 == mode_ms_left ) {
+                freeze_score = -1;
+                freeze_box_.set(-1, -1, -1, -1);
+                set_mode( mode_last );
+                break;
+            } else {
+                return true;
+            }
+        case mode_t::LEVEL_SETUP:
+            set_mode( mode_t::START );
+            return true;
+        case mode_t::START:
             set_mode( mode_t::NORMAL );
-        }
-        return true;
-    } else if( mode_t::DEAD == mode_ ) {
-        if( 0 == mode_ms_left ) {
-            set_mode( mode_t::HOME );
-        }
-        return true;
-    } else if( 0 < freeze_frame_count ) {
-        --freeze_frame_count;
-        return true;
+            break;
+        case mode_t::NORMAL:
+            break;
+        case mode_t::POWERED:
+            if( 0 == mode_ms_left ) {
+                set_mode( mode_t::NORMAL );
+            }
+            break;
+        case mode_t::DEAD:
+            if( 0 == mode_ms_left ) {
+                return false; // main look shall handle restart: set_mode( mode_t::START );
+            }
+            return true;
+        default:
+            break;
     }
     // NORMAL and POWERED
-
-    if( mode_t::POWERED == mode_ ) {
-        if( 0 == mode_ms_left ) {
-            set_mode( mode_t::NORMAL );
-        }
-    }
 
     if( 0 < fruit_ms_left ) {
         fruit_ms_left = std::max( 0, fruit_ms_left - get_ms_per_frame() );
@@ -345,7 +342,7 @@ bool pacman_t::tick() noexcept {
                 } else if( tile_t::PELLET_POWER == tile ) {
                     global_maze->set_tile(x_i, y_i, tile_t::EMPTY);
                     score_ += ::number( tile_to_score(tile) );
-                    set_mode( mode_t::POWERED );
+                    set_mode( mode_t::POWERED, game_level_spec().fright_time_ms );
                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                     next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
                     freeze_frame_count = 3;
@@ -383,7 +380,7 @@ bool pacman_t::tick() noexcept {
     // Collision test with ghosts
     int i=0;
     for(ghost_ref g : ghosts()) {
-        if( pos_.intersects(g->position()) ) {
+        if( pos_.intersects_f(g->position()) ) {
             const ghost_t::mode_t g_mode = g->mode();
             if( ghost_t::mode_t::CHASE <= g_mode && g_mode <= ghost_t::mode_t::SCATTER ) {
                 collision_enemies = true;
@@ -410,9 +407,9 @@ bool pacman_t::tick() noexcept {
     }
 
     if( collision_enemies ) {
-        set_mode( mode_t::DEAD );
+        set_mode( mode_t::DEAD, number( mode_duration_t::DEADANIM ) );
     }
-    return !collision_enemies;
+    return true; // return false after DEAD animation, not yet: !collision_enemies;
 }
 
 void pacman_t::draw(SDL_Renderer* rend) noexcept {
@@ -452,8 +449,10 @@ std::string to_string(pacman_t::mode_t m) {
     switch( m ) {
         case pacman_t::mode_t::FREEZE:
             return "freeze";
-        case pacman_t::mode_t::HOME:
-            return "home";
+        case pacman_t::mode_t::LEVEL_SETUP:
+            return "level_setup";
+        case pacman_t::mode_t::START:
+            return "start";
         case pacman_t::mode_t::NORMAL:
             return "normal";
         case pacman_t::mode_t::POWERED:
