@@ -343,11 +343,11 @@ static void set_game_mode(const game_mode_t m, const int caller) noexcept {
     const int old_level = current_level;
     switch( m ) {
         case game_mode_t::NEXT_LEVEL:
+            global_maze->reset();
             ++current_level;
             [[fallthrough]];
         case game_mode_t::START:
             pacman->set_mode( pacman_t::mode_t::LEVEL_SETUP );
-            global_maze->reset();
             game_mode = game_mode_t::START;
             if( audio_samples[ number( audio_clip_t::INTRO ) ]->is_valid() ) {
                 // use_audio == true
@@ -599,6 +599,7 @@ int main(int argc, char *argv[])
     uint64_t frame_count_total = 0;
     int snapshot_counter = 0;
 
+    global_maze->reset();
     set_game_mode(game_mode_t::START, 1);
 
     while (!close) {
