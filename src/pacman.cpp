@@ -133,6 +133,8 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             set_dir( direction_t::LEFT );
             const acoord_t& f_p = global_maze->fruit_pos();
             global_maze->set_tile(f_p.x_i(), f_p.y_i(), tile_t::EMPTY);
+            fruit_ms_left = 0;
+            freeze_frame_count = 0;
             break;
         }
         case mode_t::START:
@@ -141,8 +143,6 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             pos_ = global_maze->pacman_start_pos();
             pos_.set_aligned_dir( direction_t::LEFT, keyframei_ );
             set_dir( direction_t::LEFT );
-            fruit_ms_left = 0;
-            freeze_frame_count = 0;
             set_speed(game_level_spec().pacman_speed);
             break;
         case mode_t::NORMAL:
