@@ -215,6 +215,10 @@ and assumed to be in the public domain.
 
 ## Changes
 
+**1.0.0**
+
+* Reached clean code demo stage with functional implementation.
+
 **0.2.0**
 
 * Stability, next_target bug fix and alternative distance function
