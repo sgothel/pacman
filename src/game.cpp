@@ -844,13 +844,15 @@ int main(int argc, char *argv[])
             uint8_t r, g, b, a;
             SDL_GetRenderDrawColor(rend, &r, &g, &b, &a);
             for(ghost_ref ghost : ghosts()) {
-                const acoord_t& p1 = ghost->position();
-                const acoord_t& p2 = ghost->target();
-                SDL_SetRenderDrawColor(rend,
-                        ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][0],
-                        ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][1],
-                        ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][2], 255);
-                draw_line(rend, pixel_width_scaled, win_pixel_offset, 0, p1.x_f(), p1.y_f(), p2.x_f(), p2.y_f());
+                if( ghost->is_scattering_or_chasing() ) {
+                    const acoord_t& p1 = ghost->position();
+                    const acoord_t& p2 = ghost->target();
+                    SDL_SetRenderDrawColor(rend,
+                            ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][0],
+                            ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][1],
+                            ghost_t::rgb_color[ ghost_t::number( ghost->id() ) ][2], 255);
+                    draw_line(rend, pixel_width_scaled, win_pixel_offset, 0, p1.x_f(), p1.y_f(), p2.x_f(), p2.y_f());
+                }
             }
             SDL_SetRenderDrawColor(rend, r, g, b, a);
         }
