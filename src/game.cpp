@@ -299,7 +299,7 @@ static void on_window_resized(SDL_Renderer* rend, const int win_width_l, const i
 
 static std::string get_usage(const std::string& exename) noexcept {
     // TODO: Keep in sync with README.md
-    return "Usage: "+exename+" [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
+    return "Usage: "+exename+" [-2p] [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
               "[-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] "+
               "[-no_ghosts] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]";
 }
@@ -388,10 +388,13 @@ int main(int argc, char *argv[])
     bool use_audio = false;
     int pixel_filter_quality = 0;
     int start_level = 1;
+    bool human_blinky = false;
     std::string record_bmpseq_basename;
     {
         for(int i=1; i<argc; ++i) {
-            if( 0 == strcmp("-audio", argv[i]) ) {
+            if( 0 == strcmp("-2p", argv[i]) ) {
+                human_blinky = true;
+            } else if( 0 == strcmp("-audio", argv[i]) ) {
                 use_audio = true;
             } else if( 0 == strcmp("-pixqual", argv[i]) && i+1<argc) {
                 pixel_filter_quality = atoi(argv[i+1]);
@@ -468,6 +471,7 @@ int main(int argc, char *argv[])
     }
     {
         log_printf("\n%s\n\n", get_usage(exename).c_str());
+        log_printf("- 2p %d\n", human_blinky);
         log_printf("- use_audio %d\n", use_audio);
         log_printf("- pixqual %d\n", pixel_filter_quality);
         log_printf("- show_fps %d\n", log_fps());
@@ -581,11 +585,16 @@ int main(int argc, char *argv[])
     pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total);
     log_printf("%s\n", pacman->toString().c_str());
 
+    ghost_ref blinky = nullptr;
     if( !disable_all_ghosts ) {
         ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::BLINKY, rend, fields_per_sec_total) );
         ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::PINKY, rend, fields_per_sec_total) );
         ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::INKY, rend, fields_per_sec_total) );
         ghosts_.push_back( std::make_shared<ghost_t>(ghost_t::personality_t::CLYDE, rend, fields_per_sec_total) );
+        blinky = ghost( ghost_t::personality_t::BLINKY );
+        if( human_blinky ) {
+            blinky->set_manual_control(true);
+        }
     }
     for(ghost_ref g : ghosts()) {
         log_printf("%s\n", g->toString().c_str());
@@ -593,9 +602,12 @@ int main(int argc, char *argv[])
 
     bool window_shown = false;
     bool close = false;
-    bool set_dir = false;
-    direction_t current_dir = pacman->direction();
-    SDL_Scancode current_scancode = SDL_SCANCODE_STOP;
+    bool set_dir_1 = false;
+    bool set_dir_2 = false;
+    direction_t pacman_dir = pacman->direction();
+    direction_t blinky_dir = direction_t::LEFT;
+    SDL_Scancode pacman_scancode = SDL_SCANCODE_STOP;
+    SDL_Scancode blinky_scancode = SDL_SCANCODE_STOP;
 
     const uint64_t fps_range_ms = 5000;
     uint64_t t0 = getCurrentMilliseconds();
@@ -626,14 +638,19 @@ int main(int argc, char *argv[])
                      * - [    3,394] KEY UP: scancode 81 (ignored) -> 'L', scancode 80, set_dir 1)
                      * - [    4,061] KEY UP: scancode 80 (release) -> 'L', scancode 80, set_dir 0)
                      */
-                    if ( event.key.keysym.scancode == current_scancode ) {
-                        set_dir = false;
+                    if ( event.key.keysym.scancode == pacman_scancode ) {
+                        set_dir_1 = false;
                         if( debug_key_input ) {
-                            log_printf("KEY UP: scancode %d (release) -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(current_dir).c_str(), current_scancode, set_dir);
+                            log_printf("KEY UP: pacman scancode %d (release) -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(pacman_dir).c_str(), pacman_scancode, set_dir_1);
+                        }
+                    } else if ( event.key.keysym.scancode == blinky_scancode ) {
+                        set_dir_2 = false;
+                        if( debug_key_input ) {
+                            log_printf("KEY UP: blinky scancode %d (release) -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(pacman_dir).c_str(), pacman_scancode, set_dir_1);
                         }
                     } else {
                         if( debug_key_input ) {
-                            log_printf("KEY UP: scancode %d (ignored) -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(current_dir).c_str(), current_scancode, set_dir);
+                            log_printf("KEY UP: scancode %d (ignored) -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(pacman_dir).c_str(), pacman_scancode, set_dir_1);
                         }
                     }
                     break;
@@ -680,24 +697,48 @@ int main(int argc, char *argv[])
                             set_game_mode(game_mode_t::NEXT_LEVEL, 15);
                             break;
                         case SDL_SCANCODE_W:
+                            if( human_blinky ) {
+                                blinky_dir = direction_t::UP;
+                                set_dir_2 = true;
+                                break;
+                            }
+                            [[fallthrough]];
                         case SDL_SCANCODE_UP:
-                            current_dir = direction_t::UP;
-                            set_dir = true;
+                            pacman_dir = direction_t::UP;
+                            set_dir_1 = true;
                             break;
                         case SDL_SCANCODE_A:
+                            if( human_blinky ) {
+                                blinky_dir = direction_t::LEFT;
+                                set_dir_2 = true;
+                                break;
+                            }
+                            [[fallthrough]];
                         case SDL_SCANCODE_LEFT:
-                            current_dir = direction_t::LEFT;
-                            set_dir = true;
+                            pacman_dir = direction_t::LEFT;
+                            set_dir_1 = true;
                             break;
                         case SDL_SCANCODE_S:
+                            if( human_blinky ) {
+                                blinky_dir = direction_t::DOWN;
+                                set_dir_2 = true;
+                                break;
+                            }
+                            [[fallthrough]];
                         case SDL_SCANCODE_DOWN:
-                            current_dir = direction_t::DOWN;
-                            set_dir = true;
+                            pacman_dir = direction_t::DOWN;
+                            set_dir_1 = true;
                             break;
                         case SDL_SCANCODE_D:
+                            if( human_blinky ) {
+                                blinky_dir = direction_t::RIGHT;
+                                set_dir_2 = true;
+                                break;
+                            }
+                            [[fallthrough]];
                         case SDL_SCANCODE_RIGHT:
-                            current_dir = direction_t::RIGHT;
-                            set_dir = true;
+                            pacman_dir = direction_t::RIGHT;
+                            set_dir_1 = true;
                             break;
                         case SDL_SCANCODE_F:
                             fullscreen_flags = 0 == fullscreen_flags ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
@@ -715,11 +756,14 @@ int main(int argc, char *argv[])
                             // nop
                             break;
                     }
-                    if( set_dir ) {
-                        current_scancode = event.key.keysym.scancode;
+                    if( set_dir_1 ) {
+                        pacman_scancode = event.key.keysym.scancode;
+                    } else if( set_dir_2 ) {
+                        blinky_scancode = event.key.keysym.scancode;
                     }
                     if( debug_key_input ) {
-                        log_printf("KEY DOWN: scancode %d -> '%s', scancode %d, set_dir %d)\n", event.key.keysym.scancode, to_string(current_dir).c_str(), current_scancode, set_dir);
+                        log_printf("KEY DOWN: scancode %d -> '%s', scancode[pacman %d, blinky %d], set_dir[pacman %d, blinky %d])\n",
+                                event.key.keysym.scancode, to_string(pacman_dir).c_str(), pacman_scancode, blinky_scancode, set_dir_1, set_dir_2);
                     }
             }
         }
@@ -757,8 +801,11 @@ int main(int argc, char *argv[])
         }
 
         if( game_active ) {
-            if( set_dir ) {
-                pacman->set_dir(current_dir);
+            if( set_dir_1 ) {
+                pacman->set_dir(pacman_dir);
+            }
+            if( set_dir_2 && nullptr != blinky ) {
+                blinky->set_dir(blinky_dir);
             }
             global_tex->tick();
             ghost_t::global_tick();

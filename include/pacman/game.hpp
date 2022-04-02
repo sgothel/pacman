@@ -245,6 +245,7 @@ class ghost_t {
         acoord_t home_pos;
         acoord_t pos_;
         acoord_t target_;
+        bool manual_control;
 
         /** if use_decision_one_field_ahead(), the look-ahead next direction when reaching pos_next */
         direction_t dir_next;
@@ -276,6 +277,8 @@ class ghost_t {
 
         void set_next_target() noexcept;
         void set_next_dir(const bool collision, const bool is_center) noexcept;
+
+        constexpr bool in_manual_control() const noexcept { return manual_control && ( is_scattering_or_chasing() || mode_t::SCARED == mode_ ); }
 
         /** Return true if speed changed, otherwise false */
         bool set_mode_speed() noexcept;
@@ -311,6 +314,13 @@ class ghost_t {
         static void set_global_mode(const mode_t m, const int mode_ms=-1) noexcept;
 
         void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
+
+        void set_manual_control(const bool v) noexcept { manual_control = v; }
+
+        /**
+         * Set direction, allowed if set_manual_control(true) and active when ghost is in chasing, scattering or scared mode
+         */
+        bool set_dir(const direction_t new_dir) noexcept;
 
         /** For global SCATTER, CHASE or SCARED mode switch, etc. */
         static void global_tick() noexcept;

@@ -220,7 +220,9 @@ bool pacman_t::set_dir(const direction_t new_dir) noexcept {
     const bool collision_maze = !pos_.test(new_dir, keyframei_, [](tile_t tile) -> bool {
         return tile_t::WALL == tile || tile_t::GATE == tile;
     });
-    // log_printf("pacman set_dir: %s -> %s, collision %d, %s\n", to_string(current_dir).c_str(), to_string(new_dir).c_str(), collision_maze, pos.toString().c_str());
+    if( false ) {
+        log_printf("pacman set_dir: %s -> %s, collision %d, %s\n", to_string(current_dir).c_str(), to_string(new_dir).c_str(), collision_maze, pos_.toString().c_str());
+    }
     if( !collision_maze ) {
         const direction_t old_dir = current_dir;
         current_dir = new_dir;

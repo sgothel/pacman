@@ -64,6 +64,7 @@ The binary shall be build to `bin/pacman`.
 ### Commandline Arguments
 
 Following commandline arguments are supported
+- '-2p' to enable 2nd player controlling Blinky when chasing, scattering or scared using `W`, `A`, `S` and `D` for up, left, down and right.
 - `-audio` to turn on audio effects, i.e. playing the audio samples.
 - `-pixqual <int>` to increas pixel filtering quality, i.e. 0 = nearest (default), 1 = linear and 2 = anisotropic filtering. 
 - `-no_vsync` to force off hardware enabled vsync, which in turn enables manual fps synchronization
@@ -85,7 +86,7 @@ Following commandline arguments are supported
 - `-record <basename-of-bmp-files>` to record each frame as a bmp file at known fps. The basename may contain folder names. The resulting bmp files may be converted to video using [scripts/bmps_to_mp4.sh](../tree/scripts/bmps_to_mp4.sh), see below.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-bin/pacman [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]
+bin/pacman [-2p] [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Keyboard Input
@@ -193,14 +194,14 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - Persistent game state
   - Snapshot (screenshot)
   - Video recording via bmp snapshots each frame
+- Extension
+  - Second player controls Blinky when chasing, scattering or scared
 
 ### To Do
 - Pacman
   - Lives
 - Sound
   - Complete samples
-- Extension
-  - Second player moves a ghost
 - Maze
   - Render maze itself from maze-spec file
 - Persistent game state

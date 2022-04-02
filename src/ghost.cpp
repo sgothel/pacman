@@ -98,7 +98,8 @@ ghost_t::ghost_t(const personality_t id__, SDL_Renderer* rend, const float field
   atex_scared_flash( "S+", rend, ms_per_fright_flash/2, global_tex->all_images(), 0, 0, 14, 14, { { 10*14, 0 }, { 11*14, 0 } }),
   atex_phantom( "P", rend, ms_per_atex, global_tex->all_images(), 0, 41 + 4*14, 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
   atex( &get_tex() ),
-  dir_next( dir_ ),
+  manual_control(false),
+  dir_next( current_dir ),
   pos_next(-1, -1)
 {
     if( ghost_t::personality_t::BLINKY == id_ ) {
@@ -686,12 +687,16 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             // set_global_mode blocked if !is_scattering_or_chasing()
             if( mode_t::LEAVE_HOME == old_mode ) {
                 current_dir = direction_t::LEFT;
+            } else if( mode_t::SCARED != old_mode && !in_manual_control() ) {
+                current_dir = inverse(current_dir);
             }
             break;
         case mode_t::SCATTER:
             // set_global_mode blocked if !is_scattering_or_chasing()
             if( mode_t::LEAVE_HOME == old_mode ) {
                 current_dir = direction_t::LEFT;
+            } else if( mode_t::SCARED != old_mode && !in_manual_control() ) {
+                current_dir = inverse(current_dir);
             }
             break;
         case mode_t::SCARED: {
@@ -699,6 +704,8 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             if( mode_t::LEAVE_HOME == old_mode ) {
                 // From own tick, reached start pos and using remaining global_mode_ms_left
                 current_dir = direction_t::LEFT;
+            } else if( !in_manual_control() ) {
+                current_dir = inverse(current_dir);
             }
             break;
         }
@@ -719,6 +726,31 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id_).c_str(),
                 to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms, mode_ms_left,
                 current_speed_pct, pos_.toShortString().c_str(), target_.toShortString().c_str());
+    }
+}
+
+bool ghost_t::set_dir(const direction_t new_dir) noexcept {
+    if( !in_manual_control() || current_dir == new_dir ) {
+        return true;
+    }
+    const bool collision_maze = !pos_.test(new_dir, keyframei_, [](tile_t tile) -> bool {
+        return tile_t::WALL == tile || tile_t::GATE == tile;
+    });
+    if( false ) {
+        log_printf("%s set_dir: %s -> %s, collision %d, %s\n",
+                to_string(id_).c_str(), to_string(current_dir).c_str(), to_string(new_dir).c_str(), collision_maze, pos_.toString().c_str());
+    }
+    if( !collision_maze ) {
+        const direction_t old_dir = current_dir;
+        current_dir = new_dir;
+        // reset_stats();
+        if( log_moves() ) {
+            log_printf("%s set_dir: %s -> %s, %s c%d e%d\n",
+                    to_string(id_).c_str(), to_string(old_dir).c_str(), to_string(current_dir).c_str(), pos_.toString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_));
+        }
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -805,7 +837,7 @@ void ghost_t::tick() noexcept {
     } else {
         set_mode_speed();
     }
-    if( use_decision_one_field_ahead() ) {
+    if( !in_manual_control() && use_decision_one_field_ahead() ) {
         if( pos_.is_center(keyframei_) && pos_.intersects_i(pos_next) ) {
             if( log_moves() ) {
                 log_printf("%s tick dir_next: %s -> %s, pos %s, reached %s, coll %d\n",
@@ -841,7 +873,7 @@ void ghost_t::tick() noexcept {
                     collision_maze, target_.toShortString().c_str(), atex->toString().c_str());
         }
     }
-    if( !use_decision_one_field_ahead() ) {
+    if( !in_manual_control() && !use_decision_one_field_ahead() ) {
         set_next_dir(collision_maze, pos_.is_center(keyframei_));
     }
 }
