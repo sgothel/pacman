@@ -229,7 +229,7 @@ class ghost_t {
         mode_t mode_;
         mode_t mode_last;
         int mode_ms_left;
-        direction_t dir_;
+        direction_t current_dir;
         bool pellet_counter_active_;
         int pellet_counter_;
         static bool global_pellet_counter_active;
@@ -300,7 +300,7 @@ class ghost_t {
         constexpr bool in_house() const noexcept { return mode_t::HOME == mode_ || mode_t::LEAVE_HOME == mode_; }
         constexpr bool is_scattering_or_chasing() const noexcept { return mode_t::SCATTER == mode_ || mode_t::CHASE == mode_; }
 
-        constexpr direction_t direction() const noexcept { return dir_; }
+        constexpr direction_t direction() const noexcept { return current_dir; }
         constexpr const acoord_t& position() const noexcept { return pos_; }
         constexpr const acoord_t& target() const noexcept { return target_; }
 

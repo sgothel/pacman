@@ -90,7 +90,7 @@ ghost_t::ghost_t(const personality_t id__, SDL_Renderer* rend, const float field
   mode_( mode_t::AWAY ),
   mode_last( mode_t::AWAY ),
   mode_ms_left ( 0 ),
-  dir_( direction_t::LEFT ),
+  current_dir( direction_t::LEFT ),
   pellet_counter_active_( false ),
   pellet_counter_( 0 ),
   atex_normal( "N", rend, ms_per_atex, global_tex->all_images(), 0, id_to_yoff(id_), 14, 14, { { 0*14, 0 }, { 1*14, 0 }, { 2*14, 0 }, { 3*14, 0 } }),
@@ -292,7 +292,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     };
 
-    const direction_t cur_dir = dir_;
+    const direction_t cur_dir = current_dir;
     const direction_t inv_dir = inverse(cur_dir);
     direction_t new_dir;
     int choice;
@@ -464,7 +464,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
     if( use_decision_one_field_ahead() && !ahead_coll ) {
         dir_next = new_dir;
     } else {
-        dir_ = new_dir;
+        current_dir = new_dir;
     }
     if( log_moves() ) {
         log_printf("%s set_next_dir: %s -> %s (%d), %s [%d ms], pos %s c%d e%d -> %s\n", to_string(id_).c_str(), to_string(cur_dir).c_str(), to_string(new_dir).c_str(),
@@ -664,7 +664,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::LEVEL_SETUP:
             pos_ = home_pos;
             pos_.set_aligned_dir(keyframei_);
-            dir_ = direction_t::LEFT;
+            current_dir = direction_t::LEFT;
             break;
         case mode_t::START:
             pellet_counter_active_ = true;
@@ -674,37 +674,31 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::HOME: {
             pos_ = home_pos;
             pos_.set_aligned_dir(keyframei_);
-            dir_ = direction_t::LEFT;
+            current_dir = direction_t::LEFT;
             break;
         }
         case mode_t::LEAVE_HOME:
             pellet_counter_active_ = false;
-            dir_ = direction_t::LEFT;
+            current_dir = direction_t::LEFT;
             pos_.set_aligned_dir(keyframei_);
             break;
         case mode_t::CHASE:
             // set_global_mode blocked if !is_scattering_or_chasing()
             if( mode_t::LEAVE_HOME == old_mode ) {
-                dir_ = direction_t::LEFT;
-            } else if( mode_t::SCARED != old_mode ) {
-                dir_ = inverse(dir_);
+                current_dir = direction_t::LEFT;
             }
             break;
         case mode_t::SCATTER:
             // set_global_mode blocked if !is_scattering_or_chasing()
             if( mode_t::LEAVE_HOME == old_mode ) {
-                dir_ = direction_t::LEFT;
-            } else if( mode_t::SCARED != old_mode ) {
-                dir_ = inverse(dir_);
+                current_dir = direction_t::LEFT;
             }
             break;
         case mode_t::SCARED: {
             // set_global_mode blocked if !in_house()
             if( mode_t::LEAVE_HOME == old_mode ) {
                 // From own tick, reached start pos and using remaining global_mode_ms_left
-                dir_ = direction_t::LEFT;
-            } else {
-                dir_ = inverse(dir_);
+                current_dir = direction_t::LEFT;
             }
             break;
         }
@@ -719,7 +713,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     }
     set_mode_speed();
     set_next_target();
-    dir_next = dir_;
+    dir_next = current_dir;
     pos_next.set_pos(-1, -1);
     if( log_modes() ) {
         log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id_).c_str(),
@@ -802,7 +796,7 @@ void ghost_t::tick() noexcept {
             return;
     }
 
-    collision_maze = !pos_.step(dir_, keyframei_, [&](tile_t tile) -> bool {
+    collision_maze = !pos_.step(current_dir, keyframei_, [&](tile_t tile) -> bool {
         return ( mode_t::LEAVE_HOME == mode_ || mode_t::PHANTOM == mode_ ) ?
                tile_t::WALL == tile : ( tile_t::WALL == tile || tile_t::GATE == tile );
     });
@@ -815,17 +809,17 @@ void ghost_t::tick() noexcept {
         if( pos_.is_center(keyframei_) && pos_.intersects_i(pos_next) ) {
             if( log_moves() ) {
                 log_printf("%s tick dir_next: %s -> %s, pos %s, reached %s, coll %d\n",
-                        to_string(id_).c_str(), to_string(dir_).c_str(), to_string(dir_next).c_str(),
+                        to_string(id_).c_str(), to_string(current_dir).c_str(), to_string(dir_next).c_str(),
                         pos_.toShortString().c_str(), pos_next.toShortString().c_str(), collision_maze);
             }
-            dir_ = dir_next;
+            current_dir = dir_next;
             pos_next.set_pos(-1, -1);
             set_next_dir(collision_maze, true /* center */);
         } else if( collision_maze ) {
             // safeguard against move deadlock, should not happen - could if not centered (was a tunnel issue)
             if( log_moves() ) {
                 log_printf("%s tick dir_next: %s -> %s, pos %s, skipped %s, coll %d - collision\n",
-                        to_string(id_).c_str(), to_string(dir_).c_str(), to_string(dir_next).c_str(),
+                        to_string(id_).c_str(), to_string(current_dir).c_str(), to_string(dir_next).c_str(),
                         pos_.toShortString().c_str(), pos_next.toShortString().c_str(), collision_maze);
             }
             pos_next.set_pos(-1, -1);
@@ -837,12 +831,12 @@ void ghost_t::tick() noexcept {
     if( log_moves() ) {
         if( use_decision_one_field_ahead() ) {
             log_printf("%s tick: %s -> %s, %s [%d ms], pos %s c%d e%d coll %d -> %s -> %s, textures %s\n",
-                    to_string(id_).c_str(), to_string(dir_).c_str(), to_string(dir_next).c_str(), to_string(mode_).c_str(), mode_ms_left,
+                    to_string(id_).c_str(), to_string(current_dir).c_str(), to_string(dir_next).c_str(), to_string(mode_).c_str(), mode_ms_left,
                     pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_),
                     collision_maze, pos_next.toShortString().c_str(), target_.toShortString().c_str(), atex->toString().c_str());
         } else {
             log_printf("%s tick: %s, %s [%d ms], pos %s c%d e%d, coll %d -> %s, textures %s\n",
-                    to_string(id_).c_str(), to_string(dir_).c_str(), to_string(mode_).c_str(), mode_ms_left,
+                    to_string(id_).c_str(), to_string(current_dir).c_str(), to_string(mode_).c_str(), mode_ms_left,
                     pos_.toShortString().c_str(), pos_.is_center(keyframei_), pos_.entered_tile(keyframei_),
                     collision_maze, target_.toShortString().c_str(), atex->toString().c_str());
         }
@@ -969,7 +963,7 @@ bool ghost_t::can_leave_home() noexcept {
 //
 
 std::string ghost_t::toString() const noexcept {
-    return to_string(id_)+"["+to_string(mode_)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(dir_)+", "+pos_.toString()+" -> "+target_.toShortString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
+    return to_string(id_)+"["+to_string(mode_)+"["+std::to_string(mode_ms_left)+" ms], "+to_string(current_dir)+", "+pos_.toString()+" -> "+target_.toShortString()+", "+atex->toString()+", "+keyframei_.toString()+"]";
 }
 
 std::string to_string(ghost_t::personality_t id) noexcept {
