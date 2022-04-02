@@ -425,6 +425,7 @@ class pacman_t {
         constexpr uint64_t score() const noexcept { return score_; }
         const box_t& freeze_box() const noexcept { return freeze_box_; }
 
+        void reset_score() noexcept { score_ = 0; }
         void set_mode(const mode_t m, const int mode_ms=-1) noexcept;
         void stop_audio_loops() noexcept;
         void set_speed(const float pct) noexcept;

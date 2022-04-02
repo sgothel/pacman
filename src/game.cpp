@@ -343,8 +343,8 @@ static void set_game_mode(const game_mode_t m, const int caller) noexcept {
     const int old_level = current_level;
     switch( m ) {
         case game_mode_t::NEXT_LEVEL:
-            global_maze->reset();
             ++current_level;
+            global_maze->reset();
             [[fallthrough]];
         case game_mode_t::START:
             pacman->set_mode( pacman_t::mode_t::LEVEL_SETUP );
@@ -384,6 +384,7 @@ int main(int argc, char *argv[])
     bool show_targets = false;
     bool use_audio = false;
     int pixel_filter_quality = 0;
+    int start_level = 1;
     std::string record_bmpseq_basename;
     {
         for(int i=1; i<argc; ++i) {
@@ -432,7 +433,7 @@ int main(int argc, char *argv[])
             } else if( 0 == strcmp("-dist_manhatten", argv[i]) ) {
                 manhatten_distance_enabled = true;
             } else if( 0 == strcmp("-level", argv[i]) && i+1<argc) {
-                current_level = atoi(argv[i+1]);
+                start_level = atoi(argv[i+1]);
                 ++i;
             } else if( 0 == strcmp("-record", argv[i]) && i+1<argc) {
                 record_bmpseq_basename = argv[i+1];
@@ -443,6 +444,7 @@ int main(int argc, char *argv[])
     const std::string exename(argv[0]);
 
     global_maze = std::make_unique<maze_t>("media/playfield_pacman.txt");
+    current_level = start_level;
 
     if( !global_maze->is_ok() ) {
         log_printf("Maze: Error: %s\n", global_maze->toString().c_str());
@@ -669,8 +671,9 @@ int main(int argc, char *argv[])
                             }
                             break;
                         case SDL_SCANCODE_R:
-                            current_level = 1;
-                            set_game_mode(game_mode_t::START, 15);
+                            current_level = start_level - 1;
+                            pacman->reset_score();
+                            set_game_mode(game_mode_t::NEXT_LEVEL, 15);
                             break;
                         case SDL_SCANCODE_W:
                         case SDL_SCANCODE_UP:
