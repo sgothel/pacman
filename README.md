@@ -78,7 +78,7 @@ The binary shall be build to `bin/pacman`.
 ### Commandline Arguments
 
 Following commandline arguments are supported
-- '-2p' to enable 2nd player controlling Blinky when chasing, scattering or scared using `W`, `A`, `S` and `D` for up, left, down and right.
+- `-2p` to enable 2nd player controlling Blinky when chasing, scattering or scared using `W`, `A`, `S` and `D` for up, left, down and right.
 - `-audio` to turn on audio effects, i.e. playing the audio samples.
 - `-pixqual <int>` to increas pixel filtering quality, i.e. 0 = nearest (default), 1 = linear and 2 = anisotropic filtering. 
 - `-no_vsync` to force off hardware enabled vsync, which in turn enables manual fps synchronization
