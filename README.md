@@ -7,7 +7,7 @@ This project's canonical repositories is hosted on [Gothel Software](https://jau
 
 ## Goals
 This project likes to demonstrate a complex system written in modern C++
-for our computer science class.
+for our [computer science class](https://jausoft.com/cgit/cs_class/).
 
 We have chosen the classic game for our project 
 to pay homage to [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s 
