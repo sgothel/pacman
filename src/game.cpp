@@ -366,6 +366,7 @@ static void set_game_mode(const game_mode_t m, const int caller) noexcept {
             }
             [[fallthrough]];
         case game_mode_t::PAUSE:
+            pacman->stop_audio_loops();
             [[fallthrough]];
         default:
             game_mode = m;

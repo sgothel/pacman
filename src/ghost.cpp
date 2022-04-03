@@ -474,7 +474,7 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
 }
 
 void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
-    if( m != global_mode ) { // only earmark last other mode
+    if( m != global_mode ) { // only earmark last other mode, avoid B -> [curr = B] [last = A] to become [curr = B] [last = B]
         global_mode_last = global_mode;
     }
     global_mode = m;
@@ -647,7 +647,7 @@ bool ghost_t::set_mode_speed() noexcept {
 }
 
 void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
-    if( m != mode_last ) { // only earmark last other mode
+    if( m != mode_ ) { // only earmark last other mode, avoid B -> [curr = B] [last = A] to become [curr = B] [last = B]
         mode_last = mode_;
     }
     const mode_t old_mode = mode_;

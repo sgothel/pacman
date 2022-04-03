@@ -372,8 +372,8 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 fwd_y_pos_i = new_y_pos_i;
             } else {
                 // smooth wrapping top to bottom screen
-                new_y_pos_f = keyframei.align_value( maze.height() - step_width ); // position below center to let new position hit
-                fwd_y_pos_i = ceil_to_int(new_y_pos_f);
+                new_y_pos_f = keyframei.align_value( maze.height() + center - half_step ); // position below center to let new position hit, i.e. above of center of previous tile
+                fwd_y_pos_i = maze.height() - 1;
                 new_y_pos_i = fwd_y_pos_i;
             }
             new_x_pos_f = keyframei.center_value(x_pos_i);
@@ -397,8 +397,8 @@ bool acoord_t::step_impl(direction_t dir, const bool test_only, const keyframei_
                 fwd_x_pos_i = new_x_pos_i;
             } else {
                 // smooth wrapping left to right screen
-                new_x_pos_f = keyframei.align_value( maze.width() - step_width ); // position right of center to let new position hit
-                fwd_x_pos_i = ceil_to_int(new_x_pos_f);
+                new_x_pos_f = keyframei.align_value( maze.width() + center - half_step ); // position right of center to let new position hit, i.e. left of center of previous tile
+                fwd_x_pos_i = maze.width() - 1;
                 new_x_pos_i = fwd_x_pos_i;
             }
             new_y_pos_f = keyframei.center_value(y_pos_i);

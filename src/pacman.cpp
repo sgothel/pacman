@@ -114,7 +114,9 @@ void pacman_t::destroy() noexcept {
 }
 
 void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
-    if( m != mode_last && mode_t::FREEZE != m ) { // only earmark last other mode != mode_t::FREEZE
+    if( m              != mode_ && // only earmark last other mode, avoid B -> [curr = B] [last = A] to become [curr = B] [last = B]
+        mode_t::FREEZE != mode_ )  // and avoid FREEZE to be earmarked at all
+    {
         mode_last = mode_;
     }
     const mode_t old_mode = mode_;
