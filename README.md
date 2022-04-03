@@ -214,7 +214,11 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pinky's up-traget to be 4 ahead as intended
 - ...
 
-## Second Player Mode
+### Manhatten Distance
+With the `-dist_manhatten` mode enabled, [see *Commandline Arguments*](#commandline-arguments) above,
+the Manhatten distance function is used instead of the Euclidean default.
+
+### Second Player Mode
 With the '-2p' mode enabled, [see *Commandline Arguments*](#commandline-arguments) above,
 a 2nd player can control Blinky when chasing, scattering or scared.
 
