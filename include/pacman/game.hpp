@@ -67,7 +67,9 @@ score_t tile_to_score(const tile_t tile) noexcept;
  * from [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier).
  */
 struct ghost_wave_t {
+    /** scatter duration >= 0 */
     int scatter_ms;
+    /** chase duration > 0 */
     int chase_ms;
 };
 typedef std::vector<ghost_wave_t> ghost_wave_vec_t;
@@ -211,10 +213,11 @@ class ghost_t {
         static random_engine_t<random_engine_mode_t::PUCKMAN> rng_pm;
         static std::uniform_int_distribution<int> rng_dist;
 
-        static mode_t global_mode; // SCATTER, CHASE or SCARED
-        static mode_t global_mode_last; // SCATTER, CHASE or SCARED
-        static int global_mode_ms_left; // for SCATTER, CHASE or SCARED
-        static int global_scatter_mode_count; // for SCATTER, CHASE or SCARED
+        static mode_t global_mode;
+        static mode_t global_mode_last;
+        static int global_mode_ms_left;
+        static int global_mode_last_ms_left;
+        static int global_wave_count;
 
         const int ms_per_atex = 500;
         const int ms_per_fright_flash = 334;
@@ -393,6 +396,7 @@ class pacman_t {
         mode_t mode_;
         mode_t mode_last;
         int mode_ms_left;
+        int mode_last_ms_left;
         int fruit_ms_left;
         int lives;
         int ghosts_eaten_powered;

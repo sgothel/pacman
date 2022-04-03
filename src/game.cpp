@@ -127,9 +127,9 @@ score_t tile_to_score(const tile_t tile) noexcept {
 // level_spec_t
 //
 
-static ghost_wave_vec_t ghost_waves_1 = { { 7000, 20000 }, { 7000, 20000 }, { 5000,   20000 }, { 5000, -1 } };
-static ghost_wave_vec_t ghost_waves_2 = { { 7000, 20000 }, { 7000, 20000 }, { 5000, 1033000 }, {   17, -1 } };
-static ghost_wave_vec_t ghost_waves_5 = { { 5000, 20000 }, { 5000, 20000 }, { 5000, 1037000 }, {   17, -1 } };
+static ghost_wave_vec_t ghost_waves_1 = { { 7000, 20000 }, { 7000, 20000 }, { 5000,   20000 }, { 5000, std::numeric_limits<int>::max() }, { 0, std::numeric_limits<int>::max() } };
+static ghost_wave_vec_t ghost_waves_2 = { { 7000, 20000 }, { 7000, 20000 }, { 5000, 1033000 }, {   17, std::numeric_limits<int>::max() }, { 0, std::numeric_limits<int>::max() } };
+static ghost_wave_vec_t ghost_waves_5 = { { 5000, 20000 }, { 5000, 20000 }, { 5000, 1037000 }, {   17, std::numeric_limits<int>::max() }, { 0, std::numeric_limits<int>::max() } };
 
 static ghost_pellet_counter_limit_t pellet_counter_limit_l1 = { 0, 0, 30, 60 };
 static ghost_pellet_counter_limit_t pellet_counter_limit_l2 = { 0, 0, 0, 50 };

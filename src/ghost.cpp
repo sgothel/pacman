@@ -39,8 +39,9 @@ static constexpr const bool DEBUG_PELLET_COUNTER = false;
 
 ghost_t::mode_t ghost_t::global_mode = mode_t::AWAY;
 ghost_t::mode_t ghost_t::global_mode_last = mode_t::AWAY;
-int ghost_t::global_mode_ms_left = 0; // for SCATTER, CHASE or SCARED
-int ghost_t::global_scatter_mode_count = 0;
+int ghost_t::global_mode_ms_left = 0;
+int ghost_t::global_mode_last_ms_left = 0;
+int ghost_t::global_wave_count = 0;
 
 bool ghost_t::global_pellet_counter_active = false;
 int ghost_t::global_pellet_counter = 0;
@@ -476,7 +477,10 @@ void ghost_t::set_next_dir(const bool collision, const bool is_center) noexcept 
 void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
     if( m != global_mode ) { // only earmark last other mode, avoid B -> [curr = B] [last = A] to become [curr = B] [last = B]
         global_mode_last = global_mode;
+        global_mode_last_ms_left = global_mode_ms_left;
     }
+    const mode_t old_mode = global_mode;
+    const int old_mode_ms_left = global_mode_ms_left;
     global_mode = m;
     global_mode_ms_left = mode_ms;
     bool propagate = true;
@@ -492,7 +496,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
             global_pellet_counter_active = false;
             global_pellet_counter = 0;
             global_pellet_time_left = game_level_spec().ghost_max_home_time_ms;
-            global_scatter_mode_count = 0;
+            global_wave_count = 0;
             reset_random();
             break;
         case mode_t::START:
@@ -508,6 +512,7 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
                     g->set_mode( global_mode, global_mode_ms_left );
                 }
             }
+            ++global_wave_count;
             break;
         case mode_t::SCATTER:
             propagate = false;
@@ -516,12 +521,11 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
                     g->set_mode( global_mode, global_mode_ms_left );
                 }
             }
-            ++global_scatter_mode_count;
             break;
         case mode_t::SCARED:
             propagate = false;
             for(ghost_ref g : ghosts()) {
-                if( !g->in_house() ) {
+                if( !g->in_house() && mode_t::PHANTOM != g->mode() ) {
                     g->set_mode( global_mode, global_mode_ms_left );
                 }
             }
@@ -529,8 +533,9 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::PHANTOM:
             [[fallthrough]];
         default:
-            log_printf("Error: set_global_mode: %s -> %s -> %s [%s -> %d ms]\n",
-                    to_string(global_mode_last).c_str(), to_string(m).c_str(), to_string(global_mode).c_str(), mode_ms, global_mode_ms_left);
+            log_printf("Error: set_global_mode: %s* / %s -> %s [%d* / %d -> %d ms]\n",
+                    to_string(global_mode_last).c_str(), to_string(old_mode).c_str(), to_string(global_mode).c_str(),
+                    global_mode_last_ms_left, old_mode_ms_left, global_mode_ms_left);
             return;
     }
     if( propagate ) {
@@ -539,8 +544,10 @@ void ghost_t::set_global_mode(const mode_t m, const int mode_ms) noexcept {
         }
     }
     if( log_modes() ) {
-        log_printf("ghosts set_global_mode: %s -> %s -> %s [%d -> %d ms]\n",
-                to_string(global_mode_last).c_str(), to_string(m).c_str(), to_string(global_mode).c_str(), mode_ms, global_mode_ms_left);
+        log_printf("ghosts set_global_mode: %s* / %s -> %s [%d* / %d -> %d ms], wave count %d\n",
+                to_string(global_mode_last).c_str(), to_string(old_mode).c_str(), to_string(global_mode).c_str(),
+                global_mode_last_ms_left, old_mode_ms_left, global_mode_ms_left,
+                global_wave_count);
     }
 }
 
@@ -561,31 +568,38 @@ void ghost_t::global_tick() noexcept {
                 break;
             case mode_t::LEVEL_SETUP:
                 break;
-            case mode_t::START:
-                set_global_mode( mode_t::SCATTER, get_ghost_wave(global_scatter_mode_count).scatter_ms );
+            case mode_t::START: {
+                // first scatter phase to be guaranteed
+                set_global_mode( mode_t::SCATTER, get_ghost_wave(global_wave_count).scatter_ms );
                 break;
+            }
             case mode_t::HOME:
                 break;
             case mode_t::LEAVE_HOME:
                 break;
             case mode_t::CHASE:
-                if( 0 == global_mode_ms_left ) {
-                    set_global_mode( mode_t::SCATTER, get_ghost_wave(global_scatter_mode_count).scatter_ms );
+                if( 0 >= global_mode_ms_left ) {
+                    const int duration = get_ghost_wave(global_wave_count).scatter_ms;
+                    if( 0 < duration ) {
+                        set_global_mode( mode_t::SCATTER, duration);
+                    } else {
+                        set_global_mode( mode_t::CHASE, get_ghost_wave(global_wave_count).chase_ms);
+                    }
                 }
                 break;
             case mode_t::SCATTER:
-                if( 0 == global_mode_ms_left ) {
-                    set_global_mode( mode_t::CHASE, get_ghost_wave(global_scatter_mode_count).chase_ms );
+                if( 0 >= global_mode_ms_left ) {
+                    set_global_mode( mode_t::CHASE, get_ghost_wave(global_wave_count).chase_ms);
                 }
                 break;
             case mode_t::SCARED:
-                if( 0 == global_mode_ms_left ) {
+                if( 0 >= global_mode_ms_left ) {
                     if( mode_t::CHASE == global_mode_last ) {
-                        set_global_mode( mode_t::CHASE, get_ghost_wave(global_scatter_mode_count).chase_ms );
+                        set_global_mode( mode_t::CHASE, get_ghost_wave(global_wave_count).chase_ms );
                     } else if( mode_t::SCATTER == global_mode_last ) {
-                        set_global_mode( mode_t::SCATTER, get_ghost_wave(global_scatter_mode_count).scatter_ms );
+                        set_global_mode( mode_t::SCATTER, get_ghost_wave(global_wave_count).scatter_ms );
                     } else {
-                        set_global_mode( global_mode_last );
+                        set_global_mode( global_mode_last, global_mode_last_ms_left );
                     }
                 }
                 break;
@@ -700,7 +714,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             }
             break;
         case mode_t::SCARED: {
-            // set_global_mode blocked if !in_house()
+            // set_global_mode blocked if !in_house() or phantom
             if( mode_t::LEAVE_HOME == old_mode ) {
                 // From own tick, reached start pos and using remaining global_mode_ms_left
                 current_dir = direction_t::LEFT;
@@ -713,9 +727,9 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             ++live_counter_during_pacman_live;
             break;
         default:
-            log_printf("%s set_global_mode: Error: %s -> %s [%d -> %d ms]; Global_mode %s -> %s [%d ms]\n", to_string(id_).c_str(),
-                    to_string(old_mode).c_str(), to_string(m).c_str(), old_mode_ms_left, mode_ms_left,
-                    to_string(global_mode_last).c_str(), to_string(global_mode).c_str(), global_mode_ms_left);
+            log_printf("%s set_mode: Error: %s* / %s -> %s [%d -> %d ms]\n", to_string(id_).c_str(),
+                    to_string(mode_last).c_str(), to_string(old_mode).c_str(), to_string(mode_).c_str(),
+                    old_mode_ms_left, mode_ms_left);
             break;
     }
     set_mode_speed();
@@ -723,8 +737,9 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
     dir_next = current_dir;
     pos_next.set_pos(-1, -1);
     if( log_modes() ) {
-        log_printf("%s set_mode: %s -> %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id_).c_str(),
-                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms, mode_ms_left,
+        log_printf("%s set_mode: %s* / %s -> %s [%d -> %d ms], speed %5.2f, pos %s -> %s\n", to_string(id_).c_str(),
+                to_string(mode_last).c_str(), to_string(old_mode).c_str(), to_string(mode_).c_str(),
+                old_mode_ms_left, mode_ms_left,
                 current_speed_pct, pos_.toShortString().c_str(), target_.toShortString().c_str());
     }
 }
@@ -795,7 +810,7 @@ void ghost_t::tick() noexcept {
             if( pos_.intersects_f( target_ ) ) {
                 if( mode_t::PHANTOM == mode_last && mode_t::SCARED == global_mode ) {
                     // avoid re-materialized ghost to restart SCARED again
-                    set_mode( global_mode_last );
+                    set_mode( global_mode_last, global_mode_last_ms_left );
                 } else {
                     // global_mode_ms_left in case for SCARED time left
                     set_mode( global_mode, global_mode_ms_left );
@@ -809,8 +824,8 @@ void ghost_t::tick() noexcept {
         case mode_t::SCATTER:
             break;
         case mode_t::SCARED: {
-            if( 0 == mode_ms_left ) {
-                set_mode( global_mode );
+            if( 0 >= mode_ms_left ) {
+                set_mode( global_mode, global_mode_ms_left );
             } else {
                 set_next_target(); // update dummy
             }

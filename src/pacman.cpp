@@ -82,8 +82,9 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   next_empty_field_frame_cntr(0, false /* auto_reload */),
   invincible( false ),
   mode_( mode_t::FREEZE ),
-  mode_last( mode_t::FREEZE ),
+  mode_last( mode_t::NORMAL ),
   mode_ms_left ( -1 ),
+  mode_last_ms_left( -1 ),
   fruit_ms_left( -1 ),
   lives( 3 ),
   ghosts_eaten_powered( 0 ),
@@ -119,8 +120,10 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         mode_t::FREEZE != mode_ )  // and avoid FREEZE to be earmarked at all
     {
         mode_last = mode_;
+        mode_last_ms_left = mode_ms_left;
     }
     const mode_t old_mode = mode_;
+    const int old_mode_ms_left = mode_ms_left;
     mode_ = m;
     mode_ms_left = mode_ms;
     switch( m ) {
@@ -166,8 +169,9 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
             break;
     }
     if( log_modes() ) {
-        log_printf("pacman set_mode: %s -> %s -> %s [%d ms], speed %5.2f, pos %s\n",
-                to_string(old_mode).c_str(), to_string(m).c_str(), to_string(mode_).c_str(), mode_ms_left,
+        log_printf("pacman set_mode: %s* / %s -> %s [%d* / %d -> %d ms], speed %5.2f, pos %s\n",
+                to_string(mode_last).c_str(), to_string(old_mode).c_str(), to_string(mode_).c_str(),
+                mode_last_ms_left, old_mode_ms_left, mode_ms_left,
                 current_speed_pct, pos_.toShortString().c_str());
     }
 }
@@ -263,10 +267,10 @@ bool pacman_t::tick() noexcept {
 
     switch( mode_ ) {
         case mode_t::FREEZE:
-            if( 0 == mode_ms_left ) {
+            if( 0 >= mode_ms_left ) {
                 freeze_score = -1;
                 freeze_box_.set(-1, -1, -1, -1);
-                set_mode( mode_last );
+                set_mode( mode_last, mode_last_ms_left );
                 break;
             } else {
                 return true;
@@ -279,12 +283,12 @@ bool pacman_t::tick() noexcept {
         case mode_t::NORMAL:
             break;
         case mode_t::POWERED:
-            if( 0 == mode_ms_left ) {
+            if( 0 >= mode_ms_left ) {
                 set_mode( mode_t::NORMAL );
             }
             break;
         case mode_t::DEAD:
-            if( 0 == mode_ms_left ) {
+            if( 0 >= mode_ms_left ) {
                 return false; // main look shall handle restart: set_mode( mode_t::START );
             }
             return true;
