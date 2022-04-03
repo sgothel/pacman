@@ -157,7 +157,6 @@ void pacman_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::POWERED:
             ghost_t::set_global_mode( ghost_t::mode_t::SCARED, mode_ms_left );
             set_speed(game_level_spec().pacman_powered_speed);
-            ghosts_eaten_powered = 0;
             break;
         case mode_t::DEAD:
             stop_audio_loops();
@@ -360,6 +359,7 @@ bool pacman_t::tick() noexcept {
                     set_mode( mode_t::POWERED, game_level_spec().fright_time_ms );
                     audio_samples[ ::number( audio_clip_t::MUNCH ) ]->play(0);
                     next_empty_field_frame_cntr.load( keyframei_.frames_per_field() + 1 );
+                    ghosts_eaten_powered = 0;
                     freeze_frame_count = 3;
                 }
             } else if( tile_t::EMPTY == tile ) {
