@@ -9,17 +9,21 @@ This project's canonical repositories is hosted on [Gothel Software](https://jau
 This project likes to demonstrate a complex system written in modern C++
 for our computer science class.
 
+We have chosen the classic game for our project 
+to pay homage to [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s 
+original [Puckman](https://en.wikipedia.org/wiki/Pac-Man).
+
 Besides management of animated sprite graphics, maze environment and tile positioning,
 animation speed synchronization, 
 the interesting part might be the ghost's state machine and their movements.
 
 Potential code sections of interest
-- Selecting a new direction [ghost_t::set_next_dir()](../tree/src/ghost.cpp#n275)
-- Selecting the target [ghost_t::set_next_target()](../tree/src/ghost.cpp#n141)
-- Pellet counter to leave home [ghost_t::pellet_...()](../tree/src/ghost.cpp#n884)
+- Selecting a new direction [ghost_t::set_next_dir()](../tree/src/ghost.cpp#n276)
+- Selecting the target [ghost_t::set_next_target()](../tree/src/ghost.cpp#n142)
+- Pellet counter to leave home [ghost_t::pellet_...()](../tree/src/ghost.cpp#n910)
 - Level Specification [game_level_spec_t](../tree/src/game.cpp#n126)
 - Keyframe interval for animation [keyframei_t](../tree/include/pacman/utils.hpp#n96)
-- Random number engine [random_engine_t](../tree/include/pacman/utils.hpp#n349)
+- Random number engine [random_engine_t](../tree/include/pacman/utils.hpp#n350)
 
 ## Previous Work
 To implement the original pacman game behavior like weighted tile collision,
@@ -28,13 +32,23 @@ ghost algorithm, etc. - we have used the following documents for reference
 - Chad Birch's [Understanding Pac-Man Ghost Behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
 - Don Hodges's [Why do Pinky and Inky have different behaviors when Pac-Man is facing up?](http://donhodges.com/pacman_pinky_explanation.htm)
 
-The implementation is inspired by [Toru Iwatani](https://en.wikipedia.org/wiki/Toru_Iwatani)'s
-original game [Puckman](https://en.wikipedia.org/wiki/Pac-Man).
+We have followed the references closely to achieve a most accurate default mode for matching the original,
+[see *Deviations from the Original*](#deviations-from-the-original) below.
 
-## License
-This project is for educational purposes and shall be distributed in source form only.
+## Other Implementations
+There exist other free software implementations of this classic game,
+which we have not analyzed yet (2022-04-03):
+- [Shaune Williams's Pac-Man](https://github.com/masonicGIT/pacman/tree/master/sounds)
+- [Steve Dunn's Pacman-TypeScript](https://github.com/SteveDunn/Pacman-TypeScript/tree/master/snd)
+- [Armin Reichert's pacman](https://github.com/armin-reichert/pacman)
+- [Kofybrek's Pacman](https://github.com/Kofybrek/Pacman)
 
-This project is licensed under the MIT license.
+## License and Copyrights
+This project is for educational purposes, intended to be distributed in source form only
+and is [licensed under the MIT license](COPYING).
+
+This project is authored by Sven Gothel and his son Svenson Han Gothel.
+Its [copyright is held by Gothel Software e.K since 2022](COPYING).
 
 Namco holds the copyright on the original Puckman since 1980.
 
@@ -72,7 +86,7 @@ Following commandline arguments are supported
 - `-speed <int>` to set the 100% player speed in fields per seconds
 - `-wwidth <int>` to set the initial window width
 - `-wheight <int>` to set the initial window height
-- `-show_fps` to show pacman's speed and to periodically show the frames per seconds (fps) value on the console
+- `-show_fps` to show pacman's speed statistics and periodically show frames per seconds (fps) on the console
 - `-show_modes` to show all players' mode changes
 - `-show_moves` to show all players' move criteria like distance and collisions incl. speed changes on the console
 - `-show_targets` to show the ghost's target position as a ray on the video screen
@@ -83,7 +97,7 @@ Following commandline arguments are supported
 - `-decision_on_spot` to enable ghot's deciding next turn on the spot with a more current position, otherwise one tile ahead.
 - `-dist_manhatten` to use the Manhatten distance function instead of the Euclidean default
 - `-level <int>` to start at given level
-- `-record <basename-of-bmp-files>` to record each frame as a bmp file at known fps. The basename may contain folder names. The resulting bmp files may be converted to video using [scripts/bmps_to_mp4.sh](../tree/scripts/bmps_to_mp4.sh), see below.
+- `-record <basename-of-bmp-files>` to record each frame as a bmp file at known fps, [see *Video Recording Example*](#video-recording-example) below.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
 bin/pacman [-2p] [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] [-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] [-no_ghosts] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]
@@ -104,9 +118,13 @@ bin/pacman [-2p] [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int
   - Right: `RIGHT` or `D`
 
 ### Video Recording Example
+The basename for the resulting `bmp` files is passed after the `-record` option tag
+and may contain folder names. 
 
-We assume we are in the project folder having `bin/pacman` build and created a `video` folder.
+The resulting bmp files may be converted to video using [scripts/bmps_to_mp4.sh](../tree/scripts/bmps_to_mp4.sh).
  
+We assume we are in the project folder having `bin/pacman` build and created a `video` folder.
+
 - Use the first command to start the game while recording bmp snapshots each frame 
 to `video/puckman-01-*.bmp`.
 - Use the second command to convert same files to `video/puckman-01.mp4`.
@@ -120,20 +138,67 @@ rm video/puckman-01*bmp
 mpv video/puckman-01.mp4
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  
+## Deviations from the Original
+While we have focused on implementing the original behavior most accurately,
+some aspects are not fully in our control and are discussed here.
+
+### PRNG Scared Mode
+The original uses a known seeding iteration, used as a memory address
+within the game rom. The last bits of the addressed rom byte represents 
+the PRNG value for the ghost's direction in scared mode.
+
+Since the roms can't be used, we use the PRNG value of another algorithm 
+with same seeding sequence to preserver the periodic attrbutes at least.
+
+### Frame Sync Timing
+This implementation uses the monitor's frames per second number 
+to approximate the sub-tile step-width for the desired tiles per frame pace.
+
+This is achieved via Keyframe interval for animation, see [keyframei_t](../tree/include/pacman/utils.hpp#n96).
+
+Below we added measurements from pacman via commandline argument `-show_fps` 
+running along the bottom longest line from collision to collision.
+
+For each level we measured the slower first walk with dots and the second walk faster wihtout dots.
+
+Level 1: Fields/s deviation on longest line measured 7.955 f/s to 8.000 f/s or 0.5635%
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
+bin/pacman -no_ghosts -show_fps -level 1
+
+[    8,471] pacman stats: speed 0.71%, td 3515ms, fields[25.00 walked, actual 7.112/s, requested 7.100/s, diff 0.1743%], fps[draw 60.03/s, tick 56.90/s], frames[draw 211, synced 11], [fps 60, frames/field 8, fields/s 7.500000/7.100000 (diff 0.400000, 3.200001f/s, 0.938969 ms, sync 19/f), center 0.500000], [26.500000/32.500000 26/32, last[dir R, collided 1], [walked[25.000000, 25], center 25, entered 25]]
+
+[   11,872] pacman stats: speed 0.80%, td 3017ms, fields[24.00 walked, actual 7.955/s, requested 8.000/s, diff 0.5635%], fps[draw 59.99/s, tick 56.02/s], frames[draw 181, synced 12], [fps 60, frames/field 7, fields/s 8.571428/8.000000 (diff 0.571428, 3.999998f/s, 1.190477 ms, sync 15/f), center 0.428571], [1.428571/32.428570 1/32, last[dir L, collided 1], [walked[23.999989, 23], center 24, entered 24]]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Level 5: Fields/s deviation on longest line measured 8.772 f/s to 8.700 f/s or 0.8267%
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
+bin/pacman -no_ghosts -show_fps -level 5
+
+[    8,270] pacman stats: speed 0.87%, td 2850ms, fields[25.00 walked, actual 8.772/s, requested 8.700/s, diff 0.8267%], fps[draw 60.00/s, tick 52.63/s], frames[draw 171, synced 21], [fps 60, frames/field 6, fields/s 10.000000/8.700000 (diff 1.300000, 7.800001f/s, 2.490423 ms, sync 8/f), center 0.500000], [26.500000/32.500000 26/32, last[dir R, collided 1], [walked[24.999977, 25], center 25, entered 25]]
+
+[   11,004] pacman stats: speed 1.00%, td 2400ms, fields[23.83 walked, actual 9.931/s, requested 10.000/s, diff 0.6945%], fps[draw 60.00/s, tick 60.00/s], frames[draw 144, synced 0], [fps 60, frames/field 6, fields/s 10.000000/10.000000 (diff 0.000000, 0.000000f/s, 0.000000 ms, sync -1/f), center 0.500000], [1.500000/32.500000 1/32, last[dir L, collided 1], [walked[23.833315, 23], center 24, entered 23]]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Below 3% deviation should be good enough for this game using >= 10% speed differences in modes.
+
+Below 1% deviation is a great match.
+
+### Bugs
+This software may have bugs :)
+
 ## Optional Deviations from the Original
 
 ### Decision on the Spot
 As stated in [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier),
 the ghosts select their next direction *one tile ahead of an intersection*.
 
-With the `-decision_on_spot` mode enabled, see `Usage` above,
+With the `-decision_on_spot` mode enabled, [see *Commandline Arguments*](#commandline-arguments) above,
 the ghosts decide their next direction for each field using a more current pacman position.
 
 The default setting is to use the original *one tile ahead of an intersection*.
    
 ### Bugfix Mode
-
-With the `-bugfix` mode enabled, see `Usage` above,
+With the `-bugfix` mode enabled, [see *Commandline Arguments*](#commandline-arguments) above,
 the original puckman behavior (bugs) are disabled.
 
 The list below shall be updated in case we further the implementation
@@ -148,6 +213,10 @@ If false, a more accurate implementation, the pacman bugfix, is used:
 - pixel accurate tile position for collision tests
 - pinky's up-traget to be 4 ahead as intended
 - ...
+
+## Second Player Mode
+With the '-2p' mode enabled, [see *Commandline Arguments*](#commandline-arguments) above,
+a 2nd player can control Blinky when chasing, scattering or scared.
 
 ## Implementation Status 
 
