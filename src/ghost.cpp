@@ -677,6 +677,7 @@ void ghost_t::set_mode(const mode_t m, const int mode_ms) noexcept {
         case mode_t::AWAY:
             break;
         case mode_t::LEVEL_SETUP:
+            atex = &get_tex();
             pos_ = home_pos;
             pos_.set_aligned_dir(keyframei_);
             current_dir = direction_t::LEFT;
