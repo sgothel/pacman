@@ -261,10 +261,10 @@ float keyframei_t::center_value(const float v) const noexcept {
 }
 
 std::string keyframei_t::toString() const noexcept {
-    return "[fps "+std::to_string(frames_per_second_const_)+", frames/field "+std::to_string(frames_per_field_)+
-            ", fields/s "+std::to_string(fields_per_second())+"/"+std::to_string(fields_per_second_req_)+
-            " (diff "+std::to_string(fields_per_second_diff_)+", "+std::to_string(frames_per_second_diff())+
-            "f/s, "+std::to_string(sync_delay())+" ms, sync "+std::to_string(sync_frame_count())+"/f), center "+std::to_string(center_)+"]";
+    return "[fps "+std::to_string( frames_per_second() )+", frames/field "+std::to_string( frames_per_field() )+
+            ", fields/s "+std::to_string( fields_per_second() )+"/"+std::to_string( fields_per_second_requested() )+
+            " (diff "+std::to_string( fields_per_second_diff() )+", "+std::to_string( frames_per_second_diff() )+
+            "f/s, "+std::to_string( sync_delay() )+" ms, sync "+std::to_string( sync_frame_count() )+"/f), center "+std::to_string( center() )+"]";
 }
 
 //

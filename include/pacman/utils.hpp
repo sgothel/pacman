@@ -177,6 +177,9 @@ class keyframei_t {
         /** Return count of fields per frame, also the sub-field width or height, 1 / get_frames_per_field(). */
         constexpr float fields_per_frame() const noexcept { return 1.0f / frames_per_field_; }
 
+        /** Returns the requested fields per second 'moving' speed. */
+        constexpr float fields_per_second_requested() const noexcept { return fields_per_second_req_; }
+
         /** Returns the fields per second actual 'moving' speed, i.e. get_frames_per_second() / get_frames_per_field() */
         constexpr float fields_per_second() const noexcept { return frames_per_second_const_ / frames_per_field_; }
 
