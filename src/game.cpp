@@ -400,6 +400,21 @@ int main(int argc, char *argv[])
             } else if( 0 == strcmp("-pixqual", argv[i]) && i+1<argc) {
                 pixel_filter_quality = atoi(argv[i+1]);
                 ++i;
+            } else if( 0 == strcmp("-no_vsync", argv[i]) ) {
+                enable_vsync = false;
+            } else if( 0 == strcmp("-fps", argv[i]) && i+1<argc) {
+                forced_fps = atoi(argv[i+1]);
+                enable_vsync = false;
+                ++i;
+            } else if( 0 == strcmp("-speed", argv[i]) && i+1<argc) {
+                fields_per_sec_total = atof(argv[i+1]);
+                ++i;
+            } else if( 0 == strcmp("-wwidth", argv[i]) && i+1<argc) {
+                win_width = atoi(argv[i+1]);
+                ++i;
+            } else if( 0 == strcmp("-wheight", argv[i]) && i+1<argc) {
+                win_height = atoi(argv[i+1]);
+                ++i;
             } else if( 0 == strcmp("-show_fps", argv[i]) ) {
                 enable_log_fps = true;
             } else if( 0 == strcmp("-show_modes", argv[i]) ) {
@@ -416,21 +431,6 @@ int main(int argc, char *argv[])
                 enable_log_modes = true;
                 show_targets = true;
                 enable_debug_gfx = true;
-            } else if( 0 == strcmp("-no_vsync", argv[i]) ) {
-                enable_vsync = false;
-            } else if( 0 == strcmp("-fps", argv[i]) && i+1<argc) {
-                forced_fps = atoi(argv[i+1]);
-                enable_vsync = false;
-                ++i;
-            } else if( 0 == strcmp("-speed", argv[i]) && i+1<argc) {
-                fields_per_sec_total = atof(argv[i+1]);
-                ++i;
-            } else if( 0 == strcmp("-wwidth", argv[i]) && i+1<argc) {
-                win_width = atoi(argv[i+1]);
-                ++i;
-            } else if( 0 == strcmp("-wheight", argv[i]) && i+1<argc) {
-                win_height = atoi(argv[i+1]);
-                ++i;
             } else if( 0 == strcmp("-no_ghosts", argv[i]) ) {
                 disable_all_ghosts = true;
             } else if( 0 == strcmp("-bugfix", argv[i]) ) {
@@ -475,15 +475,16 @@ int main(int argc, char *argv[])
         log_printf("- 2p %d\n", human_blinky);
         log_printf("- use_audio %d\n", use_audio);
         log_printf("- pixqual %d\n", pixel_filter_quality);
+        log_printf("- enable_vsync %d\n", enable_vsync);
+        log_printf("- forced_fps %d\n", forced_fps);
+        log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
+        log_printf("- win size %d x %d\n", win_width, win_height);
         log_printf("- show_fps %d\n", log_fps());
         log_printf("- show_modes %d\n", log_modes());
         log_printf("- show_moves %d\n", log_moves());
         log_printf("- show_targets %d\n", show_targets);
         log_printf("- show_debug_gfx %d\n", show_debug_gfx());
-        log_printf("- enable_vsync %d\n", enable_vsync);
-        log_printf("- forced_fps %d\n", forced_fps);
-        log_printf("- fields_per_sec %5.2f\n", fields_per_sec_total);
-        log_printf("- win size %d x %d\n", win_width, win_height);
+        log_printf("- no_ghosts %d\n", disable_all_ghosts);
         log_printf("- bugfix %d\n", !use_original_pacman_behavior());
         log_printf("- decision_on_spot %d\n", !use_decision_one_field_ahead());
         log_printf("- distance %s\n", use_manhatten_distance() ? "Manhatten" : "Euclidean");
