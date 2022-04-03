@@ -80,6 +80,7 @@ pacman_t::pacman_t(SDL_Renderer* rend, const float fields_per_sec_total_) noexce
   keyframei_(get_frames_per_sec(), fields_per_sec_total*current_speed_pct, true /* nearest */),
   sync_next_frame_cntr( keyframei_.sync_frame_count(), true /* auto_reload */),
   next_empty_field_frame_cntr(0, false /* auto_reload */),
+  invincible( false ),
   mode_( mode_t::FREEZE ),
   mode_last( mode_t::FREEZE ),
   mode_ms_left ( -1 ),
@@ -393,7 +394,9 @@ bool pacman_t::tick() noexcept {
         if( pos_.intersects_f(g->position()) ) {
             const ghost_t::mode_t g_mode = g->mode();
             if( ghost_t::mode_t::CHASE <= g_mode && g_mode <= ghost_t::mode_t::SCATTER ) {
-                collision_enemies = true;
+                if( !invincible ) {
+                    collision_enemies = true;
+                }
             } else if( ghost_t::mode_t::SCARED == g_mode ) {
                 switch( ghosts_eaten_powered ) {
                     case 0: freeze_score = ::number( score_t::GHOST_1 ); break;
@@ -408,7 +411,7 @@ bool pacman_t::tick() noexcept {
                 audio_samples[ ::number( audio_clip_t::EAT_GHOST ) ]->play();
                 freeze_box_.set(pos_.x_i()-1, pos_.y_i()-1, 2, 2);
                 set_mode(mode_t::FREEZE, number( mode_duration_t::FREEZE ));
-                if( false ) {
+                if( log_modes() ) {
                     log_printf("pacman eats: ghost# %d, score %d, ghost %s\n", ghosts_eaten_powered, freeze_score, g->toString().c_str());
                 }
             }

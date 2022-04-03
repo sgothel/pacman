@@ -301,7 +301,7 @@ static std::string get_usage(const std::string& exename) noexcept {
     // TODO: Keep in sync with README.md
     return "Usage: "+exename+" [-2p] [-audio] [-pixqual <int>] [-no_vsync] [-fps <int>] [-speed <int>] [-wwidth <int>] [-wheight <int>] "+
               "[-show_fps] [-show_modes] [-show_moves] [-show_targets] [-show_debug_gfx] [-show_all] "+
-              "[-no_ghosts] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]";
+              "[-no_ghosts] [-invincible] [-bugfix] [-decision_on_spot] [-dist_manhatten] [-level <int>] [-record <basename-of-bmp-files>]";
 }
 
 //
@@ -385,6 +385,7 @@ int main(int argc, char *argv[])
     float fields_per_sec_total=10;
     int win_width = 640, win_height = 720;
     bool disable_all_ghosts = false;
+    bool invincible = false;
     bool show_targets = false;
     bool use_audio = false;
     int pixel_filter_quality = 0;
@@ -433,6 +434,8 @@ int main(int argc, char *argv[])
                 enable_debug_gfx = true;
             } else if( 0 == strcmp("-no_ghosts", argv[i]) ) {
                 disable_all_ghosts = true;
+            } else if( 0 == strcmp("-invincible", argv[i]) ) {
+                invincible = true;
             } else if( 0 == strcmp("-bugfix", argv[i]) ) {
                 original_pacman_behavior = false;
             } else if( 0 == strcmp("-decision_on_spot", argv[i]) ) {
@@ -485,6 +488,7 @@ int main(int argc, char *argv[])
         log_printf("- show_targets %d\n", show_targets);
         log_printf("- show_debug_gfx %d\n", show_debug_gfx());
         log_printf("- no_ghosts %d\n", disable_all_ghosts);
+        log_printf("- invincible %d\n", invincible);
         log_printf("- bugfix %d\n", !use_original_pacman_behavior());
         log_printf("- decision_on_spot %d\n", !use_decision_one_field_ahead());
         log_printf("- distance %s\n", use_manhatten_distance() ? "Manhatten" : "Euclidean");
@@ -585,6 +589,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<texture_t> pacman_left2_tex = std::make_shared<texture_t>(global_tex->all_images()->sdl_texture(), 0 + 1*13, 28 + 0, 13, 13, false /* owner*/);
 
     pacman = std::make_shared<pacman_t>(rend, fields_per_sec_total);
+    pacman->set_invincible(invincible);
     log_printf("%s\n", pacman->toString().c_str());
 
     ghost_ref blinky = nullptr;

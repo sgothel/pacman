@@ -389,6 +389,7 @@ class pacman_t {
         countdown_t sync_next_frame_cntr;
         countdown_t next_empty_field_frame_cntr;
 
+        bool invincible;
         mode_t mode_;
         mode_t mode_last;
         int mode_ms_left;
@@ -440,6 +441,8 @@ class pacman_t {
         void stop_audio_loops() noexcept;
         void set_speed(const float pct) noexcept;
         const keyframei_t& get_keyframei() const noexcept { return keyframei_; }
+
+        void set_invincible(const bool v) noexcept { invincible = v; }
 
         /**
          * Set direction

@@ -92,7 +92,8 @@ Following commandline arguments are supported
 - `-show_targets` to show the ghost's target position as a ray on the video screen
 - `-show_debug_gfx` to show all debug gfx
 - `-show_all` enable `-show_modes`, `-show_moves`, `-show_targets` and `-show_debug_gfx`
-- `-no_ghosts` to disable all ghosts
+- `-no_ghosts` to disable all ghosts (testing)
+- `-invincible` to make pacman invincible (testing)
 - `-bugfix` to turn off the original puckman's behavior (bugs), see `Bugfix Mode` below.
 - `-decision_on_spot` to enable ghot's deciding next turn on the spot with a more current position, otherwise one tile ahead.
 - `-dist_manhatten` to use the Manhatten distance function instead of the Euclidean default
@@ -221,6 +222,11 @@ the Manhatten distance function is used instead of the Euclidean default.
 ### Second Player Mode
 With the '-2p' mode enabled, [see *Commandline Arguments*](#commandline-arguments) above,
 a 2nd player can control Blinky when chasing, scattering or scared.
+
+### Testing Options
+The following testing options are available
+- `-no_ghosts` to disable all ghosts (testing)
+- `-invincible` to make pacman invincible (testing)
 
 ## Implementation Status 
 
