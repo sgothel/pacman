@@ -5,8 +5,8 @@
 ## Git Repository
 This project's canonical repositories is hosted on [Gothel Software](https://jausoft.com/cgit/cs_class/pacman.git/).
 
-## Goals
-This project likes to demonstrate a complex system written in modern C++
+## Overview
+This project demonstrates a complex system written in modern C++
 for our [computer science class](https://jausoft.com/cgit/cs_class/).
 
 We have chosen the classic game for our project 
@@ -25,14 +25,19 @@ Potential code sections of interest
 - Keyframe interval for animation [keyframei_t](../tree/include/pacman/utils.hpp#n96)
 - Random number engine [random_engine_t](../tree/include/pacman/utils.hpp#n350)
 
+### Coverage
+
+[*Chase, Scatter and Phantoms – Sisyphus alike Ghost Fate*](https://jausoft.com/blog/2022/05/31/chase-scatter-and-phantoms-sisyphus-alike-ghost-fate/)
+is a little article of ours describing details and includes screenshots and a short video recording.
+
 ## Previous Work
-To implement the original pacman game behavior like weighted tile collision,
+To implement the original *Puckman* game behavior like weighted tile collision,
 ghost algorithm, etc. - we have used the following documents for reference
 - Jamey Pittman's [The Pac-Man Dossier](https://www.gamedeveloper.com/design/the-pac-man-dossier)
 - Chad Birch's [Understanding Pac-Man Ghost Behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
 - Don Hodges's [Why do Pinky and Inky have different behaviors when Pac-Man is facing up?](http://donhodges.com/pacman_pinky_explanation.htm)
 
-We have followed the references closely to achieve a most accurate default mode for matching the original,
+We have followed the references closely to achieve a most accurate default mode to match the original,
 [see *Deviations from the Original*](#deviations-from-the-original) below.
 
 ## Other Implementations
@@ -160,7 +165,7 @@ This is achieved via Keyframe interval for animation, see [keyframei_t](../tree/
 Below we added measurements from pacman via commandline argument `-show_fps` 
 running along the bottom longest line from collision to collision.
 
-For each level we measured the slower first walk with dots and the second walk faster wihtout dots.
+For each level we measured the slower first walk eating pellets and the second walk faster without pellets.
 
 Level 1: Fields/s deviation on longest line measured 7.955 f/s to 8.000 f/s or 0.5635%
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
@@ -207,12 +212,12 @@ and kept in sync with `include/pacman/globals.hpp`.
 
 By default the original pacman behavior is being implemented:
 - weighted (round) tile position for collision tests
-- pinky's up-target not 4 ahead, but 4 ahead and 4 to the left
+- Pinky's up-target not 4 ahead, but 4 ahead and 4 to the left
 - ...
 
 If false, a more accurate implementation, the pacman bugfix, is used:
 - pixel accurate tile position for collision tests
-- pinky's up-traget to be 4 ahead as intended
+- Pinky's up-target to be 4 ahead as intended
 - ...
 
 ### Manhatten Distance
